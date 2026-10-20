@@ -192,16 +192,24 @@ Jeden kalendár pre trénera aj zverenca: tréner v ňom plánuje, zverenec zapi
 - V detaile dňa vidí aj skutočné zápisy zverenca z denníka a jeho poznámku „ako to išlo“.
 - **Prehľad splnenia** (`/plan/prehlad`): pre každého zverenca počet naplánovaných, splnených a nesplnených tréningov za
   30 dní s percentom, zoznam nesplnených po termíne a program na najbližších 7 dní.
+- **Týždenný plán z textu** (`/plan/tyzden`): tréner vloží správu tak, ako ju píše skupine (dni, časy, skupiny, mená,
+  cviky), appka ju rozdelí na dni → bloky → položky (`plan_text.py`, pevné pravidlá bez AI), v náhľade tréner odklikne,
+  komu ktorý blok patrí, a plán sa uloží každému zverencovi na celý týždeň. Blok sa priradí podľa skupiny
+  („objemovci“), slova „všetci“ alebo prezývky / mena zverenca – skupiny a prezývky si tréner nastaví na tej istej
+  stránke. Riadok „Bulharské drepy 8a8x2“ je cvik (8 na stranu, 2 série), „10 až 12x400m“ sú úseky, ostatné ostáva
+  ako text. Vložený týždeň sa dá zmazať naraz.
 
 **Zverenec**
 - Vidí len svoj plán. V kalendári sú tri druhy položiek: obrysový čip = naplánované, vyplnený čip so ✓ = splnené,
   červený čip s ! = nesplnené po termíne; drobným písmom zápisy z denníka.
 - V detaile dňa klikne **Splniť** – vyplní vzdialenosť, čas a poznámku; vznikne zápis v denníku (sekcia Tréningy)
   prepojený s plánom. Alebo prepojí už existujúci zápis z toho dňa. **Označiť ako nesplnené** splnenie zruší.
+- Pri tréningu z textu vidí jeho položky: ku každej sérii cviku zapíše kilá, ku každému úseku čas, a môže si pridať
+  vlastné cviky („Drep 5x5“, „6x150m“). Z týchto zápisov sú grafy posilňovne a úsekov.
 
 ### Grafy výkonnosti (`/grafy`)
 
-Zverenec vidí svoje grafy, tréner si vyberie zverenca, administrátor ktoréhokoľvek. Päť častí:
+Zverenec vidí svoje grafy, tréner si vyberie zverenca, administrátor ktoréhokoľvek. Sedem častí:
 
 1. **Vývoj výsledkov** – časy z pretekov vo vybranej disciplíne, os Y obrátená (*nižší čas = vyššie*), osobný rekord
    má väčšiu značku. Nad grafom dlaždice PB / posledný / prvý výsledok.
@@ -209,9 +217,12 @@ Zverenec vidí svoje grafy, tréner si vyberie zverenca, administrátor ktorého
 3. **Tréningový objem** – kilometre za posledných 12 týždňov z denníka tréningov.
 4. **Plnenie plánu** – posledných 8 týždňov, naplánované vs. splnené tréningy a percento plnenia.
 5. **Technika z videa** – priemerný kontakt so zemou (ms) a kadencia z uložených analýz videa.
+6. **Posilňovňa** – najväčšia váha na sériu pre vybraný cvik v každom tréningu (z kíl zapísaných k položkám plánu).
+7. **Úseky z plánu** – najrýchlejší úsek na vybranú vzdialenosť v každom tréningu, os obrátená.
 
 Pod každým grafom je **Zobraziť ako tabuľku** s rovnakými číslami; stránka funguje aj bez JavaScriptu. Rovnaké dáta
-vracia `GET /grafy/api/<metrika>?athlete_id=&discipline=` pre `vysledky`, `rekordy`, `objem`, `plan`, `technika`.
+vracia `GET /grafy/api/<metrika>?athlete_id=&discipline=` pre `vysledky`, `rekordy`, `objem`, `plan`, `technika`,
+`posilka` (`?exercise=`) a `behy` (`?distance=` v metroch).
 
 ### Administrátor – správa používateľov
 
@@ -289,9 +300,10 @@ Navigácia v `templates/base.html` sa skladá podľa roly; názvy endpointov sú
 
 | Tabuľka | Kľúčové stĺpce |
 |---|---|
-| `user` | `username` (unikátne), `password_hash`, `role` (`zverenec` / `trener` / `admin`), `full_name`, `coach_id` → `user.id`, **`coach_confirmed`** (tréner vidí údaje až keď je `True`), `world_athletics_id`, `must_change_password`, `created_at` |
+| `user` | `username` (unikátne), `password_hash`, `role` (`zverenec` / `trener` / `admin`), `full_name`, `coach_id` → `user.id`, **`coach_confirmed`** (tréner vidí údaje až keď je `True`), `world_athletics_id`, `must_change_password`, `group_name` a `nickname` (priradenie týždenného plánu z textu), `created_at` |
 | `race_result` | `user_id` (atlét), `discipline`, `result_s` (sekundy), `date`, `competition`, `place`, `wind`, `source` (`manual` / `world_athletics` / `stopky`), `note`, `created_by` (kto zapísal). Osobný rekord = `min(result_s)` na disciplínu, počíta sa, neukladá. |
-| `planned_training` | `athlete_id`, `coach_id`, `date`, `title`, `description`, `completed`, `completed_at`, `athlete_note`, `training_log_id` → `training_log.id` |
+| `planned_training` | `athlete_id`, `coach_id`, `date`, `title`, `description`, `completed`, `completed_at`, `athlete_note`, `training_log_id` → `training_log.id`, `batch_id` (jedno vloženie týždňa z textu), `time_text` („16:00“) |
+| `plan_item` | `plan_id` → `planned_training.id`, `position`, `kind` (`sila` / `beh` / `ine`), `text`, `exercise`, `reps`, `reps_max`, `per_side`, `sets`, `distance_m`, `intensity_pct`, `result_json` (kilá na sériu alebo sekundy na úsek), `result_note`, `added_by_athlete` |
 | `training_log` | `user_id`, `date`, `training_type`, `distance_km`, `duration_min`, `duration_sec`, `intervals_data`, `notes` |
 | `biometric_log` | `user_id`, `date`, `hrv`, `recovery`, `rhr` |
 | `video_analysis` | `user_id`, `stored_name`, `overlay_name`, `fps`, `steps_detected`, `contact_ms_mean`, `flight_ms_mean`, `cadence_spm`, `duty_factor_pct`, `asymmetry_pct`, `speed_ms`, `stride_length_m`, `result_json` (celý výsledok vrátane krokov, uhlov, hodnotenia a komentára AI trénera) |
@@ -301,7 +313,7 @@ Navigácia v `templates/base.html` sa skladá podľa roly; názvy endpointov sú
 | `strava_token` | `user_id`, `athlete_id`, `access_token`, `refresh_token`, `expires_at` |
 
 Každý riadok s údajmi má **`user_id` = vlastník**, a každý dotaz je ním filtrovaný. Tabuľky vytvorí
-`db.create_all()`; chýbajúce stĺpce v staršej databáze (`user_id`, `coach_confirmed`, `height_cm`) doplní
+`db.create_all()`; chýbajúce stĺpce v staršej databáze (`user_id`, `coach_confirmed`, `height_cm`, `group_name`, `nickname`, `batch_id`, `time_text`) doplní
 `_ensure_columns()` cez `ALTER TABLE ADD COLUMN`, takže databáza z verzie pred účtami zostane funkčná. Riadky bez
 vlastníka (z verzie pred účtami) vidí len administrátor.
 
@@ -420,6 +432,12 @@ Spúšťač si sám vytvorí `venv`, nainštaluje balíky z `requirements.txt` (
 a `opencv` sú veľké) a otvorí prehliadač na `http://127.0.0.1:5001`. Ak macOS súbor odmietne otvoriť, povoľ ho
 v *Nastavenia → Súkromie a bezpečnosť*.
 
+**Na telefóne:** server predvolene počúva len na počítači. V školskej či domácej sieti ho spusti
+s `ATLETCOACH_HOST=0.0.0.0` a na telefóne otvor `http://<IP počítača>:5001`. Appka má manifest
+(`static/manifest.webmanifest`) a ikony, takže sa dá **pridať na plochu** (Safari: Zdieľať → Pridať na plochu,
+Chrome: ponuka → Pridať na plochu) a otvára sa bez lišty prehliadača. Kamera pre fotobunku cez obyčajné `http`
+v sieti nefunguje (pozri [Kamera pri stopkách](#kamera-pri-stopkách)).
+
 ### Ručne
 
 ```bash
@@ -471,8 +489,19 @@ v školskej sieti). Toto by si vyžadovalo skutočné nasadenie:
   trvá desiatky sekúnd na jednu úlohu. Každá analýza beží vo vlastnom vlákne priamo v procese servera (žiadna
   fronta úloh), takže viac súbežných analýz si delí CPU a rozpracovaná úloha sa pri reštarte stratí (uložené
   výsledky ostávajú).
-- **WSGI server** namiesto vývojového: `gunicorn app:app` (Linux) alebo `waitress-serve app:app` (Windows), s
-  `FLASK_DEBUG=0` a `ATLETCOACH_RELOAD=0`. Vývojový server Flasku nie je určený pre verejnú prevádzku.
+- **WSGI server** namiesto vývojového: v repozitári je `wsgi.py` (ProxyFix pre HTTPS za reverznou proxy, bezpečná
+  session cookie) a `gunicorn.conf.py` (jeden proces s vláknami – analýza videa beží vo vláknach a jej stav je
+  v pamäti): `gunicorn --config gunicorn.conf.py wsgi:app`. Vývojový server Flasku nie je určený pre verejnú prevádzku.
+- **Docker** – `Dockerfile` postaví obraz s OpenCV, MediaPipe a ffmpeg a spustí gunicorn na porte `PORT` (8080):
+
+  ```bash
+  docker build -t atletcoach .
+  docker run -d -p 8080:8080 -v atletcoach-data:/app/instance --env-file .env atletcoach
+  ```
+
+  Hostingy, ktoré stavajú z Dockerfile (Railway, Fly.io, Render…), potrebujú zväzok pripojený na `/app/instance`,
+  nastavený `SECRET_KEY` a región v EÚ (údaje neplnoletých športovcov). Pred kontajner patrí HTTPS proxy
+  (hosting ju dáva sám; na vlastnom serveri Caddy alebo nginx).
 - **HTTPS** – kamera pre fotobunku funguje len cez zabezpečené spojenie, takže pred aplikáciou musí byť reverzná
   proxy (nginx / Caddy) s certifikátom.
 - **`SECRET_KEY`** pevne nastavený v `.env`; inak sa pri zmene stroja vygeneruje nový a všetky prihlásenia padnú.
@@ -555,6 +584,7 @@ python test_video_analysis.py     # kontakt so zemou, mierka, dĺžka kroku, cel
 python test_hurdle_analysis.py    # prekážky: detekcia, kroky medzi prekážkami, medzičasy, kontrola vierohodnosti
 node test_stopky_zaznam.mjs        # stopky zo záznamu v headless Google Chrome (potrebuje Chrome a Node 22+)
 python test_optical_flow.py       # optický tok na vykreslenom videu s textúrami
+python test_plan_text.py          # rozbor týždenného plánu z textu trénera: dni, bloky, skupiny, mená, cviky, úseky
 ```
 
 - `test_world_athletics.py` (pytest, 60 testov): parsovanie výkonov, dátumov, vetra a disciplín, filter bežeckých
@@ -574,14 +604,14 @@ python test_optical_flow.py       # optický tok na vykreslenom videu s textúra
 |---|---|
 | Jazyk a server | Python 3.9 – 3.12, Flask 3.1, Jinja2 šablóny, python-dotenv |
 | Databáza | SQLite cez Flask-SQLAlchemy 3.1 (aditívna migrácia `ALTER TABLE`) |
-| Frontend | HTML, CSS, Tailwind CSS (CDN), JavaScript (bez frameworku), fonty Archivo / IBM Plex |
+| Frontend | HTML, CSS, Tailwind CSS (CDN), JavaScript (bez frameworku), fonty Archivo / IBM Plex, manifest webovej appky (ikona na ploche telefónu) |
 | Grafy a mapy | Chart.js, Leaflet (heatmapa behov, vlastný dekodér Google polyline) |
 | Počítačové videnie | OpenCV 4.10 (optický tok Lucas-Kanade, RANSAC odhad pohybu kamery, kreslenie prekryvu), MediaPipe Pose 0.10 (33 bodov kostry), NumPy 1.26 |
 | Fotobunka | Web API prehliadača: `getUserMedia`, `<canvas>` `getImageData`, Web Audio (štart na zvuk), `localStorage` |
 | Externé služby | World Athletics GraphQL (neoficiálne, `requests`), Strava API (OAuth 2.0, `stravalib` + `requests`), Groq API (LLM chat completions, modely `llama-3.3-70b-versatile` → `openai/gpt-oss-120b` → `deepseek-r1-distill-llama-70b` ako záloha) |
 | Bezpečnosť | `werkzeug.security` hašovanie hesiel, podpísaná session cookie, role a viditeľnosť v `auth.py` |
 | Testy | pytest (World Athletics), skriptové testy na syntetických dátach (video, prekážky, optický tok) |
-| Nástroje | Git / GitHub, VS Code, `venv`, spúšťače `run.command` (macOS) a `run.bat` (Windows) |
+| Nástroje | Git / GitHub, VS Code, `venv`, spúšťače `run.command` (macOS) a `run.bat` (Windows), Docker + gunicorn (nasadenie) |
 
 ### Štruktúra projektu
 
@@ -593,6 +623,7 @@ maturitny_projekt/
 ├── trener.py               # zverenci, výsledky, osobné rekordy          /trener
 ├── zverenec.py             # moje výsledky, vzťah s trénerom              /zverenec
 ├── planovanie.py           # kalendár a plán tréningov                    /plan
+├── plan_text.py            # rozbor týždenného plánu z textu trénera (bez Flasku)
 ├── grafy.py                # grafy výkonnosti + JSON API                  /grafy
 ├── stopky.py               # stopky s fotobunkou (uloženie času)          /stopky
 ├── admin_panel.py          # správa používateľov                          /admin
@@ -604,10 +635,13 @@ maturitny_projekt/
 ├── test_video_analysis.py  # skriptové testy na syntetických dátach
 ├── test_hurdle_analysis.py
 ├── test_optical_flow.py
+├── test_plan_text.py       # rozbor plánu z textu na skutočnej správe trénera
 ├── requirements.txt
 ├── run.command / run.bat   # spúšťače
+├── wsgi.py, gunicorn.conf.py, Dockerfile   # nasadenie na hosting
 ├── .env.example            # vzor konfigurácie
 ├── static/css, static/js   # style.css, stopky.js, grafy.js, main.js
+├── static/icons, static/manifest.webmanifest   # ikona a manifest appky na ploche
 ├── templates/              # base.html + šablóny podľa modulu (auth/, trener/, zverenec/, planovanie/, grafy/, stopky/, admin/, wa/)
 ├── instance/               # database.db, secret_key, videos/  (negitované)
 ├── cache/                  # World Athletics a Strava cache  (negitované)

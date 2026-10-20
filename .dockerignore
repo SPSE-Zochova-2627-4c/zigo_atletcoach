@@ -1,0 +1,20 @@
+# Do obrazu nepatria lokálne dáta, prostredie ani tajomstvá.
+venv/
+__pycache__/
+*.pyc
+.env
+instance/
+cache/
+models/
+static/uploads/
+.git/
+.claude/
+.DS_Store
+*.mp4
+*.mov
+*.m4v
+*.avi
+*.mkv
+*.webm
+test_*.py
+test_*.mjs

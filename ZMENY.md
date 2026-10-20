@@ -1,3 +1,23 @@
+# Zmeny „týždenný plán z textu“ (október 2026)
+
+- **`/plan/tyzden`**: tréner vloží správu, ako ju píše skupine (dni, časy, skupiny, mená, cviky), `plan_text.py`
+  ju rozdelí na dni → bloky (čas, skupina / mená) → položky (cvik `10x2` / `8a8x2`, úseky `30 až 40x 26,5m`,
+  `3x3x26,5m na 92%`, `10 až 12x400m`, inak text). Bez AI a bez Flasku, aby bol výsledok vždy rovnaký a dal sa
+  otestovať (`test_plan_text.py` na skutočnej správe trénera).
+- **Náhľad „komu čo patrí“**: ku každému bloku predvyplnení zverenci podľa skupiny (`User.group_name`), slova
+  „všetci“ alebo prezývky / mena (`User.nickname`, krstné meno, priezvisko, username); tréner odklikne, upraví názov,
+  blok vynechá. Uloženie vytvorí `PlannedTraining` každému zverencovi s `batch_id` (celý týždeň sa dá zmazať naraz)
+  a `time_text`; položky sú `PlanItem`.
+- **Zápis výkonov zverencom**: ku každej sérii kilá, ku každému úseku čas (`PlanItem.result_json`), poznámka,
+  vlastné cviky (`added_by_athlete`); trénerovu položku maže len tréner.
+- **Grafy**: nové metriky `posilka` (najväčšia váha na sériu pre cvik, výber cviku) a `behy` (najrýchlejší úsek na
+  vzdialenosť, obrátená os), s tabuľkami a JSON API.
+- **Appka na ploche telefónu**: `static/manifest.webmanifest`, ikony v `static/icons/`, Apple meta v `base.html`,
+  MIME typ manifestu v `app.py`; server sa dá otvoriť v sieti cez `ATLETCOACH_HOST`.
+- **Nasadenie**: `Dockerfile` (python 3.12-slim + libGL, glib, ffmpeg), `wsgi.py` (ProxyFix, bezpečná cookie),
+  `gunicorn.conf.py` (1 worker × vlákna, timeout na dlhé nahrávanie), `.dockerignore` (videá, databáza, `.env`
+  a `venv` do obrazu nejdú).
+
 # Zmeny „stopky zo záznamu“ (september 2026)
 
 - Fotobunka beží aj nad videom zo záznamu: tlačidlo **Video zo záznamu** (súbor zo zariadenia) a pre
