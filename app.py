@@ -1,4 +1,5 @@
 import os
+import mimetypes
 import math
 import re
 import shutil
@@ -24,6 +25,9 @@ from auth import (login_required, roles_required, athlete_ids_visible_to,
                   visible_athletes, row_visible, scope_query)
 
 load_dotenv()
+
+# Manifest webovej appky musí ísť s vlastným typom, inak ho prehliadač ignoruje.
+mimetypes.add_type('application/manifest+json', '.webmanifest')
 
 app = Flask(__name__)
 os.makedirs(app.instance_path, exist_ok=True)
@@ -2241,6 +2245,8 @@ for _module in (trener, zverenec, planovanie, grafy, stopky, admin_panel, world_
 
 if __name__ == '__main__':
     port = int(os.getenv('ATLETCOACH_PORT', '5001'))
+    # Predvolene počúva len na tomto počítači; ATLETCOACH_HOST=0.0.0.0 ho otvorí pre telefón v tej istej sieti.
+    host = os.getenv('ATLETCOACH_HOST', '127.0.0.1')
     # Reloader a debug sa dajú vypnúť (ATLETCOACH_RELOAD=0, FLASK_DEBUG=0) – skripty, nasadenie
     use_reloader = os.getenv('ATLETCOACH_RELOAD', '1') == '1'
     debug = os.getenv('FLASK_DEBUG', '1') == '1'
@@ -2251,4 +2257,4 @@ if __name__ == '__main__':
             time.sleep(1.5)
             webbrowser.open(f'http://127.0.0.1:{port}')
         threading.Thread(target=_open_browser, daemon=True).start()
-    app.run(debug=debug, port=port, use_reloader=use_reloader)
+    app.run(host=host, debug=debug, port=port, use_reloader=use_reloader)
