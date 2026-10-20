@@ -35,6 +35,12 @@
                class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">
                 Prehľad splnenia
             </a>
+            {% if is_planner %}
+            <a href="{{ url_for('planovanie.week_form') }}"
+               class="bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]">
+                Týždenný plán z textu
+            </a>
+            {% endif %}
         </div>
     </div>
 
@@ -137,11 +143,12 @@
         </div>
         <p class="text-[13px] text-on-surface-variant mt-4 max-w-[64ch]">
             {% if is_planner %}
-            Klikni na deň a naplánuj tréning. Zverenec ho po odbehnutí označí ako splnený – zapíše si pri tom
-            vzdialenosť, čas a poznámku, ktorá sa ti tu zobrazí.
+            Klikni na deň a naplánuj tréning, alebo vlož celý týždeň naraz z textu trénera. Zverenec si pri
+            tréningu zapíše kilá k sériám alebo časy úsekov a po odbehnutí ho označí ako splnený.
             {% else %}
-            Klikni na deň, kde máš naplánovaný tréning, a po odbehnutí ho označ ako splnený. Zápis sa ti
-            uloží aj do denníka v sekcii Tréningy.
+            Klikni na deň, kde máš naplánovaný tréning: ku sériám si zapíš kilá, k úsekom časy (z nich sú
+            grafy), pridaj si vlastné cviky a po odbehnutí tréning označ ako splnený. Zápis sa ti uloží aj
+            do denníka v sekcii Tréningy.
             {% endif %}
         </p>
     </section>

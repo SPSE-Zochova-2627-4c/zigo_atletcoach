@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Náhľad týždňa · AtletCoach{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/planovanie.css') }}">{% endblock %}
+
+{% set btn_primary = 'bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]' %}
+{% set btn_secondary = 'border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors' %}
+{% set kind_label = {'beh': 'beh', 'sila': 'sila', 'ine': 'iné'} %}
+
+{% block content %}
+<main class="mt-10 pb-12">
+
+    <div class="flex items-end justify-between flex-wrap gap-5 mb-9">
+        <div>
+            <p class="eyebrow mb-2">Náhľad · {{ monday|plan_date }} – {{ sunday|plan_date }}</p>
+            <h1 class="text-[44px] leading-none font-headline font-extrabold uppercase text-on-surface">Komu čo patrí</h1>
+        </div>
+        <p class="mono text-[11px] text-on-surface-variant max-w-[48ch] leading-relaxed">
+            Zaškrtnutí zverenci dostanú tréning do kalendára. Názov si môžeš upraviť,
+            blok bez zverenca sa neuloží.
+        </p>
+    </div>
+
+    {% if intro %}
+    <div class="bg-surface-container-low border border-white/10 p-5 mb-8">
+        <p class="eyebrow mb-2">Poznámky trénera (neukladajú sa, len na prečítanie)</p>
+        {% for line in intro %}<p class="text-[13px] text-on-surface-variant leading-relaxed">{{ line }}</p>{% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('planovanie.week_save') }}">
+        <input type="hidden" name="payload" value="{{ payload }}">
+        <input type="hidden" name="monday" value="{{ monday.isoformat() }}">
+
+        {% for d in days %}
+        <section class="mb-8">
+            <div class="rule">
+                <p class="eyebrow">{{ d.name }} · {{ d.date|plan_date }}</p>
+                {% if d.rest %}<p class="eyebrow">voľno · nič sa nevytvorí</p>{% endif %}
+            </div>
+            {% if d.blocks %}
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-px bg-white/10 border border-white/10">
+                {% for b in d.blocks %}
+                {% set key = d.index ~ '-' ~ loop.index0 %}
+                {% set blk = b.block %}
+                <div class="bg-surface-container p-5 flex flex-col gap-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0 flex-1">
+                            <label for="title-{{ key }}" class="sr-only">Názov</label>
+                            <div class="flex items-center gap-2">
+                                {% if blk.time %}<span class="mono text-[12px] text-on-surface-variant flex-shrink-0">{{ blk.time }}</span>{% endif %}
+                                <input type="text" id="title-{{ key }}" name="title-{{ key }}" value="{{ b.title }}" maxlength="160" class="w-full">
+                            </div>
+                        </div>
+                        <label class="eyebrow flex items-center gap-2 whitespace-nowrap pt-3 cursor-pointer">
+                            <input type="checkbox" name="skip-{{ key }}" value="1"> nevkladať
+                        </label>
+                    </div>
+
+                    {% if blk['items'] %}
+                    <ul class="space-y-1">
+                        {% for it in blk['items'] %}
+                        <li class="text-[13px] text-on-surface leading-snug">
+                            <span class="plan-kind plan-kind--{{ it.kind }}">{{ kind_label[it.kind] }}</span> {{ it.text }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+
+                    <div>
+                        <p class="eyebrow mb-2">
+                            Komu
+                            {% if blk.everyone %}· všetci{% endif %}
+                            {% for gname in blk.groups %}· {{ gname }}{% endfor %}
+                            {% if not b.proposed %}<span style="color:#e66767">· nikomu – vyber</span>{% endif %}
+                        </p>
+                        <div class="flex flex-wrap gap-x-4 gap-y-1.5">
+                            {% for a in athletes %}
+                            <label class="flex items-center gap-1.5 text-[12px] cursor-pointer {% if a.id in b.proposed %}text-on-surface{% else %}text-on-surface-variant{% endif %}">
+                                <input type="checkbox" name="ath-{{ key }}" value="{{ a.id }}" {% if a.id in b.proposed %}checked{% endif %}>
+                                {{ a.nickname or a.display_name }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% elif not d.rest %}
+            <p class="text-on-surface-variant py-3 text-[13px]">Žiadny tréning.</p>
+            {% endif %}
+        </section>
+        {% endfor %}
+
+        <div class="flex flex-wrap items-center gap-3 mt-4">
+            <button type="submit" class="{{ btn_primary }}">Uložiť do kalendára</button>
+            <a href="{{ url_for('planovanie.week_form') }}" class="{{ btn_secondary }}">Zrušiť</a>
+        </div>
+    </form>
+
+    <details class="mt-10">
+        <summary class="plan-summary eyebrow hover:text-on-surface transition-colors">Upraviť text a rozobrať znova</summary>
+        <form method="post" action="{{ url_for('planovanie.week_preview') }}" class="mt-4 space-y-4 max-w-[80ch]">
+            <input type="hidden" name="monday" value="{{ monday.isoformat() }}">
+            <textarea name="text" rows="14" class="mono text-[13px]" required>{{ text }}</textarea>
+            <button type="submit" class="{{ btn_secondary }}">Rozobrať znova</button>
+        </form>
+    </details>
+
+</main>
+{% endblock %}

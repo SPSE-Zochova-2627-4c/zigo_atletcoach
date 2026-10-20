@@ -5,16 +5,26 @@ Tréner naplánuje zverencovi tréning na konkrétny deň, zverenec ho označí 
 Pri splnení sa zverencovi vytvorí (alebo prepojí) skutočný zápis v denníku
 (TrainingLog), takže jeden kalendár ukazuje plán aj to, čo sa naozaj odbehlo.
 
+Týždenný plán z textu (/plan/tyzden): tréner vloží správu, ako ju píše do
+skupiny (dni, časy, skupiny, mená, cviky), appka ju rozdelí (plan_text.py),
+tréner v náhľade odklikne, komu čo patrí, a plán sa uloží každému zverencovi
+na celý týždeň aj s položkami (PlanItem). Zverenec si k položkám zapíše kilá
+alebo časy a môže si pridať vlastné cviky.
+
 Prístup: zverenec vidí a plní len svoje plány; tréner plánuje len svojim
 (potvrdeným) zverencom a upravuje len vlastné plány; admin všetko.
 """
+import json
+import uuid
+from collections import OrderedDict
 from datetime import date, datetime, timedelta
 from functools import wraps
 
 from flask import (Blueprint, render_template, request, redirect, url_for,
                    flash, g, abort, jsonify)
 
-from models import db, PlannedTraining, TrainingLog
+import plan_text
+from models import db, PlannedTraining, TrainingLog, PlanItem
 from auth import (login_required, roles_required, athlete_ids_visible_to,
                   visible_athletes, require_visible_athlete)
 
@@ -489,3 +499,269 @@ def overview():
         upcoming=upcoming, missed_list=missed_list, is_planner=_is_planner(),
         past_days=OVERVIEW_PAST_DAYS, upcoming_days=OVERVIEW_UPCOMING_DAYS,
     )
+
+
+# -----------------------------
+# Týždenný plán z textu trénera
+# -----------------------------
+def _default_monday(today):
+    """Pondelok týždňa, ktorý sa práve plánuje: do utorka tento, od stredy budúci."""
+    monday = today - timedelta(days=today.weekday())
+    return monday + timedelta(days=7) if today.weekday() >= 2 else monday
+
+
+def _matcher_for(athletes):
+    groups = {a.group_name: a.group_name for a in athletes if a.group_name}
+    people = []
+    for a in athletes:
+        names = [a.nickname, a.username]
+        if a.full_name:
+            names += a.full_name.split()
+        people.append((a.id, names))
+    return plan_text.Matcher(groups, people)
+
+
+def _block_athletes(block, athletes):
+    """Komu blok patrí podľa textu: všetci / skupina / mená. Vracia id v poradí zoznamu."""
+    if block.get('everyone'):
+        return [a.id for a in athletes]
+    ids = set(block.get('people') or [])
+    wanted = {plan_text.norm(gname) for gname in block.get('groups') or []}
+    for a in athletes:
+        if a.group_name and plan_text.norm(a.group_name) in wanted:
+            ids.add(a.id)
+    return [a.id for a in athletes if a.id in ids]
+
+
+def _parse_monday(raw):
+    try:
+        monday = date.fromisoformat((raw or '').strip())
+    except ValueError:
+        return None
+    return monday - timedelta(days=monday.weekday())   # čokoľvek v týždni → jeho pondelok
+
+
+def _recent_batches(limit=8):
+    """Posledné vložené týždne trénera: (batch_id, od, do, tréningov, zverencov)."""
+    rows = PlannedTraining.query.filter(PlannedTraining.coach_id == g.user.id,
+                                        PlannedTraining.batch_id.isnot(None)) \
+        .order_by(PlannedTraining.created_at.desc(), PlannedTraining.id.desc()).all()
+    batches = OrderedDict()
+    for p in rows:
+        b = batches.setdefault(p.batch_id, {'batch_id': p.batch_id, 'start': p.date, 'end': p.date,
+                                            'count': 0, 'athletes': set(), 'created_at': p.created_at})
+        b['start'] = min(b['start'], p.date)
+        b['end'] = max(b['end'], p.date)
+        b['count'] += 1
+        b['athletes'].add(p.athlete_id)
+        if len(batches) > limit:
+            break
+    out = list(batches.values())[:limit]
+    for b in out:
+        b['athletes'] = len(b['athletes'])
+    return out
+
+
+@bp.route('/tyzden')
+@roles_required('trener', 'admin')
+def week_form():
+    athletes = _athlete_choices()
+    return render_template('planovanie/tyzden.html', athletes=athletes,
+                           default_monday=_default_monday(date.today()),
+                           batches=_recent_batches(), text=request.args.get('text', ''))
+
+
+@bp.route('/tyzden/skupiny', methods=['POST'])
+@roles_required('trener', 'admin')
+def save_groups():
+    """Skupina a prezývka pri každom zverencovi – podľa nich sa text priradí."""
+    for a in _athlete_choices():
+        a.group_name = (request.form.get(f'group-{a.id}') or '').strip()[:60] or None
+        a.nickname = (request.form.get(f'nick-{a.id}') or '').strip()[:60] or None
+    db.session.commit()
+    flash('Skupiny a prezývky uložené.', 'success')
+    return redirect(url_for('planovanie.week_form'))
+
+
+@bp.route('/tyzden/nahlad', methods=['POST'])
+@roles_required('trener', 'admin')
+def week_preview():
+    athletes = _athlete_choices()
+    if not athletes:
+        flash('Najskôr si pridaj zverencov – potom im môžeš vložiť týždenný plán.', 'info')
+        return redirect(url_for('planovanie.index'))
+    text = (request.form.get('text') or '').strip()
+    monday = _parse_monday(request.form.get('monday'))
+    if not text or monday is None:
+        flash('Vlož text plánu a vyber týždeň.', 'danger')
+        return redirect(url_for('planovanie.week_form'))
+
+    parsed = plan_text.parse(text, _matcher_for(athletes))
+    if not parsed['days']:
+        flash('V texte som nenašiel žiadny deň (Pondelok, Utorok, …). Každý deň musí začínať na novom riadku názvom dňa.', 'danger')
+        return redirect(url_for('planovanie.week_form', text=text))
+
+    days = []
+    for d in parsed['days']:
+        the_day = monday + timedelta(days=d['day'])
+        blocks = []
+        for b in d['blocks']:
+            blocks.append({'block': b, 'title': plan_text.block_title(b),
+                           'proposed': _block_athletes(b, athletes)})
+        days.append({'index': d['day'], 'date': the_day, 'name': WEEKDAYS_SK[d['day']],
+                     'rest': d['rest'], 'note': d.get('note'), 'blocks': blocks})
+    by_id = {a.id: a for a in athletes}
+    return render_template('planovanie/nahlad.html', days=days, intro=parsed['intro'],
+                           athletes=athletes, by_id=by_id, monday=monday,
+                           sunday=monday + timedelta(days=6), text=text,
+                           payload=json.dumps(parsed, ensure_ascii=False))
+
+
+@bp.route('/tyzden/ulozit', methods=['POST'])
+@roles_required('trener', 'admin')
+def week_save():
+    athletes = _athlete_choices()
+    allowed = {a.id for a in athletes}
+    monday = _parse_monday(request.form.get('monday'))
+    try:
+        parsed = json.loads(request.form.get('payload') or '')
+        days = parsed['days']
+    except (ValueError, KeyError, TypeError):
+        abort(400)
+    if monday is None:
+        abort(400)
+
+    batch_id = uuid.uuid4().hex
+    created = 0
+    athletes_hit = set()
+    for d_i, d in enumerate(days):
+        the_day = monday + timedelta(days=int(d.get('day', 0)) % 7)
+        for b_i, block in enumerate(d.get('blocks') or []):
+            key = f'{d_i}-{b_i}'
+            if request.form.get(f'skip-{key}'):
+                continue
+            # Zverenci len z vlastného zoznamu – id z formulára samo nestačí.
+            chosen = [int(x) for x in request.form.getlist(f'ath-{key}') if x.isdigit()]
+            chosen = [x for x in chosen if x in allowed]
+            if not chosen:
+                continue
+            title = (request.form.get(f'title-{key}') or plan_text.block_title(block)).strip()[:160] or 'Tréning'
+            items = block.get('items') or []
+            description = '\n'.join(it.get('text', '') for it in items if it.get('text')) or None
+            time_text = block.get('time') if isinstance(block.get('time'), str) and len(block.get('time')) == 5 else None
+            for athlete_id in chosen:
+                plan = PlannedTraining(athlete_id=athlete_id, coach_id=g.user.id, date=the_day,
+                                       title=title, description=description,
+                                       batch_id=batch_id, time_text=time_text)
+                db.session.add(plan)
+                for pos, it in enumerate(items):
+                    plan.items.append(_item_from_dict(it, pos))
+                created += 1
+                athletes_hit.add(athlete_id)
+    if not created:
+        flash('Nič sa neuložilo – žiadny blok nemal vybraného zverenca.', 'danger')
+        return redirect(url_for('planovanie.week_form'))
+    db.session.commit()
+    flash(f'Týždeň od {plan_date(monday)}: {created} tréningov pre {len(athletes_hit)} zverencov.', 'success')
+    return redirect(url_for('planovanie.index', y=monday.year, m=monday.month))
+
+
+def _item_from_dict(it, position):
+    kind = it.get('kind') if it.get('kind') in PlanItem.KINDS else 'ine'
+
+    def num(key, cast=float):
+        v = it.get(key)
+        try:
+            return cast(v) if v is not None else None
+        except (TypeError, ValueError):
+            return None
+
+    return PlanItem(position=position, kind=kind, text=(it.get('text') or '')[:200] or 'položka',
+                    exercise=(it.get('exercise') or None), reps=num('reps', int), reps_max=num('reps_max', int),
+                    per_side=bool(it.get('per_side')), sets=num('sets', int),
+                    distance_m=num('distance_m'), intensity_pct=num('intensity_pct', int))
+
+
+@bp.route('/davka/<batch_id>/zmazat', methods=['POST'])
+@login_required
+def delete_batch(batch_id):
+    plans = PlannedTraining.query.filter_by(batch_id=batch_id).all()
+    if not plans:
+        abort(404)
+    visible = athlete_ids_visible_to(g.user)
+    if not all(_can_manage(p, visible) for p in plans):
+        abort(403)
+    for p in plans:
+        db.session.delete(p)
+    db.session.commit()
+    flash(f'Vložený týždeň zmazaný ({len(plans)} tréningov).', 'success')
+    return redirect(url_for('planovanie.week_form'))
+
+
+# -----------------------------
+# Položky tréningu: kilá, časy, vlastné cviky
+# -----------------------------
+def _load_item(item_id):
+    item = db.session.get(PlanItem, item_id)
+    if item is None:
+        abort(404)
+    return item
+
+
+def _parse_number(raw):
+    """'82,5' → 82.5; prázdne alebo nezmysel → None."""
+    raw = (raw or '').strip().replace(',', '.')
+    if not raw:
+        return None
+    try:
+        v = float(raw)
+    except ValueError:
+        return None
+    return v if 0 <= v < 100000 else None
+
+
+@bp.route('/polozka/<int:item_id>/zapis', methods=['POST'])
+@login_required
+def item_record(item_id):
+    item = _load_item(item_id)
+    plan = item.plan
+    if not _can_complete(plan):
+        abort(403)
+    values = [_parse_number(request.form.get(f'v{i}')) for i in range(item.slots)]
+    item.result_json = json.dumps(values) if any(v is not None for v in values) else None
+    item.result_note = (request.form.get('note') or '').strip()[:200] or None
+    db.session.commit()
+    flash('Výkon zapísaný.', 'success')
+    return redirect(_day_url(plan.date, plan.athlete))
+
+
+@bp.route('/<int:plan_id>/polozka/pridat', methods=['POST'])
+@login_required
+def item_add(plan_id):
+    plan = _load_plan(plan_id)
+    if not _can_complete(plan):
+        abort(403)
+    text = (request.form.get('text') or '').strip()[:200]
+    if not text:
+        flash('Napíš cvik alebo úsek, napr. „Drep 5x5“ alebo „6x150m“.', 'danger')
+        return redirect(_day_url(plan.date, plan.athlete))
+    item = _item_from_dict(plan_text.classify(text), len(plan.items))
+    item.added_by_athlete = not _can_manage(plan)
+    plan.items.append(item)
+    db.session.commit()
+    flash(f'Pridané: {text}.', 'success')
+    return redirect(_day_url(plan.date, plan.athlete))
+
+
+@bp.route('/polozka/<int:item_id>/zmazat', methods=['POST'])
+@login_required
+def item_delete(item_id):
+    item = _load_item(item_id)
+    plan = item.plan
+    # Trénerovu položku maže len tréner; vlastnú si zverenec zmaže sám.
+    if not (_can_manage(plan) or (item.added_by_athlete and _can_complete(plan))):
+        abort(403)
+    db.session.delete(item)
+    db.session.commit()
+    flash('Položka zmazaná.', 'success')
+    return redirect(_day_url(plan.date, plan.athlete))

@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Týždenný plán · AtletCoach{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/planovanie.css') }}">{% endblock %}
+
+{% set btn_primary = 'bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]' %}
+{% set btn_secondary = 'border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors' %}
+
+{% block content %}
+<main class="mt-10 pb-12">
+
+    <!-- ── Hlavička ── -->
+    <div class="flex items-end justify-between flex-wrap gap-5 mb-9">
+        <div>
+            <p class="eyebrow mb-2">Plán · z textu trénera</p>
+            <h1 class="text-[44px] leading-none font-headline font-extrabold uppercase text-on-surface">Týždenný plán</h1>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5">
+            <a href="{{ url_for('planovanie.index') }}" class="{{ btn_secondary }}">Kalendár</a>
+            <a href="{{ url_for('planovanie.overview') }}" class="{{ btn_secondary }}">Prehľad splnenia</a>
+        </div>
+    </div>
+
+    {% if not athletes %}
+    <p class="font-headline font-bold text-2xl text-on-surface mb-2">Zatiaľ nemáš komu plánovať</p>
+    <p class="text-on-surface-variant max-w-[52ch] mb-6">Pridaj zverencov v sekcii Zverenci a počkaj, kým vzťah potvrdia.</p>
+    <a href="{{ url_for('trener.athletes') }}" class="inline-block {{ btn_primary }}">Zverenci</a>
+    {% else %}
+
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-x-14 gap-y-11">
+
+        <!-- ── Text plánu ── -->
+        <div class="lg:col-span-7 min-w-0">
+            <div class="rule"><p class="eyebrow">01 · Vlož text, ako ho tréner poslal</p></div>
+            <form method="post" action="{{ url_for('planovanie.week_preview') }}" class="space-y-4">
+                <div>
+                    <label for="text">Text plánu</label>
+                    <textarea id="text" name="text" rows="18" required class="mono text-[13px]"
+                              placeholder="Pondelok
+15:00 novy sprint rozcvicenie od A do Z
+16:00 objemovci
+30 az 40x 26,5m kopec
+Utorok
+17:00 objemovci
+Bulharské drepy 8a8x2
+Hip thrust 10x2
+Streda
+17:45 objemovci 10 az 12x400m s 1min pauzou
+Sobota volno
+Nedela
+18:00 vsetci
+6 razove maximum drep tlak">{{ text }}</textarea>
+                </div>
+                <div class="flex flex-wrap items-end gap-4">
+                    <div class="max-w-[200px]">
+                        <label for="monday">Týždeň od</label>
+                        <input type="date" id="monday" name="monday" value="{{ default_monday.isoformat() }}" required>
+                    </div>
+                    <p class="text-[11px] text-on-surface-variant max-w-[36ch] pb-3">Stačí hociktorý deň toho týždňa, uloží sa od pondelka.</p>
+                </div>
+                <button type="submit" class="{{ btn_primary }}">Zobraziť náhľad</button>
+            </form>
+
+            <div class="mt-9 grid grid-cols-1 sm:grid-cols-3 gap-px bg-white/10 border border-white/10">
+                {% set steps = [
+                    ('01', 'Dni a časy', 'Každý deň začína názvom dňa na novom riadku (aj bez diakritiky: Stvrtok, Nedela). Riadok s časom „15:00“ otvára tréning, riadky pod ním sú jeho položky. „Sobota volno“ = voľný deň.'),
+                    ('02', 'Komu patrí', 'Skupina („objemovci“), „všetci“ alebo meno či prezývka v riadku rozhodne, komu sa tréning uloží. Ak nič nesedí, vyberieš zverencov v náhľade.'),
+                    ('03', 'Cviky a úseky', '„Bulharské drepy 8a8x2“ = 8 na stranu, 2 série. „10 az 12x400m“ = úseky. Zverenec si potom ku sériám zapíše kilá a k úsekom časy – z nich sú grafy.'),
+                ] %}
+                {% for num, heading, body in steps %}
+                <div class="bg-surface-container px-5 py-6">
+                    <p class="mono text-[11px] text-on-surface-variant mb-4">{{ num }}</p>
+                    <p class="font-headline font-bold text-on-surface mb-2">{{ heading }}</p>
+                    <p class="text-[13px] text-on-surface-variant leading-relaxed">{{ body }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- ── Skupiny a prezývky + vložené týždne ── -->
+        <div class="lg:col-span-5 min-w-0">
+            <div class="rule"><p class="eyebrow">02 · Skupiny a prezývky zverencov</p></div>
+            <form method="post" action="{{ url_for('planovanie.save_groups') }}">
+                <datalist id="group-names">
+                    {% for gname in athletes|map(attribute='group_name')|select|unique %}<option value="{{ gname }}">{% endfor %}
+                </datalist>
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-white/10">
+                            <th class="py-2.5 text-left">Zverenec</th>
+                            <th class="py-2.5 text-left">Skupina</th>
+                            <th class="py-2.5 text-left">Prezývka v texte</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-[13px]">
+                        {% for a in athletes %}
+                        <tr class="border-b border-white/5 align-middle">
+                            <td class="py-2 pr-3 text-on-surface whitespace-nowrap">{{ a.display_name }}</td>
+                            <td class="py-2 pr-3"><input type="text" name="group-{{ a.id }}" value="{{ a.group_name or '' }}" list="group-names" maxlength="60" placeholder="objemovci" aria-label="Skupina {{ a.display_name }}"></td>
+                            <td class="py-2"><input type="text" name="nick-{{ a.id }}" value="{{ a.nickname or '' }}" maxlength="60" placeholder="{{ (a.full_name or a.username).split(' ')[0] }}" aria-label="Prezývka {{ a.display_name }}"></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <button type="submit" class="{{ btn_secondary }} mt-4">Uložiť skupiny a prezývky</button>
+                <p class="text-[11px] text-on-surface-variant mt-3 leading-relaxed max-w-[52ch]">
+                    Názov skupiny musí byť rovnaký ako v texte trénera (napr. „objemovci“, „ados group“).
+                    Prezývka je to, ako ťa tréner v texte volá; okrem nej sa hľadá aj krstné meno a priezvisko.
+                </p>
+            </form>
+
+            <div class="rule mt-11"><p class="eyebrow">03 · Naposledy vložené týždne</p></div>
+            {% if batches %}
+            <ul class="divide-y divide-white/5">
+                {% for b in batches %}
+                <li class="py-3 flex items-center justify-between gap-4">
+                    <div class="min-w-0">
+                        <p class="text-[13px] text-on-surface">{{ b.start|plan_date }} – {{ b.end|plan_date }}</p>
+                        <p class="mono text-[11px] text-on-surface-variant">{{ b.count }} tréningov · {{ b.athletes }} zverencov · vložené {{ b.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                    </div>
+                    <div class="flex items-center gap-3 flex-shrink-0">
+                        <a href="{{ url_for('planovanie.index', y=b.start.year, m=b.start.month) }}" class="eyebrow hover:text-on-surface transition-colors">kalendár →</a>
+                        <form method="post" action="{{ url_for('planovanie.delete_batch', batch_id=b.batch_id) }}"
+                              onsubmit="return confirm('Zmazať celý vložený týždeň ({{ b.count }} tréningov)?')">
+                            <button type="submit" class="text-[11px] font-semibold uppercase tracking-[0.1em] border-b border-transparent hover:border-current pb-0.5 transition-colors" style="color:#e66767">zmazať</button>
+                        </form>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-on-surface-variant py-4 text-[13px]">Zatiaľ žiadny. Po uložení náhľadu sa tu objaví a dá sa zmazať naraz.</p>
+            {% endif %}
+        </div>
+    </section>
+    {% endif %}
+
+</main>
+{% endblock %}

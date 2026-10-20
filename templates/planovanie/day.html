@@ -4,6 +4,7 @@
 
 {% set btn_primary = 'bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]' %}
 {% set btn_secondary = 'border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors' %}
+{% set kind_label = {'beh': 'beh', 'sila': 'sila', 'ine': 'iné'} %}
 
 {% block content %}
 <main class="mt-10 pb-12">
@@ -35,7 +36,7 @@
                 <div class="flex items-start justify-between gap-4">
                     <div class="min-w-0">
                         <p class="font-headline font-bold text-lg leading-tight {% if status == 'done' %}text-on-surface-variant{% else %}text-on-surface{% endif %}">
-                            {% if status == 'done' %}<span style="color:#a8c22f">✓</span> {% endif %}{{ p.title }}
+                            {% if status == 'done' %}<span style="color:#a8c22f">✓</span> {% endif %}{% if p.time_text %}<span class="mono text-[13px] text-on-surface-variant font-normal">{{ p.time_text }}</span> {% endif %}{{ p.title }}
                         </p>
                         {% if p.description %}
                         <p class="text-[13px] text-on-surface-variant mt-1.5 whitespace-pre-line leading-relaxed">{{ p.description }}</p>
@@ -46,6 +47,73 @@
                         {% if status == 'done' %}splnené{% elif status == 'missed' %}nesplnené po termíne{% else %}čaká{% endif %}
                     </span>
                 </div>
+
+                {# ── Položky: cviky a úseky z textu trénera + vlastné; zápis kíl a časov ── #}
+                {% if p.items or perms[p.id].complete %}
+                <div class="mt-4 border-t border-white/10 pt-3">
+                    {% if p.items %}
+                    <p class="eyebrow mb-1">Cviky a úseky</p>
+                    {% for it in p.items %}
+                    <div class="plan-item">
+                        <div class="flex items-start justify-between gap-3">
+                            <p class="text-[13px] text-on-surface leading-snug">
+                                <span class="plan-kind plan-kind--{{ it.kind }}">{{ kind_label[it.kind] }}</span>{{ it.text }}
+                                {% if it.added_by_athlete %}<span class="eyebrow ml-1">vlastné</span>{% endif %}
+                            </p>
+                            {% if perms[p.id].manage or (it.added_by_athlete and perms[p.id].complete) %}
+                            <form method="post" action="{{ url_for('planovanie.item_delete', item_id=it.id) }}" onsubmit="return confirm('Zmazať položku „{{ it.text|e }}“?')">
+                                {% if aid %}<input type="hidden" name="athlete_id" value="{{ aid }}">{% endif %}
+                                <button type="submit" class="eyebrow hover:text-on-surface transition-colors" title="Zmazať">×</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                        {% if it.has_results %}
+                        <p class="mono text-[12px] mt-1" style="color:var(--volt)">
+                            {% for v in it.results %}{% if v is not none %}{{ '%g'|format(v) }}{% else %}–{% endif %}{% if not loop.last %} / {% endif %}{% endfor %} {{ it.unit }}
+                            {% if it.result_note %}<span class="text-on-surface-variant">· {{ it.result_note }}</span>{% endif %}
+                        </p>
+                        {% endif %}
+                        {% if perms[p.id].complete and it.slots %}
+                        <details class="mt-1">
+                            <summary class="plan-summary eyebrow hover:text-on-surface transition-colors">{{ 'Upraviť' if it.has_results else 'Zapísať' }} {{ 'kilá' if it.kind == 'sila' else 'časy' }}</summary>
+                            <form method="post" action="{{ url_for('planovanie.item_record', item_id=it.id) }}" class="mt-3 space-y-3">
+                                {% if aid %}<input type="hidden" name="athlete_id" value="{{ aid }}">{% endif %}
+                                <p class="text-[11px] text-on-surface-variant">
+                                    {% if it.kind == 'sila' %}{{ it.sets or 1 }} {{ 'séria' if (it.sets or 1) == 1 else 'série' }}{% if it.reps %} × {{ it.reps }}{% if it.per_side %} na stranu{% endif %}{% endif %} – kilá na každú sériu
+                                    {% else %}{{ it.slots }} {{ 'úsek' if it.slots == 1 else 'úsekov' }}{% if it.distance_m %} × {{ '%g'|format(it.distance_m) }} m{% endif %} – čas v sekundách (napr. 58,3){% endif %}
+                                </p>
+                                <div class="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                                    {% for i in range(it.slots) %}
+                                    {% set val = it.results[i] if i < it.results|length else none %}
+                                    <input type="text" inputmode="decimal" name="v{{ i }}" value="{% if val is not none %}{{ '%g'|format(val) }}{% endif %}" placeholder="{{ it.unit }}" aria-label="{{ i + 1 }}.">
+                                    {% endfor %}
+                                </div>
+                                <div class="flex flex-wrap items-end gap-3">
+                                    <div class="flex-1 min-w-[160px]">
+                                        <label for="inote-{{ it.id }}">Poznámka</label>
+                                        <input type="text" id="inote-{{ it.id }}" name="note" value="{{ it.result_note or '' }}" maxlength="200" placeholder="nepovinné">
+                                    </div>
+                                    <button type="submit" class="{{ btn_secondary }}">Uložiť</button>
+                                </div>
+                            </form>
+                        </details>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+
+                    {% if perms[p.id].complete %}
+                    <form method="post" action="{{ url_for('planovanie.item_add', plan_id=p.id) }}" class="mt-3 flex items-end gap-2">
+                        {% if aid %}<input type="hidden" name="athlete_id" value="{{ aid }}">{% endif %}
+                        <div class="flex-1">
+                            <label for="add-{{ p.id }}">Pridať cvik alebo úsek</label>
+                            <input type="text" id="add-{{ p.id }}" name="text" maxlength="200" placeholder="napr. Drep 5x5, Mŕtvy ťah 3x8, 6x150m">
+                        </div>
+                        <button type="submit" class="{{ btn_secondary }}">Pridať</button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% endif %}
 
                 {% if p.completed %}
                 <div class="mt-4 border-t border-white/10 pt-4">

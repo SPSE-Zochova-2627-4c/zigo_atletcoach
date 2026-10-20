@@ -12,7 +12,8 @@ from datetime import date, datetime, timedelta
 from flask import Blueprint, render_template, request, g, jsonify, abort
 from sqlalchemy import func
 
-from models import db, RaceResult, TrainingLog, PlannedTraining, VideoAnalysis
+from models import db, RaceResult, TrainingLog, PlannedTraining, VideoAnalysis, PlanItem
+from plan_text import norm as _norm
 from auth import login_required, require_visible_athlete, visible_athletes
 
 bp = Blueprint('grafy', __name__, url_prefix='/grafy')
@@ -26,7 +27,7 @@ DISCIPLINE_ORDER = ('60m', '100m', '200m', '300m', '400m', '600m', '800m', '1000
 
 VOLUME_WEEKS = 12
 PLAN_WEEKS = 8
-METRICS = ('vysledky', 'rekordy', 'objem', 'plan', 'technika')
+METRICS = ('vysledky', 'rekordy', 'objem', 'plan', 'technika', 'posilka', 'behy')
 
 
 # -----------------------------
@@ -229,7 +230,89 @@ def technique_series(athlete):
     }
 
 
-def _metric(metric, athlete, discipline):
+def _plan_items(athlete, kind):
+    """Položky plánu zverenca daného druhu so zapísaným výkonom, podľa dátumu."""
+    rows = PlanItem.query.join(PlannedTraining, PlanItem.plan_id == PlannedTraining.id) \
+        .filter(PlannedTraining.athlete_id == athlete.id, PlanItem.kind == kind,
+                PlanItem.result_json.isnot(None)) \
+        .order_by(PlannedTraining.date.asc(), PlanItem.id.asc()).all()
+    return [it for it in rows if it.has_results]
+
+
+def gym_series(athlete, exercise=None):
+    """
+    Posilňovňa: najväčšie kilá na jeden cvik v každom tréningu. Cvik sa vyberá
+    (?exercise=), predvolene ten, ktorý má najviac zápisov.
+    """
+    items = _plan_items(athlete, 'sila')
+    counts = Counter(_norm(it.exercise or it.text) for it in items)
+    names = {}
+    for it in items:
+        names.setdefault(_norm(it.exercise or it.text), it.exercise or it.text)
+    exercises = [names[k] for k, _ in counts.most_common()]
+    chosen = None
+    if exercise and _norm(exercise) in names:
+        chosen = _norm(exercise)
+    elif exercises:
+        chosen = _norm(exercises[0])
+    labels, values, rows = [], [], []
+    if chosen:
+        for it in items:
+            if _norm(it.exercise or it.text) != chosen:
+                continue
+            vals = [v for v in it.results if v is not None]
+            labels.append(it.plan.date.strftime('%d.%m.%Y'))
+            values.append(max(vals))
+            rows.append({'date': labels[-1], 'sets': ' / '.join(f'{v:g}' for v in vals),
+                         'max': max(vals), 'reps': it.reps, 'per_side': it.per_side,
+                         'text': it.text, 'note': it.result_note or ''})
+    return {'labels': labels, 'values': values,
+            'meta': {'unit': 'kg', 'exercise': names.get(chosen) if chosen else None,
+                     'exercises': exercises, 'rows': rows,
+                     'best': max(values) if values else None}}
+
+
+def runs_series(athlete, distance=None):
+    """
+    Behy z plánu: najlepší čas úseku na danú vzdialenosť v každom tréningu
+    (?distance= v metroch), predvolene vzdialenosť s najviac zápismi.
+    """
+    items = _plan_items(athlete, 'beh')
+    items = [it for it in items if it.distance_m]
+    counts = Counter(float(it.distance_m) for it in items)
+    distances = [d for d, _ in counts.most_common()]
+    chosen = None
+    if distance:
+        try:
+            dist = float(str(distance).replace(',', '.'))
+            chosen = dist if dist in counts else None
+        except ValueError:
+            chosen = None
+    if chosen is None and distances:
+        chosen = distances[0]
+    labels, values, rows = [], [], []
+    if chosen is not None:
+        for it in items:
+            if float(it.distance_m) != chosen:
+                continue
+            vals = [v for v in it.results if v is not None]
+            labels.append(it.plan.date.strftime('%d.%m.%Y'))
+            values.append(min(vals))
+            rows.append({'date': labels[-1], 'times': ' / '.join(fmt_time(v) for v in vals),
+                         'best': fmt_time(min(vals)), 'mean': fmt_time(sum(vals) / len(vals)),
+                         'count': len(vals), 'text': it.text, 'note': it.result_note or ''})
+    return {'labels': labels, 'values': values,
+            'meta': {'unit': 's', 'distance': chosen,
+                     'distance_text': (f'{chosen:g} m' if chosen is not None else None),
+                     'distances': [f'{d:g}' for d in distances], 'rows': rows,
+                     'best_text': fmt_time(min(values)) if values else None}}
+
+
+def _metric(metric, athlete, discipline, exercise=None, distance=None):
+    if metric == 'posilka':
+        return gym_series(athlete, exercise)
+    if metric == 'behy':
+        return runs_series(athlete, distance)
     if metric == 'vysledky':
         return results_series(athlete, discipline)
     if metric == 'rekordy':
@@ -253,7 +336,9 @@ def index():
     discipline, disciplines = _pick_discipline(athlete, request.args.get('discipline'))
     athletes = visible_athletes(g.user) if (g.user.is_coach or g.user.is_admin) else None
 
-    data = {m: _metric(m, athlete, discipline) for m in METRICS}
+    exercise = request.args.get('exercise')
+    distance = request.args.get('distance')
+    data = {m: _metric(m, athlete, discipline, exercise, distance) for m in METRICS}
     return render_template('grafy/index.html',
                            eyebrow='Výkonnosť', title='Grafy',
                            athlete=athlete, athletes=athletes,
@@ -269,7 +354,8 @@ def api(metric):
         return jsonify({'error': 'Neznáma metrika.'}), 404
     athlete = _target_athlete()
     discipline, _ = _pick_discipline(athlete, request.args.get('discipline'))
-    payload = _metric(metric, athlete, discipline)
+    payload = _metric(metric, athlete, discipline,
+                      request.args.get('exercise'), request.args.get('distance'))
     payload['meta']['athlete_id'] = athlete.id
     return jsonify(payload)
 

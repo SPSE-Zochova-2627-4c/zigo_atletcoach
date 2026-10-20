@@ -376,6 +376,138 @@
         {% endif %}
     </section>
 
+    {# ════════ 6. Posilňovňa – kilá z plánu ════════ #}
+    {% set gym = data.posilka %}
+    <section class="py-10 border-t border-white/10">
+        <div class="rule">
+            <p class="eyebrow">06 · Posilňovňa{% if gym.meta.exercise %} · {{ gym.meta.exercise }}{% endif %}</p>
+            {% if gym.meta.exercises|length > 1 %}
+            <form method="get" action="{{ url_for('grafy.index') }}" class="flex items-end gap-2">
+                {% if athlete.id != current_user.id %}<input type="hidden" name="athlete_id" value="{{ athlete.id }}">{% endif %}
+                {% if discipline %}<input type="hidden" name="discipline" value="{{ discipline }}">{% endif %}
+                {% if data.behy.meta.distance is not none %}<input type="hidden" name="distance" value="{{ data.behy.meta.distance }}">{% endif %}
+                <select name="exercise" onchange="this.form.submit()" class="text-[11px]" aria-label="Cvik">
+                    {% for e in gym.meta.exercises %}
+                    <option value="{{ e }}" {% if e == gym.meta.exercise %}selected{% endif %}>{{ e }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+            {% endif %}
+        </div>
+
+        {% if gym["values"] %}
+        <div class="flex items-baseline justify-between flex-wrap gap-3 mb-5">
+            <div>
+                <h2 class="font-headline font-bold text-xl text-on-surface">Najväčšia váha na sériu</h2>
+                <p class="eyebrow mt-1">z tréningov v pláne · kilá, ktoré si zapísal k sériám</p>
+            </div>
+            <p class="mono text-[11px] text-on-surface-variant">{{ gym["values"]|length }} tréningov · maximum <span class="text-on-surface">{{ '%g'|format(gym.meta.best) }} kg</span></p>
+        </div>
+        <div class="bg-surface-container border border-white/10 p-5">
+            <canvas id="chart-gym" height="90"></canvas>
+        </div>
+        <details class="mt-4">
+            <summary class="eyebrow cursor-pointer hover:text-on-surface transition-colors select-none">Zobraziť ako tabuľku</summary>
+            <div class="overflow-x-auto mt-4 border border-white/10">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-white/10 bg-surface-container">
+                            <th class="px-4 py-3 text-left">Dátum</th>
+                            <th class="px-4 py-3 text-left">Zadanie</th>
+                            <th class="px-4 py-3 text-left">Série (kg)</th>
+                            <th class="px-4 py-3 text-right">Max</th>
+                            <th class="px-4 py-3 text-left">Poznámka</th>
+                        </tr>
+                    </thead>
+                    <tbody class="mono text-[13px]">
+                        {% for r in gym.meta.rows %}
+                        <tr class="border-b border-white/5">
+                            <td class="px-4 py-2 text-on-surface-variant">{{ r.date }}</td>
+                            <td class="px-4 py-2 text-on-surface">{{ r.text }}</td>
+                            <td class="px-4 py-2 text-on-surface">{{ r.sets }}</td>
+                            <td class="px-4 py-2 text-right text-on-surface font-semibold">{{ '%g'|format(r.max) }}</td>
+                            <td class="px-4 py-2 text-on-surface-variant">{{ r.note or '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </details>
+        {% else %}
+        <div class="border border-white/10 py-16 text-center">
+            <p class="eyebrow mb-3">Zatiaľ nie je čo kresliť</p>
+            <p class="text-on-surface mb-1">Žiadne kilá z posilňovne.</p>
+            <p class="text-sm text-on-surface-variant">V pláne otvor silový tréning a ku každej sérii zapíš, koľko si dvíhal.</p>
+        </div>
+        {% endif %}
+    </section>
+
+    {# ════════ 7. Behy z plánu – časy úsekov ════════ #}
+    {% set runs = data.behy %}
+    <section class="py-10 border-t border-white/10">
+        <div class="rule">
+            <p class="eyebrow">07 · Úseky z plánu{% if runs.meta.distance_text %} · {{ runs.meta.distance_text }}{% endif %}</p>
+            {% if runs.meta.distances|length > 1 %}
+            <form method="get" action="{{ url_for('grafy.index') }}" class="flex items-end gap-2">
+                {% if athlete.id != current_user.id %}<input type="hidden" name="athlete_id" value="{{ athlete.id }}">{% endif %}
+                {% if discipline %}<input type="hidden" name="discipline" value="{{ discipline }}">{% endif %}
+                {% if gym.meta.exercise %}<input type="hidden" name="exercise" value="{{ gym.meta.exercise }}">{% endif %}
+                <select name="distance" onchange="this.form.submit()" class="text-[11px]" aria-label="Vzdialenosť">
+                    {% for d in runs.meta.distances %}
+                    <option value="{{ d }}" {% if runs.meta.distance is not none and d == ('%g'|format(runs.meta.distance)) %}selected{% endif %}>{{ d }} m</option>
+                    {% endfor %}
+                </select>
+            </form>
+            {% endif %}
+        </div>
+
+        {% if runs["values"] %}
+        <div class="flex items-baseline justify-between flex-wrap gap-3 mb-5">
+            <div>
+                <h2 class="font-headline font-bold text-xl text-on-surface">Najrýchlejší úsek v tréningu</h2>
+                <p class="eyebrow mt-1">nižší čas = vyššie · os je obrátená</p>
+            </div>
+            <p class="mono text-[11px] text-on-surface-variant">{{ runs["values"]|length }} tréningov · najlepší <span class="text-on-surface">{{ runs.meta.best_text }}</span></p>
+        </div>
+        <div class="bg-surface-container border border-white/10 p-5">
+            <canvas id="chart-runs" height="90"></canvas>
+        </div>
+        <details class="mt-4">
+            <summary class="eyebrow cursor-pointer hover:text-on-surface transition-colors select-none">Zobraziť ako tabuľku</summary>
+            <div class="overflow-x-auto mt-4 border border-white/10">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-white/10 bg-surface-container">
+                            <th class="px-4 py-3 text-left">Dátum</th>
+                            <th class="px-4 py-3 text-left">Zadanie</th>
+                            <th class="px-4 py-3 text-left">Časy</th>
+                            <th class="px-4 py-3 text-right">Najlepší</th>
+                            <th class="px-4 py-3 text-right">Priemer</th>
+                        </tr>
+                    </thead>
+                    <tbody class="mono text-[13px]">
+                        {% for r in runs.meta.rows %}
+                        <tr class="border-b border-white/5">
+                            <td class="px-4 py-2 text-on-surface-variant">{{ r.date }}</td>
+                            <td class="px-4 py-2 text-on-surface">{{ r.text }}</td>
+                            <td class="px-4 py-2 text-on-surface">{{ r.times }}</td>
+                            <td class="px-4 py-2 text-right text-on-surface font-semibold">{{ r.best }}</td>
+                            <td class="px-4 py-2 text-right text-on-surface-variant">{{ r.mean }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </details>
+        {% else %}
+        <div class="border border-white/10 py-16 text-center">
+            <p class="eyebrow mb-3">Zatiaľ nie je čo kresliť</p>
+            <p class="text-on-surface mb-1">Žiadne časy úsekov z plánu.</p>
+            <p class="text-sm text-on-surface-variant">V pláne otvor bežecký tréning a zapíš časy jednotlivých úsekov.</p>
+        </div>
+        {% endif %}
+    </section>
+
 </main>
 {% endblock %}
 

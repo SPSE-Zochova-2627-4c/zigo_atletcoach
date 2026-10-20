@@ -91,7 +91,9 @@ def _ensure_columns():
     from sqlalchemy import text, inspect
     inspector = inspect(db.engine)
     wanted = {'user_profile': [('height_cm', 'FLOAT')],
-              'user': [('coach_confirmed', 'BOOLEAN NOT NULL DEFAULT 0')]}
+              'user': [('coach_confirmed', 'BOOLEAN NOT NULL DEFAULT 0'),
+                       ('group_name', 'VARCHAR(60)'), ('nickname', 'VARCHAR(60)')],
+              'planned_training': [('batch_id', 'VARCHAR(36)'), ('time_text', 'VARCHAR(5)')]}
     for table in LEGACY_USER_TABLES:
         wanted.setdefault(table, []).append(('user_id', 'INTEGER'))
 

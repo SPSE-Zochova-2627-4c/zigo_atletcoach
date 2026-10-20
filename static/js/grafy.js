@@ -209,6 +209,36 @@ document.addEventListener('DOMContentLoaded', () => {
             })
         });
     }
+    /* ── 6. Posilňovňa: najväčšie kilá na cvik v každom tréningu ── */
+    const gym = DATA.posilka;
+    if (el('chart-gym') && gym && gym.values.length) {
+        new Chart(el('chart-gym'), {
+            type: 'line',
+            data: { labels: gym.labels, datasets: [lineDataset(gym.values, LIME, { pointRadius: 3, pointBackgroundColor: LIME })] },
+            options: baseOptions({
+                beginAtZero: true,
+                yTick: (v) => v + ' kg',
+                tooltipLabel: (c) => c.parsed.y + ' kg',
+                tooltipAfter: (items) => { const r = gym.meta.rows[items[0].dataIndex]; return r ? 'série ' + r.sets + ' kg' + (r.note ? ' · ' + r.note : '') : ''; }
+            })
+        });
+    }
+
+    /* ── 7. Úseky z plánu: najrýchlejší čas, obrátená os ── */
+    const runs = DATA.behy;
+    if (el('chart-runs') && runs && runs.values.length) {
+        new Chart(el('chart-runs'), {
+            type: 'line',
+            data: { labels: runs.labels, datasets: [lineDataset(runs.values, BLUE, { pointRadius: 3, pointBackgroundColor: BLUE })] },
+            options: baseOptions({
+                reverse: true,
+                yTick: (v) => fmtTime(v),
+                tooltipLabel: (c) => fmtTime(c.parsed.y),
+                tooltipAfter: (items) => { const r = runs.meta.rows[items[0].dataIndex]; return r ? r.count + ' úsekov · priemer ' + r.mean : ''; }
+            })
+        });
+    }
+
     if (el('chart-cadence') && tech.labels.length) {
         new Chart(el('chart-cadence'), {
             type: 'line',
