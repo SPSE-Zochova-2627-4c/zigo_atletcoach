@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Stránka sa nenašla · AtletCoach{% endblock %}
+
+{% block content %}
+<main class="mt-16 pb-12">
+    <p class="eyebrow mb-2">Chyba 404</p>
+    <h1 class="page-title">Táto stránka neexistuje</h1>
+    <p class="text-on-surface-variant mt-4 max-w-[52ch]">
+        Adresa je nesprávna, alebo bola stránka presunutá. Skús to z úvodnej stránky.
+    </p>
+    <div class="mt-8 flex flex-wrap gap-2.5">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">Domov</a>
+        <a href="{{ url_for('stopky.page') }}"
+           class="btn btn-secondary">Stopky</a>
+    </div>
+</main>
+{% endblock %}

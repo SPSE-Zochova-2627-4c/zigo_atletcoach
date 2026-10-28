@@ -1,0 +1,9 @@
+{# Spoločná hlavička právnych stránok: nadpis, úvod a obsah stránky. Premenné: nadpis, uvod, sekcie = [(id, názov)]. #}
+<p class="eyebrow mb-2">Informácie o aplikácii · platné od {{ pravne_verzia }}</p>
+<h1 class="page-title">{{ nadpis }}</h1>
+<p class="text-on-surface-variant mt-5 leading-relaxed max-w-[64ch]">{{ uvod }}</p>
+<nav aria-label="Obsah stránky" class="mt-6 flex flex-wrap gap-x-5 gap-y-2">
+    {% for sid, nazov in sekcie %}
+    <a href="#{{ sid }}" class="eyebrow hover:text-on-surface transition-colors">{{ '%02d'|format(loop.index) }} {{ nazov }}</a>
+    {% endfor %}
+</nav>

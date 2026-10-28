@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Podmienky používania · AtletCoach{% endblock %}
+
+{% block content %}
+<main class="mt-10 pb-12 max-w-[78ch] pravne">
+    {% with nadpis='Podmienky používania',
+            uvod='Krátko a zrozumiteľne: čo AtletCoach je, čo od teba čakáme a čo od appky čakať nemáš. Registráciou alebo používaním s týmito podmienkami súhlasíš.',
+            sekcie=[('co-je', 'Čo je AtletCoach'), ('ucet', 'Účet'), ('obsah', 'Videá a údaje, ktoré nahrávaš'), ('nie-je', 'Čo appka nie je'),
+                    ('platby', 'Platby a vrátenie peňazí'), ('zodpovednost', 'Zodpovednosť'), ('ukoncenie', 'Ukončenie'), ('prava', 'Práva k obsahu a kódu')] %}
+        {% include 'pravne/_hlavicka.html' %}
+    {% endwith %}
+
+    <section id="co-je" class="pt-12">
+        <div class="rule"><p class="eyebrow">01 · Čo je AtletCoach</p></div>
+        <p class="text-on-surface-variant leading-relaxed">
+            Webová aplikácia pre trénera a jeho bežcov: analýza techniky behu z videa, medzičasy pri prekážkach, stopky
+            s virtuálnou fotobunkou, výsledky z pretekov, plán tréningov a grafy. Vytvoril ju Tomáš Žigo ako maturitný projekt
+            na SPŠE Bratislava, Zochova 9. Je <span class="text-on-surface">bezplatná a nekomerčná</span>; kontakt je v časti
+            <a href="{{ url_for('pravne.ochrana_udajov') }}#kto" class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">Ochrana osobných údajov</a>.
+        </p>
+    </section>
+
+    <section id="ucet" class="pt-12">
+        <div class="rule"><p class="eyebrow">02 · Účet</p></div>
+        <ul class="list-disc pl-5 space-y-2 text-on-surface-variant leading-relaxed">
+            <li>Zadávaj pravdivé údaje a heslo nikomu nedávaj. Za to, čo sa z tvojho účtu urobí, zodpovedáš ty.</li>
+            <li>Ak máš menej ako 16 rokov, potrebuješ na účet súhlas rodiča alebo zákonného zástupcu
+                (<a href="{{ url_for('pravne.ochrana_udajov') }}#deti" class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">prečo</a>).</li>
+            <li>Tréner vidí údaje zverenca až po tom, čo zverenec vzťah potvrdí. Ak tréner účet zverencovi založí sám,
+                zodpovedá za to, že zverenec (a u mladšieho ako 16 rokov aj rodič) o tom vie a súhlasí.</li>
+            <li>Jeden človek, jeden účet. Nepokúšaj sa dostať k cudzím údajom ani obchádzať obmedzenia aplikácie.</li>
+        </ul>
+    </section>
+
+    <section id="obsah" class="pt-12">
+        <div class="rule"><p class="eyebrow">03 · Videá a údaje, ktoré nahrávaš</p></div>
+        <ul class="list-disc pl-5 space-y-2 text-on-surface-variant leading-relaxed">
+            <li>Nahrávaj len videá, na ktorých si ty, alebo osoby, ktoré s nahraním a analýzou súhlasili. Za obsah videí
+                a za práva k nim zodpovedá ten, kto ich nahral.</li>
+            <li>Nenahrávaj nič urážlivé, nezákonné ani nesúvisiace s tréningom. Maximálna veľkosť videa je 600 MB.</li>
+            <li>Údaje o zdraví (HRV, regenerácia, pokojový tep) zapisuj len za seba a len ak chceš – sú v appke
+                dobrovoľné a kedykoľvek ich zmažeš.</li>
+        </ul>
+    </section>
+
+    <section id="nie-je" class="pt-12">
+        <div class="rule"><p class="eyebrow">04 · Čo appka nie je</p></div>
+        <ul class="list-disc pl-5 space-y-2 text-on-surface-variant leading-relaxed">
+            <li><span class="text-on-surface">Nie je to zdravotná ani odborná rada.</span> Hodnotenie techniky, skóre
+                pripravenosti z HRV, odporúčania AI chatu a AI trénera sú orientačné výstupy programu a jazykového modelu.
+                O tréningu rozhoduje tréner, o zdraví lekár.</li>
+            <li>Čísla z videa sú odhady. Presnosť závisí od záberu (z boku, celá postava), od snímkovej frekvencie
+                (pri 30 fps je chyba kontaktu so zemou okolo ±25 ms, pri 120 fps a viac pár milisekúnd) a od kalibrácie výškou.
+                Stopky s fotobunkou majú presnosť jedného snímku kamery.</li>
+            <li>Výsledky importované z World Athletics sa načítavajú z verejného webu neoficiálnym spôsobom; môžu byť
+                neúplné a import sa môže kedykoľvek prestať dať použiť.</li>
+        </ul>
+    </section>
+
+    <section id="platby" class="pt-12">
+        <div class="rule"><p class="eyebrow">05 · Platby a vrátenie peňazí</p></div>
+        <p class="text-on-surface-variant leading-relaxed">
+            AtletCoach je <span class="text-on-surface">úplne bezplatný</span>. Nemá platené funkcie, predplatné ani nákupy
+            v aplikácii, takže sa nič neplatí a nič sa nevracia. Ak niekto za prístup k tejto aplikácii pýta peniaze, nie
+            je to od nás. Služby tretích strán, ktoré si môžeš pripojiť (Strava, Groq), majú vlastné podmienky a prípadné
+            platby riešiš priamo s nimi.
+        </p>
+    </section>
+
+    <section id="zodpovednost" class="pt-12">
+        <div class="rule"><p class="eyebrow">06 · Zodpovednosť</p></div>
+        <ul class="list-disc pl-5 space-y-2 text-on-surface-variant leading-relaxed">
+            <li>Aplikácia sa poskytuje „tak, ako je“, bez záruky dostupnosti, bezchybnosti ani uchovania údajov.
+                Je to školský projekt, ktorý sa môže meniť alebo skončiť.</li>
+            <li>Dôležité výsledky a videá si uchovávaj aj inde – appka zálohy nerobí.</li>
+            <li>Za rozhodnutia o tréningu, pretekoch alebo zdraví urobené na základe údajov z aplikácie nesie
+                zodpovednosť ten, kto ich urobil.</li>
+        </ul>
+    </section>
+
+    <section id="ukoncenie" class="pt-12">
+        <div class="rule"><p class="eyebrow">07 · Ukončenie</p></div>
+        <p class="text-on-surface-variant leading-relaxed">
+            Používanie môžeš kedykoľvek ukončiť a požiadať o zmazanie účtu aj so všetkými údajmi. Administrátor môže
+            zrušiť účet, ktorý porušuje tieto podmienky, alebo účet dlhodobo nepoužívaný po skončení projektu; o zmazaní
+            sa dá vopred požiadať o výpis údajov.
+        </p>
+    </section>
+
+    <section id="prava" class="pt-12">
+        <div class="rule"><p class="eyebrow">08 · Práva k obsahu a kódu</p></div>
+        <ul class="list-disc pl-5 space-y-2 text-on-surface-variant leading-relaxed">
+            <li>Tvoje videá, výsledky a zápisy ostávajú tvoje. Appka ich používa len na to, aby ti ich ukázala a spočítala
+                z nich výsledky.</li>
+            <li>Zdrojový kód aplikácie je na GitHube:
+                <a href="{{ github_url }}" target="_blank" rel="noopener" class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">{{ github_url|replace('https://', '') }}<span class="sr-only"> (otvorí sa v novom okne)</span></a>.
+                Použité knižnice a písma majú vlastné licencie (MIT, BSD, SIL OFL, Apache 2.0), uvedené v repozitári.</li>
+            <li>Strava a jej logo sú ochranné známky Strava, Inc.; World Athletics a WHOOP patria svojim vlastníkom.
+                AtletCoach s nimi nie je prepojený ani nimi schválený.</li>
+            <li>Tieto podmienky sa riadia právom Slovenskej republiky. Ak sa zmenia, nová verzia bude na tejto stránke
+                s novým dátumom.</li>
+        </ul>
+        <p class="eyebrow mt-10">Posledná zmena: {{ pravne_verzia }}</p>
+    </section>
+</main>
+{% endblock %}

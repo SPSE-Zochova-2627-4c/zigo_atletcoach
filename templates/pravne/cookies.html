@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Cookies · AtletCoach{% endblock %}
+
+{% block content %}
+<main class="mt-10 pb-12 max-w-[78ch] pravne">
+    {% with nadpis='Cookies',
+            uvod='AtletCoach používa jedinú cookie, a to na prihlásenie. Žiadne analytické ani reklamné cookies, žiadne sledovanie, žiadne cookies cudzích firiem.',
+            sekcie=[('co', 'Čo sa ukladá'), ('preco-bez-suhlasu', 'Prečo nie je banner so súhlasom'), ('ulozisko', 'Pamäť prehliadača'), ('zmazanie', 'Ako to zmazať')] %}
+        {% include 'pravne/_hlavicka.html' %}
+    {% endwith %}
+
+    <section id="co" class="pt-12">
+        <div class="rule"><p class="eyebrow">01 · Čo sa ukladá</p></div>
+        <div class="overflow-x-auto border border-white/10">
+            <table class="w-full text-[13px]">
+                <thead>
+                    <tr class="border-b border-white/10 bg-surface-container">
+                        <th scope="col" class="px-4 py-3 text-left">Názov</th>
+                        <th scope="col" class="px-4 py-3 text-left">Načo</th>
+                        <th scope="col" class="px-4 py-3 text-left">Ako dlho</th>
+                        <th scope="col" class="px-4 py-3 text-left">Druh</th>
+                    </tr>
+                </thead>
+                <tbody class="text-on-surface-variant align-top">
+                    <tr class="border-b border-white/5">
+                        <td class="px-4 py-3 mono text-on-surface">session</td>
+                        <td class="px-4 py-3">drží tvoje prihlásenie (id účtu), jednorazové hlásenia po akcii a po pripojení Stravy dočasné prístupové kľúče</td>
+                        <td class="px-4 py-3">do zatvorenia prehliadača alebo odhlásenia</td>
+                        <td class="px-4 py-3">nevyhnutná, vlastná (first-party), podpísaná, HttpOnly, SameSite=Lax</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="text-on-surface-variant leading-relaxed mt-4">
+            Bez prihlásenia (úvodná stránka, stopky) sa cookie vytvorí len vtedy, keď appka potrebuje zobraziť hlásenie.
+            Žiadna cookie neobsahuje heslo ani osobné údaje – iba číslo účtu v podpísanej podobe.
+        </p>
+    </section>
+
+    <section id="preco-bez-suhlasu" class="pt-12">
+        <div class="rule"><p class="eyebrow">02 · Prečo nie je banner so súhlasom</p></div>
+        <p class="text-on-surface-variant leading-relaxed">
+            Podľa § 109 ods. 8 zákona č. 452/2021 Z. z. o elektronických komunikáciách sa súhlas nevyžaduje na cookies,
+            ktoré sú nevyhnutné na poskytnutie služby, o ktorú používateľ sám požiadal – a prihlásenie je presne taký
+            prípad. Keďže iné cookies nepoužívame, nemáš čo odmietať; namiesto banneru s výberom ti appka pri prvej návšteve
+            ukáže len krátku informáciu s odkazom sem.
+        </p>
+    </section>
+
+    <section id="ulozisko" class="pt-12">
+        <div class="rule"><p class="eyebrow">03 · Pamäť prehliadača</p></div>
+        <p class="text-on-surface-variant leading-relaxed">
+            Okrem cookie si appka ukladá dve drobnosti do pamäte prehliadača (localStorage). Ostávajú len v tvojom
+            prehliadači a nikam sa neposielajú:
+        </p>
+        <ul class="list-disc pl-5 space-y-2 text-on-surface-variant leading-relaxed mt-3">
+            <li><span class="mono text-on-surface">atletcoach.stopky</span> – nastavenie fotobunky (poloha čiary, citlivosť, ochranný
+                čas, čo sa má stať po pretnutí), aby tréner nemusel kameru nastavovať pri každom otvorení.</li>
+            <li><span class="mono text-on-surface">atletcoach.cookies-ok</span> – že si zavrel informačnú lištu o cookies.</li>
+        </ul>
+    </section>
+
+    <section id="zmazanie" class="pt-12">
+        <div class="rule"><p class="eyebrow">04 · Ako to zmazať</p></div>
+        <p class="text-on-surface-variant leading-relaxed">
+            Odhlásením sa cookie zruší. Všetko ostatné zmažeš v nastaveniach prehliadača pod „Súkromie“ alebo „Údaje
+            stránok“ – vyber túto stránku a zmaž cookies aj údaje stránky. Appka bude ďalej fungovať, len sa budeš musieť
+            znova prihlásiť a nastaviť čiaru fotobunky.
+        </p>
+        <p class="eyebrow mt-10">Posledná zmena: {{ pravne_verzia }}</p>
+    </section>
+</main>
+{% endblock %}

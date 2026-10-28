@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Ochrana osobných údajov · AtletCoach{% endblock %}
+
+{% block content %}
+<main class="mt-10 pb-12 max-w-[78ch] pravne">
+    {% with nadpis='Ochrana osobných údajov',
+            uvod='AtletCoach je bezplatný školský projekt. Tvoje údaje slúžia len na to, aby si ty a tvoj tréner videli tréningy, výsledky a analýzy. Nepredávajú sa, nepoužívajú sa na reklamu a nikto cudzí k nim nemá prístup.',
+            sekcie=[('kto', 'Kto údaje spracúva'), ('ake', 'Aké údaje a načo'), ('kto-vidi', 'Kto ich vidí'), ('tretie-strany', 'Tretie strany'),
+                    ('ako-dlho', 'Ako dlho'), ('prava', 'Tvoje práva'), ('deti', 'Mladší ako 16 rokov'), ('bezpecnost', 'Bezpečnosť')] %}
+        {% include 'pravne/_hlavicka.html' %}
+    {% endwith %}
+
+    <section id="kto" class="pt-12">
+        <div class="rule"><p class="eyebrow">01 · Kto údaje spracúva</p></div>
+        <p class="text-on-surface-variant leading-relaxed">
+            Aplikáciu vytvoril a prevádzkuje <span class="text-on-surface">Tomáš Žigo</span> ako maturitný projekt na
+            Strednej priemyselnej škole elektrotechnickej, Zochova 9, 811 03 Bratislava (školský rok 2026/2027).
+            Ide o nekomerčnú aplikáciu bez platieb a bez reklamy.
+        </p>
+        <p class="text-on-surface-variant leading-relaxed mt-3">
+            Otázky k údajom, žiadosť o výpis alebo o zmazanie pošli
+            {% if kontakt_email %}na <a href="mailto:{{ kontakt_email }}" class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">{{ kontakt_email }}</a>
+            alebo {% endif %}cez repozitár projektu na GitHube:
+            <a href="{{ github_url }}" target="_blank" rel="noopener" class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">{{ github_url|replace('https://', '') }}<span class="sr-only"> (otvorí sa v novom okne)</span></a>.
+            Odpoveď dostaneš najneskôr do 30 dní.
+        </p>
+    </section>
+
+    <section id="ake" class="pt-12">
+        <div class="rule"><p class="eyebrow">02 · Aké údaje a načo</p></div>
+        <p class="text-on-surface-variant leading-relaxed mb-5">
+            Zbierajú sa len údaje, bez ktorých by daná funkcia nefungovala. Všetko okrem účtu je dobrovoľné – čo nevyplníš,
+            appka nemá.
+        </p>
+        <div class="overflow-x-auto border border-white/10">
+            <table class="w-full text-[13px]">
+                <thead>
+                    <tr class="border-b border-white/10 bg-surface-container">
+                        <th scope="col" class="px-4 py-3 text-left">Údaje</th>
+                        <th scope="col" class="px-4 py-3 text-left">Načo sú</th>
+                        <th scope="col" class="px-4 py-3 text-left">Právny základ</th>
+                    </tr>
+                </thead>
+                <tbody class="text-on-surface-variant align-top">
+                    {% set riadky = [
+                        ('Účet: používateľské meno, meno a priezvisko (nepovinné), heslo (uložené len ako hash), rola, tréner, skupina a prezývka',
+                         'prihlásenie, priradenie zverenca k trénerovi, priradenie tréningov z textového plánu',
+                         'plnenie podmienok používania (čl. 6 ods. 1 písm. b GDPR)'),
+                        ('Výsledky z pretekov, osobné rekordy, plán tréningov, zapísané kilá a časy, tréningový denník',
+                         'sledovanie výkonnosti a plnenia plánu, grafy',
+                         'plnenie podmienok používania'),
+                        ('Videá behu a ich analýza: nahrané video, video s kostrou, kľúčové snímky, namerané hodnoty, výška atléta',
+                         'analýza techniky behu a prekážok',
+                         'plnenie podmienok používania; video inej osoby smieš nahrať len s jej súhlasom'),
+                        ('Údaje o zdraví: HRV, skóre regenerácie a pokojový tep (ručne alebo z CSV exportu WHOOP)',
+                         'prehľad regenerácie a orientačná pripravenosť na tréning',
+                         'výslovný súhlas (čl. 9 ods. 2 písm. a GDPR) – dávaš ho pri každom zápise či importe a kedykoľvek môžeš údaje zmazať'),
+                        ('Profil pre AI chat: prezývka, vek, výška, hlavná disciplína, cieľ',
+                         'presnejšie odpovede AI chatu, výška slúži aj na mierku pri analýze videa',
+                         'súhlas – polia sú dobrovoľné'),
+                        ('Správy v AI chate a text odoslaný tlačidlom AI tréner',
+                         'odpoveď jazykového modelu',
+                         'súhlas – údaje sa odošlú až po tvojom kliknutí'),
+                        ('Strava: prístupové kľúče, zoznam aktivít, osobné rekordy a trasy',
+                         'prehľad aktivít, osobáky a heatmapa',
+                         'súhlas – len ak Stravu sám pripojíš; odpojením sa kľúče zmažú'),
+                        ('Časy zo stopiek s fotobunkou',
+                         'uloženie nameraného času medzi výsledky',
+                         'plnenie podmienok používania'),
+                        ('IP adresa pri neúspešnom prihlásení',
+                         'obmedzenie na 5 pokusov za minútu',
+                         'oprávnený záujem (ochrana účtov); drží sa len v pamäti servera jednu minútu'),
+                    ] %}
+                    {% for udaje, naco, zaklad in riadky %}
+                    <tr class="border-b border-white/5">
+                        <td class="px-4 py-3 text-on-surface">{{ udaje }}</td>
+                        <td class="px-4 py-3">{{ naco }}</td>
+                        <td class="px-4 py-3">{{ zaklad }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section id="kto-vidi" class="pt-12">
+        <div class="rule"><p class="eyebrow">03 · Kto ich vidí</p></div>
+        <ul class="list-disc pl-5 space-y-2 text-on-surface-variant leading-relaxed">
+            <li><span class="text-on-surface">Ty</span> – všetko, čo si zapísal alebo nahral.</li>
+            <li><span class="text-on-surface">Tvoj tréner</span> – až po tom, čo vzťah s ním potvrdíš v sekcii Výsledky
+                (alebo ak ti účet založil on). Vidí tvoje výsledky, plán, tréningy, grafy a analýzy videí.
+                Nevidí tvoj AI chat ani údaje zo Stravy. Vzťah môžeš kedykoľvek zrušiť.</li>
+            <li><span class="text-on-surface">Administrátor</span> – správca aplikácie, kvôli správe účtov a opravám.</li>
+            <li>Nikto iný. Údaje sa nezdieľajú s inými používateľmi, školou ani firmami.</li>
+        </ul>
+    </section>
+
+    <section id="tretie-strany" class="pt-12">
+        <div class="rule"><p class="eyebrow">04 · Tretie strany</p></div>
+        <p class="text-on-surface-variant leading-relaxed mb-4">
+            Písma, ikony a knižnice sú uložené priamo v aplikácii, takže pri bežnom používaní tvoj prehliadač
+            nekontaktuje žiadny cudzí server. Von idú údaje len pri týchto funkciách, a vždy až po tvojej akcii:
+        </p>
+        <ul class="list-disc pl-5 space-y-2 text-on-surface-variant leading-relaxed">
+            <li><span class="text-on-surface">AI chat a AI tréner</span> – text správy, tvoj profil a namerané hodnoty sa pošlú
+                službe Groq (Groq, Inc., USA) na vygenerovanie odpovede. Groq ich podľa svojich podmienok nepoužíva na trénovanie
+                modelov. Funkcia je zapnutá len vtedy, keď správca nastaví kľúč k službe.</li>
+            <li><span class="text-on-surface">Strava</span> – ak ju pripojíš, prehliadač ťa presmeruje na strava.com
+                (Strava, Inc., USA) a appka potom načíta tvoje aktivity. Platia podmienky Stravy.</li>
+            <li><span class="text-on-surface">World Athletics</span> – tréner môže vyhľadať verejný profil atléta na
+                worldathletics.org a načítať z neho osobné rekordy. Posiela sa len hľadané meno.</li>
+            <li><span class="text-on-surface">Mapa na stránke Heatmapa</span> – dlaždice mapy sa načítavajú zo služby CARTO
+                (dáta © OpenStreetMap contributors); server CARTO pri tom vidí tvoju IP adresu. Bez pripojenej Stravy sa
+                stránka nenačíta.</li>
+        </ul>
+        <p class="text-on-surface-variant leading-relaxed mt-4">
+            Groq a Strava sídlia v USA. Prenos údajov sa opiera o tvoj súhlas (čl. 49 ods. 1 písm. a GDPR) – funkciu
+            nemusíš použiť a appka bez nej funguje.
+        </p>
+    </section>
+
+    <section id="ako-dlho" class="pt-12">
+        <div class="rule"><p class="eyebrow">05 · Ako dlho</p></div>
+        <ul class="list-disc pl-5 space-y-2 text-on-surface-variant leading-relaxed">
+            <li>Kým máš účet. Analýzy videí, výsledky, správy v chate aj biometriku si môžeš mazať sám priebežne.</li>
+            <li>Pri zmazaní účtu sa zmažú všetky tvoje údaje vrátane videí na disku. Výsledky a plány, ktoré tréner zapísal
+                svojim zverencom, ostávajú zverencom – už bez mena trénera.</li>
+            <li>Kľúče k Strave sa zmažú pri odpojení alebo odhlásení; cache aktivít do 7 dní.</li>
+            <li>Zálohy aplikácia nerobí; ak správca server zálohuje, platí pre zálohy to isté ako pre databázu.</li>
+        </ul>
+    </section>
+
+    <section id="prava" class="pt-12">
+        <div class="rule"><p class="eyebrow">06 · Tvoje práva</p></div>
+        <p class="text-on-surface-variant leading-relaxed">
+            Podľa GDPR a zákona č. 18/2018 Z. z. o ochrane osobných údajov máš právo na prístup k údajom, ich opravu,
+            vymazanie, obmedzenie spracúvania, prenosnosť a právo namietať. Súhlas (zdravotné údaje, AI, Strava) môžeš
+            kedykoľvek odvolať – stačí údaje zmazať alebo službu odpojiť; na už vykonané spracovanie to nemá vplyv.
+        </p>
+        <ul class="list-disc pl-5 space-y-2 text-on-surface-variant leading-relaxed mt-4">
+            <li>Opravu urobíš priamo v aplikácii (profil, výsledky, tréningy) alebo o ňu požiadaš trénera.</li>
+            <li>Zmazanie účtu a výpis údajov vybaví administrátor – napíš na kontakt v časti 01.</li>
+            <li>Sťažnosť môžeš podať na Úrad na ochranu osobných údajov SR, Hraničná 12, 820 07 Bratislava,
+                <a href="https://dataprotection.gov.sk" target="_blank" rel="noopener" class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">dataprotection.gov.sk<span class="sr-only"> (otvorí sa v novom okne)</span></a>.</li>
+        </ul>
+    </section>
+
+    <section id="deti" class="pt-12">
+        <div class="rule"><p class="eyebrow">07 · Mladší ako 16 rokov</p></div>
+        <p class="text-on-surface-variant leading-relaxed">
+            Appku používajú aj mladí atléti. Podľa § 15 zákona č. 18/2018 Z. z. môže dať súhlas so spracúvaním svojich
+            údajov sám len ten, kto má aspoň 16 rokov. Ak máš menej, účet si môžeš vytvoriť (alebo ti ho môže založiť
+            tréner) len so súhlasom rodiča alebo zákonného zástupcu – registráciou to potvrdzuješ. To isté platí pre
+            tréningové videá a zdravotné údaje mladšieho zverenca, ktoré nahráva tréner.
+        </p>
+    </section>
+
+    <section id="bezpecnost" class="pt-12">
+        <div class="rule"><p class="eyebrow">08 · Bezpečnosť</p></div>
+        <ul class="list-disc pl-5 space-y-2 text-on-surface-variant leading-relaxed">
+            <li>Heslá sa ukladajú len ako hash (werkzeug), nikto ich nevie prečítať.</li>
+            <li>Prihlásenie drží podpísaná cookie, ktorá sa posiela len na našu doménu a zmizne po zatvorení prehliadača.</li>
+            <li>Videá a snímky nie sú vo verejnom priečinku – každý súbor sa vydá len tomu, kto smie vidieť analýzu.</li>
+            <li>Každý dotaz do databázy je obmedzený na údaje prihláseného používateľa alebo jeho potvrdených zverencov.</li>
+            <li>Ide o školský projekt: beží na jednom počítači alebo malom serveri a nemá profesionálny dohľad. Neukladaj
+                doň nič, čo by si nechcel mať v bežnom tréningovom denníku.</li>
+        </ul>
+        <p class="eyebrow mt-10">Posledná zmena: {{ pravne_verzia }}</p>
+    </section>
+</main>
+{% endblock %}

@@ -350,3 +350,10 @@ def forbidden(_e):
     if _wants_json():
         return jsonify({'error': 'Na toto nemáš oprávnenie.'}), 403
     return render_template('403.html'), 403
+
+
+@bp.app_errorhandler(404)
+def not_found(_e):
+    if _wants_json():
+        return jsonify({'error': 'Nenašlo sa.'}), 404
+    return render_template('404.html'), 404
