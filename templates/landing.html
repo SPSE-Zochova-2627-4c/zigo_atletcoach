@@ -5,53 +5,74 @@
 <main class="pb-8">
 
     <!-- ── Úvod ── -->
-    <section class="pt-14 pb-12 border-b border-white/10">
-        <p class="eyebrow mb-4">Analýza bežeckej techniky z videa</p>
-        <h1 class="font-headline font-black uppercase leading-[0.88] tracking-[-0.035em]
-                   text-[58px] sm:text-[84px] lg:text-[104px] text-on-surface">
-            Atlet<span style="color:var(--volt)">Coach</span>
-        </h1>
-        <div class="mt-7 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-7">
-            <p class="text-on-surface-variant max-w-[48ch] leading-relaxed">
-                Pre trénerov a ich zverencov. Appka z videa vyčíta čas kontaktu so zemou, kadenciu
-                a asymetriu, pri prekážkach odmeria medzičasy a kroky. Tréner plánuje tréningy,
-                eviduje výsledky z pretekov a sleduje vývoj výkonnosti v grafoch.
-            </p>
-            <div class="flex flex-wrap gap-2.5">
-                <a href="{{ url_for('auth.login') }}"
-                   class="bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]">
-                    Prihlásiť sa
-                </a>
-                <a href="{{ url_for('auth.register') }}"
-                   class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">
-                    Registrovať
-                </a>
-                <a href="{{ url_for('stopky.page') }}"
-                   class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface-variant hover:text-on-surface transition-colors">
-                    Vyskúšať stopky
-                </a>
+    <section class="card card-hero" style="padding: 34px 36px">
+        <div class="grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] gap-10 items-center">
+            <div>
+                <p class="eyebrow" style="color:var(--accent)">Analýza bežeckej techniky z videa</p>
+                <h1 class="font-headline font-bold text-[38px] sm:text-[50px] leading-[1.02] tracking-[-0.03em] text-on-surface mt-3">
+                    Tréner a jeho bežci<br><span class="gradient-text">na jednom mieste</span>
+                </h1>
+                <p class="text-on-surface-variant text-[15px] leading-relaxed mt-5 max-w-[52ch]">
+                    Appka z videa vyčíta čas kontaktu so zemou, kadenciu a asymetriu, pri prekážkach odmeria
+                    medzičasy a kroky. Tréner plánuje tréningy, eviduje výsledky z pretekov a sleduje vývoj
+                    výkonnosti v grafoch. Zverenec vidí len svoje údaje.
+                </p>
+                <div class="flex flex-wrap gap-2.5 mt-7">
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">Prihlásiť sa</a>
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-secondary btn-lg">Registrovať</a>
+                    <a href="{{ url_for('stopky.page') }}" class="btn btn-ghost btn-lg">
+                        <span class="material-symbols-outlined" aria-hidden="true">timer</span>Vyskúšať stopky
+                    </a>
+                </div>
+            </div>
+
+            {# Ukážka, ako vyzerá výsledok analýzy – čísla sú ilustračné, nie namerané. #}
+            <div class="card p-5" aria-label="Ukážka výsledku analýzy videa" role="group">
+                <div class="flex items-baseline justify-between gap-3 mb-4">
+                    <p class="eyebrow" style="color:var(--accent)">Ukážka merania</p>
+                    <span class="chip ok"><span class="dot" aria-hidden="true"></span>technika ok</span>
+                </div>
+                <div class="flex items-baseline gap-3">
+                    <span class="score-num">112</span>
+                    <span class="text-on-surface-variant text-[15px]">ms kontakt so zemou</span>
+                </div>
+                <div class="seg-bar mt-4" aria-hidden="true">
+                    <span class="ok" style="width:58%"></span><span class="ok" style="width:22%"></span><span class="warn" style="width:14%"></span><span class="acc" style="width:6%"></span>
+                </div>
+                <p class="mono text-[11px] text-on-surface-variant mt-2">6 krokov ok · 1 sledovať · 0 riešiť</p>
+                <div class="grid grid-cols-3 gap-2 mt-5">
+                    {% for label, value, unit in [('Kadencia', '4,6', 'kr/s'), ('Letová fáza', '118', 'ms'), ('Asymetria', '2,1', '%')] %}
+                    <div class="kpi" style="padding:10px 12px">
+                        <p class="kpi-label">{{ label }}</p>
+                        <p class="kpi-value" style="font-size:20px">{{ value }}<span class="kpi-suffix">{{ unit }}</span></p>
+                    </div>
+                    {% endfor %}
+                </div>
+                <p class="text-[11px] text-on-surface-variant mt-4">Ilustračné hodnoty. Skutočná presnosť závisí od záberu a snímkovej frekvencie videa.</p>
             </div>
         </div>
     </section>
 
     <!-- ── Čo appka robí ── -->
-    <section class="py-11 border-b border-white/10">
-        <div class="rule"><p class="eyebrow">Čo appka robí</p></div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-white/10 border border-white/10">
+    <section class="pt-12">
+        <div class="rule"><p class="eyebrow">01 · Čo appka robí</p></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {% set blocks = [
-                ('01', 'Technika z videa',
+                ('videocam', 'Technika z videa',
                  'Natoč sa spomalene z boku. Softvér rozpozná postavu bežca, sleduje chodidlá voči zemi a pre každý krok vyčíta kontakt so zemou, letovú fázu, frekvenciu, dĺžku kroku a uhly v kĺboch.'),
-                ('02', 'Prekážky',
+                ('stairs', 'Prekážky',
                  'Z bežného videa prekážkového behu odmeria medzičasy medzi prekážkami a spočíta kroky medzi nimi. Pri 400 m, 110 m a 100 m vyjde aj rýchlosť medzi prekážkami.'),
-                ('03', 'Tréner a zverenci',
-                 'Tréner spravuje zverencov, ich výsledky z pretekov a osobné rekordy (aj z World Athletics), v kalendári plánuje tréningy a v grafoch sleduje vývoj výkonnosti. Zverenec vidí len svoje údaje.'),
-                ('04', 'Stopky s fotobunkou',
-                 'Stopky s kamerou telefónu alebo notebooku: virtuálna fotobunka zastaví čas v okamihu, keď bežec pretne čiaru v obraze. Funguje aj bez prihlásenia.'),
+                ('group', 'Tréner a zverenci',
+                 'Tréner spravuje zverencov, ich výsledky z pretekov a osobné rekordy (aj z World Athletics), v kalendári plánuje tréningy a v grafoch sleduje vývoj výkonnosti.'),
+                ('timer', 'Stopky s fotobunkou',
+                 'Stopky s kamerou telefónu alebo notebooku: virtuálna fotobunka zastaví čas v okamihu, keď bežec pretne čiaru v obraze. Fungujú aj bez prihlásenia.'),
             ] %}
-            {% for num, title, text in blocks %}
-            <div class="bg-surface-container px-5 py-7">
-                <p class="mono text-[11px] text-on-surface-variant mb-5">{{ num }}</p>
-                <p class="font-headline font-bold text-lg text-on-surface leading-tight mb-3">{{ title }}</p>
+            {% for icon, title, text in blocks %}
+            <div class="card p-5">
+                <span class="inline-grid place-items-center w-9 h-9 rounded-lg mb-4" style="background:var(--accent-soft);color:var(--accent-text)">
+                    <span class="material-symbols-outlined" aria-hidden="true">{{ icon }}</span>
+                </span>
+                <p class="section-title mb-2">{{ title }}</p>
                 <p class="text-[13px] text-on-surface-variant leading-relaxed">{{ text }}</p>
             </div>
             {% endfor %}
@@ -59,9 +80,9 @@
     </section>
 
     <!-- ── Úrovne prístupu ── -->
-    <section class="py-11">
-        <div class="rule"><p class="eyebrow">Štyri úrovne prístupu</p></div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-14 gap-y-6">
+    <section class="pt-12">
+        <div class="rule"><p class="eyebrow">02 · Štyri úrovne prístupu</p></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             {% set levels = [
                 ('Neprihlásený', 'Stopky s fotobunkou bez ukladania.'),
                 ('Zverenec', 'Vlastné prihlásenie, zápis tréningov, analýza videa, plán od trénera, výsledky a grafy – len svoje údaje.'),
@@ -69,12 +90,12 @@
                 ('Administrátor', 'Správa používateľských účtov a rolí.'),
             ] %}
             {% for title, text in levels %}
-            <div class="flex items-baseline justify-between gap-4 py-4 border-b border-white/10">
+            <div class="card p-5 flex items-start gap-4">
+                <span class="chip mono" aria-hidden="true">{{ '%02d'|format(loop.index) }}</span>
                 <div>
                     <p class="font-headline font-semibold text-on-surface">{{ title }}</p>
-                    <p class="text-[13px] text-on-surface-variant">{{ text }}</p>
+                    <p class="text-[13px] text-on-surface-variant mt-1">{{ text }}</p>
                 </div>
-                <span class="mono text-on-surface-variant">{{ '%02d'|format(loop.index) }}</span>
             </div>
             {% endfor %}
         </div>

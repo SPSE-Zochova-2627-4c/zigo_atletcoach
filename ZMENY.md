@@ -1,3 +1,19 @@
+# Zmeny „nový dizajn a príprava na spustenie“ (október 2026)
+
+- **Dizajn**: svetlý „výsledková listina“ vzhľad – papierový podklad, atramentový text, jeden tartanovo-červený
+  akcent, IBM Plex Sans + Mono, bočné menu s ikonami a počtami (`navigacia.py`), horná lišta s menom, dlaždice
+  s číslami, tabuľky ako karty, štítky stavov, sekcie „01 · názov“. Všetko cez tokeny v `base.html`
+  (staršie názvy tried ostali a preladili sa hromadne); nové ikony appky (`static/icons`, `logo.svg`).
+- **Tretie strany**: Tailwind, Chart.js, Leaflet + Leaflet.heat, písma IBM Plex a podmnožina ikon Material Symbols
+  sú uložené v `static/vendor` s licenciami – z prehliadača nejde nič na Google ani CDN. Heatmapa má správnu
+  atribúciu OpenStreetMap / CARTO. Oficiálne logo „Powered by Strava“ v `static/strava`.
+- **Právne stránky** (`pravne.py`, `templates/pravne/`): Ochrana osobných údajov (inventár údajov, zdravotné údaje,
+  tretie strany, práva, mladší ako 16 rokov), Podmienky používania (vrátane platieb a vrátenia peňazí – appka je
+  bezplatná), Cookies (jediná nevyhnutná cookie, localStorage). Kontakt z `ATLETCOACH_KONTAKT_EMAIL`, inak GitHub.
+  Päta s údajmi o projekte, informačná lišta o cookies, stránka 404.
+- **Prístupnosť layoutu**: odkaz „Preskočiť na obsah“, viditeľný fokus, hlásenia ako živý región (chyby ostávajú,
+  kým ich nezavrieš), menu s `aria-expanded`, ikony `aria-hidden`, kontrast placeholderov a tlmeného textu ≥ 4,5:1.
+
 # Zmeny „týždenný plán z textu“ (október 2026)
 
 - **`/plan/tyzden`**: tréner vloží správu, ako ju píše skupine (dni, časy, skupiny, mená, cviky), `plan_text.py`

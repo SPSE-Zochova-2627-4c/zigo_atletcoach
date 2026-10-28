@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="sk" class="dark">
+<html lang="sk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -7,54 +7,53 @@
 
     {# Webová appka na ploche telefónu: manifest (Android / Chrome) a Apple meta (iPhone „Pridať na plochu“). #}
     <link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}">
-    <meta name="theme-color" content="#0b0b0c">
+    <meta name="theme-color" content="#f3f1ea">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="AtletCoach">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='icons/logo.svg') }}">
     <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icons/icon-192.png') }}">
 
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {# Písma, ikony, Tailwind a Chart.js sú uložené v static/vendor (licencie v static/vendor/LICENSES.md):
+       z prehliadača používateľa nejde pri načítaní stránky žiadna požiadavka na Google ani CDN. #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fonts/fonts.css') }}">
+    <script src="{{ url_for('static', filename='vendor/js/tailwind.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/js/chart.umd.js') }}"></script>
 
     <script>
         /* ── AtletCoach design tokens ──────────────────────────────────
-           Jedna akcentná farba (volt) na uhoľnom podklade. Názvy tokenov
-           zostali rovnaké ako predtým, takže ich preberú všetky šablóny. */
+           Svetlý „výsledková listina“ vzhľad: papierový podklad, atramentový
+           text, jeden akcent v odtieni tartanovej dráhy, písmo IBM Plex.
+           Názvy tokenov ostali rovnaké ako v starších šablónach. */
         tailwind.config = {
             darkMode: "class",
             theme: {
                 extend: {
                     fontFamily: {
-                        headline: ['Archivo', 'sans-serif'],
-                        body: ['"IBM Plex Sans"', 'sans-serif'],
+                        headline: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
+                        body: ['"IBM Plex Sans"', 'system-ui', 'sans-serif'],
                         data: ['"IBM Plex Mono"', 'monospace'],
                     },
                     colors: {
-                        primary: '#d7f24a',
-                        tertiary: '#6ea8fe',
-                        secondary: '#9aa0a6',
-                        'surface-container-highest': '#262627',
-                        'surface-container-high': '#1c1c1d',
-                        'surface-container': '#161617',
-                        'surface-container-low': '#101011',
-                        'surface-bright': '#2e2e30',
-                        'on-surface': '#ece9e3',
-                        'on-surface-variant': '#8b8b84',
-                        'primary-container': 'rgba(215,242,74,0.12)',
-                        'secondary-container': 'rgba(154,160,166,0.12)',
-                        'tertiary-container': 'rgba(110,168,254,0.12)',
+                        primary: '#c8381d',
+                        tertiary: '#1f6f8b',
+                        secondary: '#655f53',
+                        'surface-container-highest': '#e6e2d8',
+                        'surface-container-high': '#ebe8df',
+                        'surface-container': '#ffffff',
+                        'surface-container-low': '#faf8f3',
+                        'surface-bright': '#ffffff',
+                        'on-surface': '#15140f',
+                        'on-surface-variant': '#655f53',
+                        'primary-container': 'rgba(200,56,29,0.10)',
+                        'secondary-container': 'rgba(101,95,83,0.10)',
+                        'tertiary-container': 'rgba(31,111,139,0.10)',
                     },
-                    /* Ostré hrany namiesto zaoblených kariet. Prepisuje to
-                       všetky rounded-* triedy naprieč šablónami naraz. */
                     borderRadius: {
-                        none: '0', sm: '2px', DEFAULT: '2px', md: '3px',
-                        lg: '3px', xl: '4px', '2xl': '4px', '3xl': '5px',
+                        none: '0', sm: '3px', DEFAULT: '4px', md: '5px',
+                        lg: '6px', xl: '8px', '2xl': '8px', '3xl': '10px',
                         full: '9999px',
                     },
                 }
@@ -63,229 +62,407 @@
     </script>
 
     <style>
-        /* ── Základ ── */
-        *, *::before, *::after { box-sizing: border-box; }
-
+        /* ── Tokeny ── */
         :root {
-            --ink:          #0b0b0c;
-            --line:         rgba(236,233,227,0.10);
-            --line-strong:  rgba(236,233,227,0.20);
-            --volt:         #d7f24a;
-            /* Sériové farby grafov — validované na tmavom podklade
-               (lightness, chroma, odstup pri farbosleposti aj kontrast). */
-            --series-1:     #879c26;
-            --series-2:     #3987e5;
-            --series-3:     #d55181;
+            --bg:            #f3f1ea;
+            --bg-elev:       #faf8f3;
+            --bg-elev-2:     #ebe8df;
+            --surface:       #ffffff;
+            --hover:         rgba(21, 20, 15, 0.04);
+            --input-bg:      #ffffff;
+            --text:          #15140f;
+            --text-soft:     #3d3b33;
+            --muted:         #655f53;
+            --border:        #e1dccf;
+            --border-strong: #c9c2b2;
+            --track:         #e8e4da;
+            --chip:          #efece4;
+            --ink:           #15140f;
+            --ink-hover:     #2a2822;
+            --accent:        #c8381d;
+            --accent-hover:  #a82d15;
+            --accent-text:   #a82d15;
+            --accent-soft:   rgba(200, 56, 29, 0.09);
+            --accent-border: rgba(200, 56, 29, 0.35);
+            --accent-ring:   rgba(200, 56, 29, 0.22);
+            --success:       #2e7d4f;
+            --success-text:  #236b41;
+            --success-soft:  rgba(46, 125, 79, 0.12);
+            --warn:          #b7791f;
+            --warn-text:     #8a5a12;
+            --warn-soft:     rgba(183, 121, 31, 0.14);
+            --danger:        #b3261e;
+            --danger-text:   #9a1f18;
+            --danger-soft:   rgba(179, 38, 30, 0.10);
+            --info:          #1f6f8b;
+            --radius:        6px;
+            --shadow-card:   0 1px 0 rgba(21,20,15,0.03), 0 1px 2px rgba(21,20,15,0.05);
+            /* Staršie názvy, ktoré používajú šablóny a CSS modulov */
+            --volt:         var(--accent);
+            --line:         var(--border);
+            --line-strong:  var(--border-strong);
+            --series-1:     #c8381d;
+            --series-2:     #1f6f8b;
+            --series-3:     #2e7d4f;
+            --series-4:     #b7791f;
         }
 
+        *, *::before, *::after { box-sizing: border-box; }
+        html { background: var(--bg); }
         body {
-            background-color: var(--ink);
-            color: #ece9e3;
+            margin: 0;
+            background-color: var(--bg);
+            color: var(--text);
             font-family: 'IBM Plex Sans', system-ui, sans-serif;
             font-size: 14px;
-            line-height: 1.55;
-            overflow-x: hidden;
+            line-height: 1.5;
             -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
         }
+        ::selection { background: var(--accent-soft); color: var(--text); }
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border-strong); border: 3px solid var(--bg); border-radius: 8px; }
 
-        /* Displejové písmo: stlačené, veľké, s tabuľkovými číslicami —
-           čísla sa pod sebou zarovnajú ako na časomiere. */
-        .font-headline {
-            font-family: 'Archivo', sans-serif;
+        /* ── Typografia ── */
+        .font-headline, h1, h2, h3 {
+            font-family: 'IBM Plex Sans', system-ui, sans-serif;
             font-variant-numeric: tabular-nums;
-            letter-spacing: -0.025em;
+            letter-spacing: -0.01em;
         }
-        .font-data, table td, table th {
-            font-variant-numeric: tabular-nums;
+        .font-data, table td, table th { font-variant-numeric: tabular-nums; }
+        .mono { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+        .page-title {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 26px; font-weight: 600; line-height: 1.15;
+            letter-spacing: -0.015em; color: var(--text);
+            text-transform: none;
         }
-        .mono {
-            font-family: 'IBM Plex Mono', monospace;
-            font-variant-numeric: tabular-nums;
-        }
-
-        /* Drobný verzálkový popisok — nosný prvok celého rozhrania. */
+        .section-title { font-family: 'IBM Plex Sans', sans-serif; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
+        /* Drobný popisok: mono, verzálky. V sekciových hlavičkách (.rule) je v akcente. */
         .eyebrow {
             font-family: 'IBM Plex Mono', monospace;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 500;
             text-transform: uppercase;
-            letter-spacing: 0.14em;
-            color: #8b8b84;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+        }
+        .rule { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; }
+        .rule::after { content: ''; flex: 1; height: 1px; background: var(--border-strong); }
+        .rule .eyebrow { color: var(--accent-text); font-size: 11.5px; font-weight: 600; }
+        .rule .eyebrow + .eyebrow { color: var(--muted); font-size: 11px; font-weight: 500; order: 3; }
+
+        /* ── Rozloženie: bočné menu + obsah ── */
+        .app { display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: 100vh; }
+        .sidebar {
+            position: sticky; top: 0; height: 100vh;
+            display: flex; flex-direction: column;
+            padding: 16px 12px 12px;
+            background: var(--bg-elev);
+            border-right: 1px solid var(--border);
+            overflow-y: auto; z-index: 40;
+        }
+        .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 14px; border-bottom: 1px solid var(--border); margin-bottom: 10px; text-decoration: none; color: inherit; }
+        .brand-mark {
+            width: 30px; height: 30px; border-radius: 5px; flex-shrink: 0; position: relative; overflow: hidden;
+            background: var(--ink); color: var(--bg);
+            display: grid; place-items: center;
+            font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 17px; line-height: 1; padding-bottom: 3px;
+        }
+        .brand-mark::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--accent); }
+        .brand-name { font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: -0.01em; line-height: 1.1; }
+        .brand-sub { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+        .nav-group { margin-top: 12px; }
+        .nav-label {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em;
+            color: var(--muted); padding: 0 10px 5px;
+        }
+        .nav-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 6px 10px; border-radius: 4px; margin-bottom: 1px;
+            font-size: 13.5px; font-weight: 500; color: var(--text-soft);
+            border-left: 2px solid transparent; text-decoration: none;
+            transition: background .12s, color .12s, border-color .12s;
+        }
+        .nav-item:hover { background: var(--hover); color: var(--text); }
+        .nav-item.active { background: var(--accent-soft); color: var(--accent-text); border-left-color: var(--accent); border-radius: 0 4px 4px 0; }
+        .nav-item .material-symbols-outlined { font-size: 18px; color: var(--muted); flex-shrink: 0; }
+        .nav-item.active .material-symbols-outlined { color: var(--accent); }
+        .nav-item .label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .nav-item .count {
+            font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+            padding: 0 6px; border-radius: 3px; line-height: 18px;
+            background: var(--chip); color: var(--text-soft); border: 1px solid var(--border);
+        }
+        .nav-item.active .count { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+        .nav-item .count.warn { background: var(--warn-soft); color: var(--warn-text); border-color: rgba(183,121,31,0.35); }
+        .sidebar-cards { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+        .sc-card { background: var(--surface); border: 1px solid var(--border); border-radius: 5px; padding: 8px 10px; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; }
+        .sc-head { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; color: var(--text-soft); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; font-size: 10.5px; }
+        .sc-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+        .sc-row { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); padding: 1px 0; }
+        .sc-row span:first-child { white-space: nowrap; }
+        .sc-row span:last-child { color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .main-col { min-width: 0; display: flex; flex-direction: column; }
+        .topbar {
+            position: sticky; top: 0; z-index: 30;
+            display: flex; align-items: center; gap: 12px;
+            height: 52px; padding: 0 28px;
+            background: rgba(243, 241, 234, 0.92); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+            border-bottom: 1px solid var(--border);
+        }
+        .topbar .spacer { flex: 1; }
+        .topbar .wordmark { display: none; }
+        .user-chip {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 4px 10px 4px 5px; border-radius: 4px;
+            background: var(--surface); border: 1px solid var(--border);
+            font-size: 12.5px; color: var(--text); text-decoration: none;
+        }
+        .user-chip:hover { border-color: var(--border-strong); }
+        .user-chip .avatar {
+            width: 22px; height: 22px; border-radius: 3px;
+            background: var(--ink); color: var(--bg);
+            display: grid; place-items: center; font-size: 11px; font-weight: 700;
+        }
+        .user-chip .role { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+        .main-inner { padding: 24px 28px 56px; max-width: 1240px; width: 100%; margin: 0 auto; flex: 1; }
+        .icon-btn {
+            width: 34px; height: 34px; border-radius: 4px;
+            background: var(--surface); color: var(--text-soft);
+            border: 1px solid var(--border);
+            display: inline-grid; place-items: center; cursor: pointer;
+            transition: background .12s, color .12s, border-color .12s;
+        }
+        .icon-btn:hover { background: var(--hover); color: var(--text); border-color: var(--border-strong); }
+        .icon-btn .material-symbols-outlined { font-size: 20px; }
+        .sidebar-backdrop { display: none; }
+
+        @media (max-width: 1023px) {
+            .app { grid-template-columns: 1fr; }
+            .sidebar {
+                position: fixed; left: 0; top: 0; bottom: 0; width: 268px; height: 100dvh;
+                transform: translateX(-104%); transition: transform .2s ease;
+                box-shadow: 0 0 40px rgba(21,20,15,0.18);
+            }
+            .sidebar.open { transform: none; }
+            .sidebar-backdrop { display: block; position: fixed; inset: 0; background: rgba(21,20,15,0.35); z-index: 35; }
+            .sidebar-backdrop[hidden] { display: none; }
+            .topbar { padding: 0 16px; }
+            .topbar .wordmark { display: inline-flex; }
+            .main-inner { padding: 18px 16px 48px; }
+        }
+        @media (min-width: 1024px) { #mobile-menu-btn { display: none; } }
+
+        /* ── Karty, KPI, štítky ── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-card);
+        }
+        .card-pad { padding: 18px 20px; }
+        .card-hero { position: relative; border-top: 3px solid var(--accent); }
+        .kpi-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+        .kpi { padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); position: relative; overflow: hidden; }
+        .kpi-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+        .kpi-value { font-family: 'IBM Plex Sans', sans-serif; font-size: 28px; font-weight: 600; letter-spacing: -0.02em; line-height: 1; display: flex; align-items: baseline; gap: 6px; font-variant-numeric: tabular-nums; }
+        .kpi-suffix { font-size: 13px; color: var(--muted); font-weight: 500; }
+        .kpi-hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+        .kpi.good .kpi-value { color: var(--success-text); }
+        .kpi.warn .kpi-value { color: var(--warn-text); }
+        .kpi.bad .kpi-value { color: var(--danger-text); }
+        .kpi.accent .kpi-value { color: var(--accent-text); }
+        .tiny-bar { margin-top: 10px; height: 4px; border-radius: 2px; background: var(--track); overflow: hidden; }
+        .tiny-bar > span { display: block; height: 100%; background: var(--ink); border-radius: 2px; }
+        .tiny-bar.good > span { background: var(--success); }
+        .tiny-bar.warn > span { background: var(--warn); }
+        .tiny-bar.bad > span { background: var(--danger); }
+        .seg-bar { display: flex; height: 6px; border-radius: 2px; overflow: hidden; background: var(--track); gap: 2px; }
+        .seg-bar > span { display: block; height: 100%; }
+        .seg-bar .ok { background: var(--success); } .seg-bar .warn { background: var(--warn); } .seg-bar .bad { background: var(--danger); } .seg-bar .acc { background: var(--ink); }
+        .score-num {
+            display: inline-block; font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 56px; line-height: 1; font-weight: 600; letter-spacing: -0.03em;
+            color: var(--text); font-variant-numeric: tabular-nums;
         }
 
-        /* ── Scrollbar ── */
-        ::-webkit-scrollbar { width: 10px; height: 10px; }
-        ::-webkit-scrollbar-track { background: var(--ink); }
-        ::-webkit-scrollbar-thumb { background: #2e2e30; border: 3px solid var(--ink); }
-        ::-webkit-scrollbar-thumb:hover { background: #45454a; }
-
-        ::selection { background: var(--volt); color: var(--ink); }
-
-        /* ── Volt tlačidlá: na svetlom akcente musí byť tmavý text ── */
-        .bg-primary, .bg-primary.text-white {
-            color: var(--ink) !important;
-            font-weight: 600;
+        .chip {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 2px 8px; border-radius: 3px;
+            font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.06em;
+            background: var(--chip); color: var(--text-soft);
+            border: 1px solid var(--border);
+            font-variant-numeric: tabular-nums; white-space: nowrap;
         }
-        .bg-primary svg { fill: var(--ink); }
-        .bg-primary:hover { background-color: #e4ff63; }
-        /* Neaktívne tlačidlo nemá byť len stlmený volt (vyzeralo to kalne
-           olivovo) — má byť jasne šedé, aby bolo vidieť, že sa nedá kliknúť. */
+        .chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+        .chip.ok { background: var(--success-soft); color: var(--success-text); border-color: rgba(46,125,79,0.35); }
+        .chip.ok .dot { background: var(--success); }
+        .chip.warn { background: var(--warn-soft); color: var(--warn-text); border-color: rgba(183,121,31,0.4); }
+        .chip.warn .dot { background: var(--warn); }
+        .chip.bad { background: var(--danger-soft); color: var(--danger-text); border-color: rgba(179,38,30,0.35); }
+        .chip.bad .dot { background: var(--danger); }
+        .chip.accent { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent-border); }
+        .chip.accent .dot { background: var(--accent); }
+        .chip.info { background: rgba(31,111,139,0.10); color: #185a71; border-color: rgba(31,111,139,0.35); }
+        .chip.info .dot { background: var(--info); }
+        .chip.mono { font-size: 10.5px; }
+
+        /* ── Tlačidlá ── */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 8px 14px; border-radius: 4px;
+            font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 13px; font-weight: 600; line-height: 1.2;
+            letter-spacing: 0; text-transform: none; text-decoration: none; white-space: nowrap;
+            border: 1px solid transparent; cursor: pointer;
+            transition: background .12s, color .12s, border-color .12s, box-shadow .12s;
+        }
+        .btn .material-symbols-outlined { font-size: 18px; }
+        .btn-primary, .bg-primary { background: var(--ink) !important; color: var(--bg) !important; border-color: var(--ink) !important; font-weight: 600; }
+        .btn-primary:hover, .bg-primary:hover { background: var(--ink-hover) !important; }
+        .bg-primary svg { fill: var(--bg); }
+        .btn-secondary { background: var(--surface); border-color: var(--border-strong); color: var(--text); }
+        .btn-secondary:hover { background: var(--bg-elev-2); border-color: var(--text-soft); color: var(--text); }
+        .btn-ghost { background: transparent; color: var(--text-soft); }
+        .btn-ghost:hover { background: var(--hover); color: var(--text); }
+        .btn-danger { background: var(--surface); color: var(--danger-text); border-color: rgba(179,38,30,0.4); }
+        .btn-danger:hover { background: var(--danger-soft); }
+        .btn-sm { padding: 5px 10px; font-size: 12px; }
+        .btn-lg { padding: 11px 18px; font-size: 14px; }
         button:disabled, .bg-primary:disabled, [disabled] {
-            background-color: #232325 !important;
-            color: #5c5c57 !important;
-            border-color: rgba(236,233,227,0.08) !important;
-            cursor: not-allowed;
-            opacity: 1 !important;
+            background-color: var(--bg-elev-2) !important;
+            color: var(--muted) !important;
+            border-color: var(--border) !important;
+            cursor: not-allowed; opacity: 1 !important; box-shadow: none !important;
         }
 
         /* ── Formuláre ── */
         input, textarea, select {
-            background: #101011 !important;
-            border: 1px solid var(--line) !important;
-            color: #ece9e3 !important;
-            border-radius: 2px !important;
-            padding: 0.55rem 0.7rem !important;
-            font-family: 'IBM Plex Sans', sans-serif !important;
+            background: var(--input-bg) !important;
+            border: 1px solid var(--border-strong) !important;
+            color: var(--text) !important;
+            border-radius: 4px !important;
+            padding: 8px 11px !important;
+            font-family: 'IBM Plex Sans', system-ui, sans-serif !important;
             font-size: 14px !important;
-            transition: border-color 0.12s linear !important;
+            transition: border-color 0.12s linear, box-shadow 0.12s linear !important;
             outline: none !important;
         }
+        input[type="checkbox"], input[type="radio"] { padding: 0 !important; width: 16px; height: 16px; border-radius: 3px !important; accent-color: var(--ink); }
+        input[type="radio"] { border-radius: 50% !important; }
         input:focus, textarea:focus, select:focus {
-            border-color: var(--volt) !important;
-            box-shadow: none !important;
+            border-color: var(--ink) !important;
+            box-shadow: 0 0 0 3px rgba(21,20,15,0.12) !important;
         }
-        input::placeholder, textarea::placeholder { color: #5c5c57 !important; }
-
-        /* Polia vypĺňali len časť riadku a popisky im sedeli inline po boku,
-           takže sa text lepil na rámček. Popisok patrí nad pole. */
+        input::placeholder, textarea::placeholder { color: #8a8477 !important; }   /* 4,6:1 na bielej */
         input:not([type="checkbox"]):not([type="radio"]):not([class]),
         textarea:not([class]), select:not([class]) { width: 100%; }
         label:not([class]) {
             display: block;
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 10px;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            color: #8b8b84;
+            font-size: 12px; font-weight: 600;
+            letter-spacing: 0.01em;
+            color: var(--text-soft);
             margin-bottom: 6px;
         }
+        fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+        legend { font-size: 12px; font-weight: 600; color: var(--text-soft); margin-bottom: 6px; }
 
-        /* ── Hlavička ── */
-        .wordmark {
-            font-family: 'Archivo', sans-serif;
-            font-weight: 800;
-            font-size: 19px;
-            letter-spacing: -0.04em;
-            text-transform: uppercase;
-            color: #ece9e3;
-            white-space: nowrap;
+        /* ── Tabuľky: každá tabuľka je karta s hlavičkovým pásom a odsadením buniek ── */
+        table.w-full {
+            border-collapse: separate; border-spacing: 0;
+            border: 1px solid var(--border); border-radius: var(--radius);
+            background: var(--surface); overflow: hidden;
         }
-
-        .navlink {
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #8b8b84;
-            padding: 6px 0;
-            position: relative;
-            transition: color 0.12s linear;
-            white-space: nowrap;
-        }
-        .navlink:hover { color: #ece9e3; }
-        .navlink.active { color: #ece9e3; }
-        .navlink.active::after {
-            content: '';
-            position: absolute;
-            left: 0; right: 0; bottom: -11px;
-            height: 2px;
-            background: var(--volt);
-        }
-        /* Rozbaľovacie menu v hlavičke je <details> bez skriptu – len bez trojuholníka. */
-        .navdrop summary { list-style: none; }
-        .navdrop summary::-webkit-details-marker { display: none; }
-
-        /* ── Plochy ──
-           Žiadne tiene ani rozmazané sklo — len linka a odstup plochy. */
-        .glass, .glow-card, .tilt-card, .hover-lift, .gradient-border {
-            background: #161617;
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            box-shadow: none !important;
-            transform: none !important;
-        }
-        .glow-card, .tilt-card, .hover-lift {
-            transition: border-color 0.12s linear, background-color 0.12s linear;
-        }
-        .glow-card:hover, .tilt-card:hover, .hover-lift:hover {
-            border-color: var(--line-strong) !important;
-        }
-        .glow-card::after, .glow-card::before,
-        .gradient-border::before, .gradient-border::after { display: none !important; }
-
-        /* ── Vypnuté efekty z predchádzajúcej verzie ──
-           Triedy nechávam definované, aby šablóny nepadali, ale nerobia nič. */
-        .bg-orb, #cursor-spotlight { display: none !important; }
-        .gradient-text {
-            background: none !important;
-            -webkit-text-fill-color: currentColor !important;
-            color: var(--volt);
-            display: inline;
-            padding: 0; margin: 0;
-        }
-        .btn-glow::after, .ripple::before { display: none !important; }
-        .btn-glow:active, .ripple:active { opacity: 0.82; }
-        .logo-animated, .float-icon, .float-icon-slow, .num-pop, .pulse-dot,
-        .card-enter, .line-draw {
-            animation: none !important;
-        }
-        .line-draw { stroke-dashoffset: 0; stroke-dasharray: none; }
-        /* Obsah je viditeľný hneď — nečaká na skript ani na odscrollovanie. */
-        .reveal, .reveal-left, .reveal-scale, .page-content {
-            opacity: 1 !important;
-            transform: none !important;
-            animation: none !important;
-            transition: none !important;
-        }
-
-        /* Shimmer zostáva — je to funkčný indikátor načítavania. */
-        .shimmer {
-            background: linear-gradient(90deg, #161617 25%, #232325 50%, #161617 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.4s linear infinite;
-        }
-        @keyframes shimmer {
-            0%   { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        /* ── Tabuľky ── */
+        table.w-full thead tr { background: var(--bg-elev); }
+        table.w-full th, table.w-full td { padding-left: 14px; padding-right: 14px; }
+        table.w-full th { padding-top: 9px !important; padding-bottom: 9px !important; border-bottom: 1px solid var(--border); }
+        table.w-full tbody tr:last-child td { border-bottom: 0 !important; }
         table th {
             font-family: 'IBM Plex Mono', monospace;
-            font-size: 10px !important;
-            font-weight: 500 !important;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: #8b8b84 !important;
+            font-size: 10.5px !important; font-weight: 600 !important;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            color: var(--muted) !important;
         }
+        table tbody tr { transition: background .12s; }
+        table tbody tr:hover { background: var(--hover); }
 
         /* ── Hlásenia ── */
-        .flash-msg { animation: none; border-radius: 2px; }
+        .flash-wrap { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+        .flash-msg {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 14px; border-radius: 4px;
+            background: var(--surface); border: 1px solid var(--border); border-left-width: 3px;
+            font-size: 13.5px; color: var(--text);
+        }
+        .flash-msg .flash-dot { display: none; }
+        .flash-msg[data-category="success"] { border-left-color: var(--success); }
+        .flash-msg[data-category="danger"], .flash-msg[data-category="error"] { border-left-color: var(--danger); }
+        .flash-msg[data-category="warning"] { border-left-color: var(--warn); }
+        .flash-msg[data-category="info"], .flash-msg[data-category="message"] { border-left-color: var(--ink); }
 
-        /* ── Deliaca linka s popisom ── */
-        .rule {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin: 0 0 18px;
+        /* ── Päta a cookie lišta ── */
+        .site-footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--border-strong); }
+        #cookie-lista { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; background: var(--surface); border-top: 1px solid var(--border-strong); box-shadow: 0 -4px 16px rgba(21,20,15,0.06); }
+
+        /* ── Prístupnosť: odkaz na obsah, viditeľný fokus, text len pre čítačky ── */
+        .skip-link {
+            position: absolute; left: 12px; top: -80px; z-index: 100;
+            background: var(--ink); color: var(--bg);
+            padding: 10px 14px; border-radius: 4px;
+            font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 600;
         }
-        .rule::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--line);
+        .skip-link:focus { top: 12px; outline: 2px solid var(--accent); outline-offset: 2px; }
+        a:focus-visible, button:focus-visible, summary:focus-visible, [tabindex]:focus-visible {
+            outline: 2px solid var(--accent); outline-offset: 2px;
         }
+        .sr-only {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+        }
+
+        /* ── Preladenie starších tried v šablónach (písané pre tmavý podklad) ── */
+        .border-white\/5  { border-color: var(--border) !important; }
+        .border-white\/10, .border-white\/15 { border-color: var(--border) !important; }
+        .border-white\/20, .border-white\/25, .border-white\/30, .border-white\/35 { border-color: var(--border-strong) !important; }
+        .hover\:border-white\/30:hover, .hover\:border-white\/35:hover, .hover\:border-white\/60:hover { border-color: var(--text-soft) !important; }
+        .divide-white\/5 > :not([hidden]) ~ :not([hidden]), .divide-white\/10 > :not([hidden]) ~ :not([hidden]) { border-color: var(--border) !important; }
+        .bg-white\/10, .bg-white\/5 { background-color: var(--border) !important; }
+        .text-white\/20, .text-white\/25, .text-white\/30 { color: var(--muted) !important; }
+        .text-white\/50, .text-white\/60, .text-white\/70 { color: var(--text-soft) !important; }
+        .bg-\[\#0b0b0c\] { background-color: var(--bg) !important; }
+        .border-\[\#879c26\], .border-\[\#a8c22f\] { border-color: var(--success) !important; }
+        .border-\[\#e66767\] { border-color: var(--danger) !important; }
+        .border-\[\#c98500\] { border-color: var(--warn) !important; }
+        .text-\[\#a8c22f\], .text-\[\#879c26\] { color: var(--success-text) !important; }
+        .text-\[\#e66767\] { color: var(--danger-text) !important; }
+        .text-\[\#c98500\] { color: var(--warn-text) !important; }
+        .text-\[\#6ea8fe\], .text-\[\#3987e5\] { color: var(--info) !important; }
+        .text-\[\#d55181\] { color: var(--accent-text) !important; }
+        .bg-tertiary { background-color: var(--info) !important; color: #fff !important; }
+        /* Plochy zo staršej verzie: jedna karta bez tieňov a skla */
+        .glass, .glow-card, .tilt-card, .hover-lift, .gradient-border {
+            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+            backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+            box-shadow: var(--shadow-card) !important; transform: none !important;
+            transition: border-color 0.12s linear;
+        }
+        .glow-card:hover, .tilt-card:hover, .hover-lift:hover { border-color: var(--border-strong) !important; }
+        .glow-card::after, .glow-card::before, .gradient-border::before, .gradient-border::after { display: none !important; }
+        .bg-orb, #cursor-spotlight { display: none !important; }
+        .gradient-text { background: none !important; -webkit-text-fill-color: currentColor !important; color: var(--accent-text); display: inline; padding: 0; margin: 0; }
+        .btn-glow::after, .ripple::before { display: none !important; }
+        .btn-glow:active, .ripple:active { opacity: 0.85; }
+        .logo-animated, .float-icon, .float-icon-slow, .num-pop, .pulse-dot, .card-enter, .line-draw { animation: none !important; }
+        .line-draw { stroke-dashoffset: 0; stroke-dasharray: none; }
+        .reveal, .reveal-left, .reveal-scale, .page-content { opacity: 1 !important; transform: none !important; animation: none !important; transition: none !important; }
+        .shimmer { background: linear-gradient(90deg, var(--bg-elev-2) 25%, var(--surface) 50%, var(--bg-elev-2) 75%); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .navdrop summary { list-style: none; }
+        .navdrop summary::-webkit-details-marker { display: none; }
 
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -296,192 +473,242 @@
 </head>
 
 <body>
+<a href="#obsah" class="skip-link">Preskočiť na obsah</a>
 
-<!-- ── HLAVIČKA ── -->
-<header class="sticky top-0 z-50 border-b border-white/10 bg-[#0b0b0c]">
-    <div class="max-w-[1180px] mx-auto px-5 h-[60px] flex items-center justify-between gap-6">
+{# ── Navigácia podľa roly ──
+   Názvy endpointov sú kontrakt: každý blueprint ich musí definovať, inak url_for spadne.
+   Položka: (endpoint, názov, ikona, kľúč počtu v nav_info alebo none) #}
+{% set role = current_user.role if current_user else none %}
+{% if role is none %}
+    {% set nav_groups = [
+        ('Prehľad', [('index', 'Domov', 'home', none), ('stopky.page', 'Stopky s fotobunkou', 'timer', none)]),
+    ] %}
+{% elif role == 'zverenec' %}
+    {% set nav_groups = [
+        ('Prehľad', [('index', 'Domov', 'home', none)]),
+        ('Tréning', [('planovanie.index', 'Plán', 'calendar_month', 'week_planned'),
+                     ('trainings', 'Tréningy', 'fitness_center', none),
+                     ('zverenec.results', 'Výsledky', 'emoji_events', none),
+                     ('grafy.index', 'Grafy', 'monitoring', none)]),
+        ('Analýza', [('video_page', 'Video', 'videocam', none),
+                     ('hurdles_page', 'Prekážky', 'stairs', none),
+                     ('stopky.page', 'Stopky', 'timer', none)]),
+        ('Viac', [('log_data', 'Regenerácia', 'favorite', none),
+                  ('ai_portal', 'AI tréner', 'smart_toy', none)]),
+    ] %}
+{% else %}
+    {% set nav_groups = [
+        ('Prehľad', [('index', 'Domov', 'home', none)]),
+        ('Zverenci', [('trener.athletes', 'Zverenci', 'group', 'athletes'),
+                      ('planovanie.index', 'Plán', 'calendar_month', 'week_planned'),
+                      ('grafy.index', 'Grafy', 'monitoring', none)]),
+        ('Analýza', [('video_page', 'Video', 'videocam', none),
+                     ('hurdles_page', 'Prekážky', 'stairs', none),
+                     ('stopky.page', 'Stopky', 'timer', none)]),
+        ('Viac', [('trainings', 'Tréningy', 'fitness_center', none),
+                  ('ai_portal', 'AI tréner', 'smart_toy', none)]),
+    ] %}
+    {% if role == 'admin' %}
+        {% set nav_groups = nav_groups + [('Správa', [('admin_panel.users', 'Používatelia', 'admin_panel_settings', 'users'),
+                                                      ('admin_panel.overview', 'Prehľad systému', 'settings', none)])] %}
+    {% endif %}
+{% endif %}
+{% set strava_items = [
+    ('dashboard',    'Prehľad aktivít', 'route'),
+    ('osobaky',      'Osobáky',         'leaderboard'),
+    ('heatmap',      'Heatmapa',        'map'),
+    ('strava_login', 'Pripojiť Stravu', 'login'),
+] %}
+{% set strava_endpoints = ['dashboard', 'osobaky', 'heatmap', 'strava_login', 'strava_authorized'] %}
+{% macro nav_link(endpoint, label, icon, count_key) -%}
+    {% set active = request.endpoint == endpoint
+                    or (request.blueprint and '.' in endpoint and endpoint.split('.')[0] == request.blueprint and endpoint.endswith('.index'))
+                    or (request.blueprint and '.' in endpoint and endpoint.split('.')[0] == request.blueprint and not endpoint.endswith('.index') and request.endpoint == endpoint) %}
+    <a href="{{ url_for(endpoint) }}" class="nav-item {{ 'active' if active else '' }}" {% if active %}aria-current="page"{% endif %}>
+        <span class="material-symbols-outlined" aria-hidden="true">{{ icon }}</span>
+        <span class="label">{{ label }}</span>
+        {% if count_key and nav_info and nav_info[count_key] is not none %}
+            <span class="count">{{ nav_info[count_key] }}</span>
+        {% endif %}
+        {% if count_key == 'athletes' and nav_info and nav_info.pending %}
+            <span class="count warn" title="čaká na potvrdenie">{{ nav_info.pending }}<span class="sr-only"> čaká na potvrdenie</span></span>
+        {% endif %}
+    </a>
+{%- endmacro %}
 
-        <a href="{{ url_for('index') }}" class="wordmark">
-            Atlet<span style="color:var(--volt)">Coach</span>
+<div class="app">
+    <aside id="sidebar" class="sidebar" aria-label="Hlavné menu">
+        <a href="{{ url_for('index') }}" class="brand">
+            <span class="brand-mark" aria-hidden="true">A</span>
+            <span>
+                <span class="brand-name block">AtletCoach</span>
+                <span class="brand-sub block">tréner a zverenci</span>
+            </span>
         </a>
 
-        {# ── Navigácia podľa roly ──
-           Názvy endpointov sú kontrakt: každý blueprint ich musí definovať, inak url_for spadne. #}
-        {% set role = current_user.role if current_user else none %}
-        {% if role is none %}
-            {% set nav_items = [
-                ('index',       'Domov'),
-                ('stopky.page', 'Stopky'),
-            ] %}
-        {% elif role == 'zverenec' %}
-            {% set nav_items = [
-                ('index',            'Domov'),
-                ('video_page',       'Video'),
-                ('hurdles_page',     'Prekážky'),
-                ('stopky.page',      'Stopky'),
-                ('trainings',        'Tréningy'),
-                ('planovanie.index', 'Plán'),
-                ('zverenec.results', 'Výsledky'),
-                ('grafy.index',      'Grafy'),
-                ('log_data',         'Logovanie'),
-                ('ai_portal',        'AI'),
-            ] %}
-        {% else %}
-            {% set nav_items = [
-                ('index',            'Domov'),
-                ('trener.athletes',  'Zverenci'),
-                ('planovanie.index', 'Plán'),
-                ('grafy.index',      'Grafy'),
-                ('video_page',       'Video'),
-                ('hurdles_page',     'Prekážky'),
-                ('stopky.page',      'Stopky'),
-                ('trainings',        'Tréningy'),
-                ('ai_portal',        'AI'),
-            ] %}
-            {% if role == 'admin' %}
-                {% set nav_items = nav_items + [('admin_panel.users', 'Používatelia')] %}
-            {% endif %}
-        {% endif %}
-        {% set strava_items = [
-            ('dashboard',    'Dashboard'),
-            ('osobaky',      'Osobáky'),
-            ('heatmap',      'Heatmapa'),
-            ('strava_login', 'Pripojiť Stravu'),
-        ] %}
-        {% set strava_endpoints = ['dashboard', 'osobaky', 'heatmap', 'strava_login', 'strava_authorized'] %}
-
-        <nav class="hidden xl:flex items-center gap-4">
-            {% for endpoint, label in nav_items %}
-            {% set active = request.endpoint == endpoint
-                            or (request.blueprint and '.' in endpoint and endpoint.split('.')[0] == request.blueprint) %}
-            <a href="{{ url_for(endpoint) }}" class="navlink {{ 'active' if active else '' }}">{{ label }}</a>
+        <nav aria-label="Sekcie">
+            {% for group_label, items in nav_groups %}
+            <div class="nav-group">
+                <p class="nav-label">{{ group_label }}</p>
+                {% for endpoint, label, icon, count_key in items %}{{ nav_link(endpoint, label, icon, count_key) }}{% endfor %}
+            </div>
             {% endfor %}
 
             {% if current_user %}
-            <details class="navdrop relative">
-                <summary class="navlink cursor-pointer flex items-center gap-1.5 {{ 'active' if request.endpoint in strava_endpoints else '' }}">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="#fc4c02">
-                        <path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/>
-                    </svg>
-                    Strava <span class="text-[9px]">▾</span>
-                </summary>
-                <div class="absolute right-0 top-full mt-[13px] w-48 bg-[#0b0b0c] border border-white/10 py-1 z-50">
-                    {% for endpoint, label in strava_items %}
-                    <a href="{{ url_for(endpoint) }}"
-                       class="block px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors">{{ label }}</a>
-                    {% endfor %}
-                </div>
-            </details>
+            <div class="nav-group">
+                <p class="nav-label">Strava</p>
+                {% for endpoint, label, icon in strava_items %}{{ nav_link(endpoint, label, icon, none) }}{% endfor %}
+            </div>
+            {% else %}
+            <div class="nav-group">
+                <p class="nav-label">Účet</p>
+                {{ nav_link('auth.login', 'Prihlásiť sa', 'login', none) }}
+                {{ nav_link('auth.register', 'Registrácia', 'person_add', none) }}
+            </div>
             {% endif %}
         </nav>
 
-        <div class="hidden xl:flex items-center gap-3 flex-shrink-0">
+        <div class="sidebar-cards">
             {% if current_user %}
-            <span class="eyebrow">{{ current_user.role_label }}</span>
-            <a href="{{ url_for('auth.change_password') }}" title="Zmena hesla"
-               class="mono text-[12px] text-on-surface hover:text-[color:var(--volt)] transition-colors">{{ current_user.username }}</a>
-            <span class="text-white/20">·</span>
-            <form method="post" action="{{ url_for('auth.logout') }}" class="inline m-0"><button type="submit" class="navlink">Odhlásiť</button></form>
+            <div class="sc-card">
+                <div class="sc-head"><span class="sc-dot" aria-hidden="true"></span>Účet · {{ current_user.role_label }}</div>
+                <div class="sc-row"><span>meno</span><span>{{ current_user.username }}</span></div>
+                {% if nav_info.week_planned is not none %}
+                <div class="sc-row"><span>týždeň</span><span>{{ nav_info.week_done }} / {{ nav_info.week_planned }} splnené</span></div>
+                {% endif %}
+                {% if nav_info.athletes is not none %}
+                <div class="sc-row"><span>zverenci</span><span>{{ nav_info.athletes }}</span></div>
+                {% endif %}
+                {% if nav_info.pending %}
+                <div class="sc-row"><span>čakajú</span><span style="color:var(--warn-text)">{{ nav_info.pending }}</span></div>
+                {% endif %}
+            </div>
+            <form method="post" action="{{ url_for('auth.logout') }}" class="m-0">
+                <button type="submit" class="btn btn-ghost btn-sm w-full justify-start"><span class="material-symbols-outlined" aria-hidden="true">logout</span>Odhlásiť</button>
+            </form>
             {% else %}
-            <a href="{{ url_for('auth.login') }}" class="navlink {{ 'active' if request.endpoint == 'auth.login' else '' }}">Prihlásiť</a>
-            <a href="{{ url_for('auth.register') }}"
-               class="border border-white/15 hover:border-white/35 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-on-surface-variant hover:text-on-surface transition-colors">
-                Registrácia
-            </a>
+            <div class="sc-card">
+                <div class="sc-head"><span class="sc-dot" aria-hidden="true"></span>Bez prihlásenia</div>
+                <div class="sc-row"><span>stopky</span><span>fungujú hneď</span></div>
+                <div class="sc-row"><span>analýza videa</span><span>po prihlásení</span></div>
+            </div>
             {% endif %}
         </div>
+    </aside>
+    <div class="sidebar-backdrop" id="sidebar-backdrop" hidden></div>
 
-        <button id="mobile-menu-btn" class="xl:hidden p-2 -mr-2 text-on-surface-variant hover:text-on-surface transition-colors">
-            <span class="material-symbols-outlined">menu</span>
-        </button>
-    </div>
-
-    <div id="mobile-menu" class="hidden xl:hidden border-t border-white/10 bg-[#0b0b0c]">
-        {% for endpoint, label in nav_items %}
-        {% set active = request.endpoint == endpoint
-                        or (request.blueprint and '.' in endpoint and endpoint.split('.')[0] == request.blueprint) %}
-        <a href="{{ url_for(endpoint) }}"
-           class="block px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] border-b border-white/5
-                  {{ 'text-on-surface' if active else 'text-on-surface-variant' }}">
-            {% if active %}<span style="color:var(--volt)">/ </span>{% endif %}{{ label }}
-        </a>
-        {% endfor %}
-
-        {% if current_user %}
-        <p class="eyebrow px-5 pt-4 pb-2">Strava</p>
-        {% for endpoint, label in strava_items %}
-        <a href="{{ url_for(endpoint) }}"
-           class="block px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] border-b border-white/5
-                  {{ 'text-on-surface' if request.endpoint == endpoint else 'text-on-surface-variant' }}">{{ label }}</a>
-        {% endfor %}
-        <div class="px-5 py-4 flex items-center justify-between gap-4">
-            <span class="flex items-baseline gap-2">
-                <span class="eyebrow">{{ current_user.role_label }}</span>
-                <a href="{{ url_for('auth.change_password') }}" class="mono text-[12px] text-on-surface">{{ current_user.username }}</a>
-            </span>
-            <form method="post" action="{{ url_for('auth.logout') }}" class="inline m-0"><button type="submit" class="navlink">Odhlásiť</button></form>
-        </div>
-        {% else %}
-        <a href="{{ url_for('auth.login') }}"
-           class="block px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] border-b border-white/5 text-on-surface">Prihlásiť</a>
-        <a href="{{ url_for('auth.register') }}"
-           class="block px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-on-surface-variant">Registrácia</a>
-        {% endif %}
-    </div>
-</header>
-
-<!-- ── OBSAH ── -->
-<div class="max-w-[1180px] mx-auto px-5">
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div class="mt-5 space-y-2">
-        {% for category, msg in messages %}
-        <div class="flash-msg flex items-center gap-3 px-4 py-3 text-sm bg-surface-container border-l-2
-            {% if category == 'success' %}border-[#879c26] text-on-surface
-            {% elif category in ('danger','error') %}border-[#e66767] text-on-surface
-            {% elif category == 'warning' %}border-[#c98500] text-on-surface
-            {% else %}border-white/25 text-on-surface{% endif %}">
-            <span class="eyebrow flex-shrink-0">
-                {% if category == 'success' %}OK
-                {% elif category in ('danger','error') %}Chyba
-                {% elif category == 'warning' %}Pozor
-                {% else %}Info{% endif %}
-            </span>
-            <span class="flex-1">{{ msg }}</span>
-            <button onclick="this.parentElement.remove()"
-                    class="text-on-surface-variant hover:text-on-surface transition-colors leading-none">
-                <span class="material-symbols-outlined text-sm">close</span>
+    <div class="main-col">
+        <header class="topbar">
+            <button id="mobile-menu-btn" type="button" class="icon-btn" aria-label="Menu" aria-controls="sidebar" aria-expanded="false">
+                <span class="material-symbols-outlined" aria-hidden="true">menu</span>
             </button>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-    {% endwith %}
+            <a href="{{ url_for('index') }}" class="wordmark items-center gap-2 font-headline font-bold text-[15px] text-on-surface no-underline">
+                <span class="brand-mark" style="width:24px;height:24px;font-size:13px" aria-hidden="true">A</span>AtletCoach
+            </a>
+            <span class="spacer"></span>
+            {% if current_user %}
+            <a href="{{ url_for('auth.change_password') }}" class="user-chip" title="Zmena hesla">
+                <span class="avatar" aria-hidden="true">{{ current_user.display_name[:1]|upper }}</span>
+                <span>{{ current_user.display_name }}</span>
+                <span class="role">{{ current_user.role_label }}</span>
+            </a>
+            {% else %}
+            <a href="{{ url_for('auth.login') }}" class="btn btn-ghost btn-sm">Prihlásiť sa</a>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Registrácia</a>
+            {% endif %}
+        </header>
 
-    <div class="page-content">
-        {% block content %}{% endblock %}
+        <div class="main-inner">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <section aria-label="Hlásenia" role="status" aria-live="polite" class="flash-wrap">
+                {% for category, msg in messages %}
+                <div data-category="{{ category }}" class="flash-msg">
+                    <span class="flash-dot" aria-hidden="true"></span>
+                    <span class="sr-only">
+                        {% if category == 'success' %}Hotovo:{% elif category in ('danger','error') %}Chyba:{% elif category == 'warning' %}Pozor:{% else %}Info:{% endif %}
+                    </span>
+                    <span class="flex-1">{{ msg }}</span>
+                    <button type="button" onclick="this.parentElement.remove()" aria-label="Zavrieť hlásenie"
+                            class="text-on-surface-variant hover:text-on-surface transition-colors leading-none">
+                        <span class="material-symbols-outlined text-sm" aria-hidden="true">close</span>
+                    </button>
+                </div>
+                {% endfor %}
+            </section>
+            {% endif %}
+            {% endwith %}
+
+            <div class="page-content" id="obsah" tabindex="-1">
+                {% block content %}{% endblock %}
+            </div>
+
+            <footer class="site-footer">
+                <div class="flex items-start justify-between flex-wrap gap-x-10 gap-y-4">
+                    <div>
+                        <p class="eyebrow">AtletCoach · maturitný projekt 2026/2027</p>
+                        <p class="text-[12px] text-on-surface-variant mt-2 leading-relaxed">
+                            Tomáš Žigo · SPŠE Bratislava, Zochova 9, 811 03 Bratislava<br>
+                            bezplatná nekomerčná aplikácia pre trénera a jeho zverencov
+                        </p>
+                    </div>
+                    <nav aria-label="Informácie o projekte" class="flex flex-wrap gap-x-5 gap-y-2 pt-0.5">
+                        <a href="{{ url_for('pravne.ochrana_udajov') }}" class="eyebrow hover:text-on-surface transition-colors">Ochrana údajov</a>
+                        <a href="{{ url_for('pravne.podmienky') }}" class="eyebrow hover:text-on-surface transition-colors">Podmienky</a>
+                        <a href="{{ url_for('pravne.cookies') }}" class="eyebrow hover:text-on-surface transition-colors">Cookies</a>
+                        {% if kontakt_email %}<a href="mailto:{{ kontakt_email }}" class="eyebrow hover:text-on-surface transition-colors">Kontakt</a>{% endif %}
+                        <a href="{{ github_url }}" target="_blank" rel="noopener" class="eyebrow hover:text-on-surface transition-colors">GitHub<span class="sr-only"> (otvorí sa v novom okne)</span></a>
+                    </nav>
+                </div>
+            </footer>
+        </div>
     </div>
 </div>
 
-<!-- ── PÄTA ── -->
-<footer class="max-w-[1180px] mx-auto px-5 mt-16 mb-8 pt-5 border-t border-white/10
-               flex items-center justify-between flex-wrap gap-3">
-    <p class="eyebrow">AtletCoach · Analýza bežeckej techniky</p>
-    <p class="eyebrow">Maturitný projekt</p>
-</footer>
+{# Jediná cookie je nevyhnutná (prihlásenie), preto len informácia bez výberu – podrobnosti na /cookies. #}
+<div id="cookie-lista" role="region" aria-label="Informácia o cookies" hidden>
+    <div class="max-w-[1240px] mx-auto px-5 py-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+        <p class="text-[13px] text-on-surface-variant">
+            Táto appka používa jedinú cookie, a to na prihlásenie. Žiadne sledovanie ani reklama.
+            <a href="{{ url_for('pravne.cookies') }}" class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">Viac o cookies</a>
+        </p>
+        <button type="button" id="cookie-ok" class="btn btn-secondary btn-sm">Rozumiem</button>
+    </div>
+</div>
 
 {% block scripts %}{% endblock %}
 
 <script>
-    document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
-        document.getElementById('mobile-menu').classList.toggle('hidden');
-    });
+    // Bočné menu na mobile: tlačidlo + pozadie, aria-expanded pre čítačky, Esc zavrie.
+    (function () {
+        const btn = document.getElementById('mobile-menu-btn');
+        const bar = document.getElementById('sidebar');
+        const back = document.getElementById('sidebar-backdrop');
+        if (!btn || !bar) return;
+        const set = (open) => { bar.classList.toggle('open', open); btn.setAttribute('aria-expanded', String(open)); if (back) back.hidden = !open; };
+        btn.addEventListener('click', () => set(!bar.classList.contains('open')));
+        back?.addEventListener('click', () => set(false));
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') set(false); });
+    })();
 
-    // Hlásenia zmiznú samé, ale dajú sa zavrieť aj ručne.
+    // Potvrdenia zmiznú samé; chyby a upozornenia ostanú, kým ich nezavrieš.
     setTimeout(() => {
-        document.querySelectorAll('.flash-msg').forEach(el => el.remove());
-    }, 6000);
+        document.querySelectorAll('.flash-msg[data-category="success"], .flash-msg[data-category="info"], .flash-msg[data-category="message"]')
+            .forEach(el => el.remove());
+    }, 8000);
+
+    // Informačná lišta o cookies – raz zavretá sa už neukáže (localStorage, len v tomto prehliadači).
+    (function () {
+        const bar = document.getElementById('cookie-lista');
+        if (!bar) return;
+        let seen = false;
+        try { seen = localStorage.getItem('atletcoach.cookies-ok') === '1'; } catch (e) {}
+        if (!seen) bar.hidden = false;
+        document.getElementById('cookie-ok')?.addEventListener('click', () => {
+            bar.hidden = true;
+            try { localStorage.setItem('atletcoach.cookies-ok', '1'); } catch (e) {}
+        });
+    })();
 </script>
 </body>
 </html>

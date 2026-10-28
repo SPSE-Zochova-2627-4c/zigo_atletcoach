@@ -5,7 +5,7 @@
     .pr-card {
         position: relative;
         overflow: hidden;
-        background: #161617;
+        background: var(--surface);
         border: 1px solid rgba(236,233,227,0.10);
         border-radius: 2px;
         transition: border-color 0.12s linear;
@@ -58,7 +58,7 @@
     }
     .badge-pr {
         background: #d7f24a;
-        color: #0b0b0c;
+        color: var(--bg);
         font-family: 'IBM Plex Mono', monospace;
         font-size: 9px;
         font-weight: 600;
@@ -96,7 +96,7 @@
     <div class="flex items-start justify-between mb-5">
         <div>
             <p class="meta-label mb-1">Osobný rekord</p>
-            <p class="dist-label text-4xl text-white">{{ dist_text }}
+            <p class="dist-label text-4xl text-on-surface">{{ dist_text }}
                 <span class="text-2xl font-semibold" style="color:#8b8b84">{{ unit }}</span>
             </p>
         </div>
@@ -155,7 +155,7 @@
     <div class="flex items-end justify-between flex-wrap gap-3">
         <div>
             <p class="meta-label mb-1">AtletCoach</p>
-            <h1 class="font-headline font-extrabold text-3xl tracking-tight">Osobné rekordy</h1>
+            <h1 class="page-title">Osobné rekordy</h1>
             <p class="text-on-surface-variant text-sm mt-1">Tvoje najlepšie časy zo Stravy</p>
         </div>
         <div class="flex items-center gap-3">

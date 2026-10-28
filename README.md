@@ -271,6 +271,8 @@ v blueprintoch:
 | `trener.py` | `trener` | `/trener` | zverenci, žiadosti, výsledky a osobné rekordy zverenca |
 | `zverenec.py` | `zverenec` | `/zverenec` | moje výsledky a PB, prijatie / odmietnutie trénera |
 | `planovanie.py` | `planovanie` | `/plan` | kalendár, plánovanie, splnenie, prehľad splnenia |
+| `pravne.py` | `pravne` | `/ochrana-udajov`, `/podmienky`, `/cookies` | ochrana osobných údajov, podmienky používania (aj platby a vrátenie peňazí), cookies; kontakt z `ATLETCOACH_KONTAKT_EMAIL` |
+| `navigacia.py` | – | – | počty do bočného menu (zverenci, čakajúce žiadosti, tréningy týždňa) |
 | `grafy.py` | `grafy` | `/grafy` | grafy výkonnosti + JSON API |
 | `stopky.py` | `stopky` | `/stopky` | stránka stopiek, uloženie času (meranie beží v `static/js/stopky.js`) |
 | `admin_panel.py` | `admin_panel` | `/admin` | správa používateľov, prehľad systému |
@@ -281,6 +283,16 @@ v blueprintoch:
 
 Žiadny blueprint neimportuje `app.py`; všetky berú `db` a modely z `models.py` a prístupové pomôcky z `auth.py`.
 Navigácia v `templates/base.html` sa skladá podľa roly; názvy endpointov sú kontrakt medzi modulmi.
+
+### Vzhľad (`templates/base.html`)
+
+Jeden dizajnový systém pre všetky stránky: svetlý papierový podklad, atramentový text, jediný akcent v odtieni
+tartanovej dráhy, písma IBM Plex Sans a IBM Plex Mono. Rozloženie je ako pri výsledkovej listine – bočné menu
+s ikonami a počtami (zverenci, čakajúce žiadosti, tréningy týždňa), dlaždice s číslami (`.kpi`), tabuľky ako karty,
+štítky stavov (`.chip`) a sekcie „01 · názov“ (`.rule`). Tokeny sú v `:root` a v konfigurácii Tailwindu, takže
+staršie šablóny sa preladili bez prepisovania. Nič sa nenačítava z CDN ani z Google Fonts – písma, ikony,
+Tailwind, Chart.js a Leaflet sú v `static/vendor` (licencie v `static/vendor/LICENSES.md`), takže z prehliadača
+používateľa nejde žiadna požiadavka na cudzí server; výnimkou sú dlaždice mapy na stránke Heatmapa (CARTO).
 
 ### Prístupové práva (`auth.py`)
 
@@ -604,8 +616,8 @@ python test_plan_text.py          # rozbor týždenného plánu z textu trénera
 |---|---|
 | Jazyk a server | Python 3.9 – 3.12, Flask 3.1, Jinja2 šablóny, python-dotenv |
 | Databáza | SQLite cez Flask-SQLAlchemy 3.1 (aditívna migrácia `ALTER TABLE`) |
-| Frontend | HTML, CSS, Tailwind CSS (CDN), JavaScript (bez frameworku), fonty Archivo / IBM Plex, manifest webovej appky (ikona na ploche telefónu) |
-| Grafy a mapy | Chart.js, Leaflet (heatmapa behov, vlastný dekodér Google polyline) |
+| Frontend | HTML, CSS, Tailwind CSS (uložený lokálne v `static/vendor`, bez CDN), JavaScript (bez frameworku), písma IBM Plex Sans / Mono a ikony Material Symbols (lokálne, licencie v `static/vendor/LICENSES.md`), manifest webovej appky (ikona na ploche telefónu) |
+| Grafy a mapy | Chart.js 4.4, Leaflet 1.9 + Leaflet.heat (lokálne kópie; heatmapa behov, vlastný dekodér Google polyline) |
 | Počítačové videnie | OpenCV 4.10 (optický tok Lucas-Kanade, RANSAC odhad pohybu kamery, kreslenie prekryvu), MediaPipe Pose 0.10 (33 bodov kostry), NumPy 1.26 |
 | Fotobunka | Web API prehliadača: `getUserMedia`, `<canvas>` `getImageData`, Web Audio (štart na zvuk), `localStorage` |
 | Externé služby | World Athletics GraphQL (neoficiálne, `requests`), Strava API (OAuth 2.0, `stravalib` + `requests`), Groq API (LLM chat completions, modely `llama-3.3-70b-versatile` → `openai/gpt-oss-120b` → `deepseek-r1-distill-llama-70b` ako záloha) |
@@ -624,6 +636,8 @@ maturitny_projekt/
 ├── zverenec.py             # moje výsledky, vzťah s trénerom              /zverenec
 ├── planovanie.py           # kalendár a plán tréningov                    /plan
 ├── plan_text.py            # rozbor týždenného plánu z textu trénera (bez Flasku)
+├── pravne.py               # ochrana údajov, podmienky, cookies          /ochrana-udajov …
+├── navigacia.py            # počty do bočného menu
 ├── grafy.py                # grafy výkonnosti + JSON API                  /grafy
 ├── stopky.py               # stopky s fotobunkou (uloženie času)          /stopky
 ├── admin_panel.py          # správa používateľov                          /admin
@@ -641,8 +655,10 @@ maturitny_projekt/
 ├── wsgi.py, gunicorn.conf.py, Dockerfile   # nasadenie na hosting
 ├── .env.example            # vzor konfigurácie
 ├── static/css, static/js   # style.css, stopky.js, grafy.js, main.js
+├── static/vendor/          # Tailwind, Chart.js, Leaflet, písma IBM Plex, ikony – lokálne kópie + licencie
+├── static/strava/          # oficiálne logo „Powered by Strava“
 ├── static/icons, static/manifest.webmanifest   # ikona a manifest appky na ploche
-├── templates/              # base.html + šablóny podľa modulu (auth/, trener/, zverenec/, planovanie/, grafy/, stopky/, admin/, wa/)
+├── templates/              # base.html (dizajnový systém: tokeny, bočné menu, karty, štítky) + šablóny podľa modulu (auth/, trener/, zverenec/, planovanie/, grafy/, stopky/, admin/, wa/, pravne/)
 ├── instance/               # database.db, secret_key, videos/  (negitované)
 ├── cache/                  # World Athletics a Strava cache  (negitované)
 └── models/                 # model kostry MediaPipe, sťahuje sa sám  (negitované)

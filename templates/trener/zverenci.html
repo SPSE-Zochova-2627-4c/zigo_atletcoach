@@ -8,27 +8,27 @@
     <div class="flex items-end justify-between flex-wrap gap-5 mb-9">
         <div>
             <p class="eyebrow mb-2">{{ current_user.role_label }} · {{ current_user.display_name }}</p>
-            <h1 class="text-[44px] leading-none font-headline font-extrabold uppercase text-on-surface">Zverenci</h1>
+            <h1 class="page-title">Zverenci</h1>
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
-            <a href="#pridat" class="bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]">Pridať zverenca</a>
+            <a href="#pridat" class="btn btn-primary">Pridať zverenca</a>
             <a href="{{ url_for('planovanie.index') }}"
-               class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">Plán</a>
+               class="btn btn-secondary">Plán</a>
         </div>
     </div>
 
     <!-- ── Čísla ── -->
-    <div class="grid grid-cols-3 gap-px bg-white/10 border border-white/10 mb-11">
-        <div class="bg-surface-container px-5 py-6">
+    <div class="grid grid-cols-3 gap-3 mb-11">
+        <div class="card px-5 py-5">
             <p class="eyebrow mb-3">{{ 'Zverenci celkom' if current_user.is_admin else 'Moji zverenci' }}</p>
             <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">{{ athlete_count }}</p>
         </div>
-        <div class="bg-surface-container px-5 py-6">
+        <div class="card px-5 py-5">
             <p class="eyebrow mb-3">Čaká na potvrdenie</p>
             <p class="font-headline font-extrabold text-[34px] leading-none {{ 'text-on-surface' if not pending else '' }}"
                {% if pending %}style="color:#d9a23a"{% endif %}>{{ pending|length }}</p>
         </div>
-        <div class="bg-surface-container px-5 py-6">
+        <div class="card px-5 py-5">
             <p class="eyebrow mb-3">Výsledkov spolu</p>
             <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">{{ stats.values()|map(attribute='count')|sum }}</p>
         </div>
@@ -127,7 +127,7 @@
 
     <!-- ── Pridanie zverenca ── -->
     <section id="pridat" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-surface-container border border-white/10 p-6">
+        <div class="card p-6">
             <div class="rule"><p class="eyebrow">Pridať existujúceho zverenca</p></div>
             <p class="text-on-surface-variant text-[13px] mb-5">
                 Zverenec už má účet. Zadaj jeho používateľské meno – dostane žiadosť, ktorú musí potvrdiť.
@@ -138,13 +138,13 @@
                     <input type="text" id="attach-username" name="username" required maxlength="32"
                            autocomplete="off" placeholder="napr. jan.novak">
                 </div>
-                <button type="submit" class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors w-full">
+                <button type="submit" class="btn btn-secondary w-full">
                     Poslať žiadosť
                 </button>
             </form>
         </div>
 
-        <div class="bg-surface-container border border-white/10 p-6">
+        <div class="card p-6">
             <div class="rule"><p class="eyebrow">Vytvoriť nový účet zverenca</p></div>
             <p class="text-on-surface-variant text-[13px] mb-5">
                 Zverenec ešte účet nemá. Heslo mu odovzdáš; pri prvom prihlásení si ho musí zmeniť.
@@ -164,7 +164,7 @@
                     <input type="text" id="new-password" name="password" required minlength="6" autocomplete="new-password"
                            class="mono w-full" placeholder="aspoň 6 znakov">
                 </div>
-                <button type="submit" class="bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] w-full">
+                <button type="submit" class="btn btn-primary w-full">
                     Vytvoriť účet
                 </button>
             </form>

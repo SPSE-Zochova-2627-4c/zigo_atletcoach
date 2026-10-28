@@ -1,18 +1,19 @@
 {% extends "base.html" %}
 
 {% block head %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+{# Leaflet je uložený lokálne (static/vendor) – z prehliadača idú von len dlaždice mapy z CARTO. #}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/js/leaflet.css') }}"/>
+<script src="{{ url_for('static', filename='vendor/js/leaflet.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/js/leaflet-heat.js') }}"></script>
 <style>
     #map { width: 100%; height: 100%; border-radius: 2px; }
-    .leaflet-container { background: #0b0b0c; }
+    .leaflet-container { background: var(--bg-elev-2); }
     .info-chip {
-        background: #161617;
+        background: var(--surface);
         border: 1px solid rgba(236,233,227,0.14);
         border-radius: 2px;
         padding: 0.45rem 0.85rem;
-        color: #ece9e3;
+        color: var(--text);
         font-size: 11px;
         font-family: 'IBM Plex Mono', monospace;
         font-weight: 500;
@@ -28,7 +29,7 @@
     <div class="flex items-end justify-between">
         <div>
             <p class="eyebrow mb-2">Strava</p>
-            <h2 class="text-[44px] leading-none font-headline font-extrabold uppercase text-on-surface">MOJE TRASY</h2>
+            <h1 class="page-title">Moje trasy</h1>
         </div>
         <div id="stats-bar" class="hidden flex items-center gap-3 pb-1">
             <div class="info-chip">
@@ -44,7 +45,7 @@
     <div class="relative rounded-3xl overflow-hidden" style="height: 620px;">
 
         <!-- Loading overlay -->
-        <div id="loading-overlay" class="absolute inset-0 z-[1000] flex flex-col items-center justify-center bg-surface-container-high rounded-3xl">
+        <div id="loading-overlay" class="absolute inset-0 z-[1000] flex flex-col items-center justify-center card rounded-3xl">
             <div class="w-16 h-16 rounded-2xl bg-primary/15 flex items-center justify-center mb-4">
                 <span class="material-symbols-outlined text-primary text-3xl animate-pulse">route</span>
             </div>
@@ -56,7 +57,7 @@
         </div>
 
         <!-- Error overlay -->
-        <div id="error-overlay" class="hidden absolute inset-0 z-[1000] flex flex-col items-center justify-center bg-surface-container-high rounded-3xl">
+        <div id="error-overlay" class="hidden absolute inset-0 z-[1000] flex flex-col items-center justify-center card rounded-3xl">
             <span class="material-symbols-outlined text-red-400 text-4xl mb-3">error</span>
             <p class="font-headline font-bold text-on-surface mb-1">Nepodarilo sa načítať trasy</p>
             <p class="text-sm text-on-surface-variant mb-4" id="error-msg"></p>
@@ -66,7 +67,7 @@
         </div>
 
         <!-- No data overlay -->
-        <div id="nodata-overlay" class="hidden absolute inset-0 z-[1000] flex flex-col items-center justify-center bg-surface-container-high rounded-3xl">
+        <div id="nodata-overlay" class="hidden absolute inset-0 z-[1000] flex flex-col items-center justify-center card rounded-3xl">
             <span class="material-symbols-outlined text-on-surface-variant text-4xl mb-3">directions_run</span>
             <p class="font-headline font-bold text-on-surface mb-1">Žiadne behy s GPS</p>
             <p class="text-sm text-on-surface-variant text-center max-w-xs">Strava nenašla žiadne aktivity s GPS dátami. Skontroluj či máš nahrané behy.</p>
@@ -123,7 +124,7 @@ function initMap() {
     }).addTo(map);
 
     L.control.attribution({ prefix: false })
-        .addAttribution('© <a href="https://carto.com/" style="color:#8b8b84">CARTO</a> · © <a href="https://www.openstreetmap.org/" style="color:#8b8b84">OSM</a>')
+        .addAttribution('© <a href="https://www.openstreetmap.org/copyright" style="color:#8b8b84" target="_blank" rel="noopener">OpenStreetMap</a> contributors · © <a href="https://carto.com/attributions" style="color:#8b8b84" target="_blank" rel="noopener">CARTO</a>')
         .addTo(map);
 }
 

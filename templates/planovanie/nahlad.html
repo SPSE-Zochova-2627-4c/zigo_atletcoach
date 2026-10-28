@@ -2,8 +2,8 @@
 {% block title %}Náhľad týždňa · AtletCoach{% endblock %}
 {% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/planovanie.css') }}">{% endblock %}
 
-{% set btn_primary = 'bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]' %}
-{% set btn_secondary = 'border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors' %}
+{% set btn_primary = 'btn btn-primary' %}
+{% set btn_secondary = 'btn btn-secondary' %}
 {% set kind_label = {'beh': 'beh', 'sila': 'sila', 'ine': 'iné'} %}
 
 {% block content %}
@@ -12,7 +12,7 @@
     <div class="flex items-end justify-between flex-wrap gap-5 mb-9">
         <div>
             <p class="eyebrow mb-2">Náhľad · {{ monday|plan_date }} – {{ sunday|plan_date }}</p>
-            <h1 class="text-[44px] leading-none font-headline font-extrabold uppercase text-on-surface">Komu čo patrí</h1>
+            <h1 class="page-title">Komu čo patrí</h1>
         </div>
         <p class="mono text-[11px] text-on-surface-variant max-w-[48ch] leading-relaxed">
             Zaškrtnutí zverenci dostanú tréning do kalendára. Názov si môžeš upraviť,
@@ -21,7 +21,7 @@
     </div>
 
     {% if intro %}
-    <div class="bg-surface-container-low border border-white/10 p-5 mb-8">
+    <div class="card p-5 mb-8">
         <p class="eyebrow mb-2">Poznámky trénera (neukladajú sa, len na prečítanie)</p>
         {% for line in intro %}<p class="text-[13px] text-on-surface-variant leading-relaxed">{{ line }}</p>{% endfor %}
     </div>
@@ -38,7 +38,7 @@
                 {% if d.rest %}<p class="eyebrow">voľno · nič sa nevytvorí</p>{% endif %}
             </div>
             {% if d.blocks %}
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-px bg-white/10 border border-white/10">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                 {% for b in d.blocks %}
                 {% set key = d.index ~ '-' ~ loop.index0 %}
                 {% set blk = b.block %}
@@ -71,7 +71,7 @@
                             Komu
                             {% if blk.everyone %}· všetci{% endif %}
                             {% for gname in blk.groups %}· {{ gname }}{% endfor %}
-                            {% if not b.proposed %}<span style="color:#e66767">· nikomu – vyber</span>{% endif %}
+                            {% if not b.proposed %}<span style="color:var(--danger)">· nikomu – vyber</span>{% endif %}
                         </p>
                         <div class="flex flex-wrap gap-x-4 gap-y-1.5">
                             {% for a in athletes %}

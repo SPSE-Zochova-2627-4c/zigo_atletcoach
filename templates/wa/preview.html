@@ -6,14 +6,14 @@
     <div class="mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
         <div>
             <p class="eyebrow mb-2">World Athletics · náhľad importu</p>
-            <h1 class="text-[44px] leading-none font-headline font-extrabold uppercase text-on-surface">{{ athlete.display_name }}</h1>
+            <h1 class="page-title">{{ athlete.display_name }}</h1>
             <p class="text-[13px] text-on-surface-variant mt-3 leading-relaxed max-w-[60ch]">
                 Skontroluj, či ide o správneho atléta. Importujú sa len bežecké disciplíny s platným časom;
                 riadky označené „už evidované“ sa preskočia, aby nevznikli duplicity.
             </p>
         </div>
         <a href="{{ url_for('wa.search_page', athlete_id=athlete.id) }}"
-           class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors self-start lg:self-auto">
+           class="btn btn-secondary self-start lg:self-auto">
             ← Späť na hľadanie
         </a>
     </div>
@@ -21,23 +21,23 @@
     {# ── Profil na WA ── #}
     <section class="mb-10">
         <div class="rule"><p class="eyebrow">Profil na World Athletics</p></div>
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-px bg-white/10 border border-white/10">
-            <div class="bg-surface-container px-5 py-6">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="card px-5 py-5">
                 <p class="eyebrow mb-3">Meno</p>
                 <p class="font-headline font-bold text-[20px] leading-tight text-on-surface">{{ profile.name }}</p>
                 <a href="{{ profile.profile_url }}" target="_blank" rel="noopener noreferrer"
                    class="inline-block mt-2 mono text-[10px] text-on-surface-variant hover:text-on-surface border-b border-white/25 transition-colors">ID {{ profile.wa_id }} · otvoriť na WA →</a>
             </div>
-            <div class="bg-surface-container px-5 py-6">
+            <div class="card px-5 py-5">
                 <p class="eyebrow mb-3">Krajina</p>
                 <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">{{ profile.country }}</p>
                 {% if profile.country_full %}<p class="mono text-[11px] text-on-surface-variant mt-2">{{ profile.country_full }}</p>{% endif %}
             </div>
-            <div class="bg-surface-container px-5 py-6">
+            <div class="card px-5 py-5">
                 <p class="eyebrow mb-3">Narodený</p>
                 <p class="font-headline font-bold text-[20px] leading-tight text-on-surface mono">{{ profile.birth_date_text }}</p>
             </div>
-            <div class="bg-surface-container px-5 py-6">
+            <div class="card px-5 py-5">
                 <p class="eyebrow mb-3">Na import</p>
                 <p class="font-headline font-extrabold text-[34px] leading-none" style="color:var(--volt)">{{ new_count }}</p>
                 <p class="mono text-[11px] text-on-surface-variant mt-2">
@@ -122,7 +122,7 @@
     </section>
 
     {# ── Potvrdenie ── #}
-    <section class="bg-surface-container border border-white/10 p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+    <section class="card p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
         <div>
             <p class="font-headline font-bold text-on-surface">
                 {% if new_count %}Importovať {{ new_count }} {% if new_count == 1 %}nový rekord{% elif new_count < 5 %}nové rekordy{% else %}nových rekordov{% endif %}{% else %}Všetky rekordy sú už evidované{% endif %}
@@ -135,12 +135,12 @@
         <div class="flex flex-wrap gap-2.5 flex-shrink-0">
             <form method="POST" action="{{ url_for('wa.import_athlete', athlete_id=athlete.id) }}">
                 <input type="hidden" name="wa_id" value="{{ profile.wa_id }}">
-                <button type="submit" class="bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]">
+                <button type="submit" class="btn btn-primary">
                     {% if new_count %}Potvrdiť import{% else %}Priradiť profil{% endif %}
                 </button>
             </form>
             <a href="{{ url_for('trener.athlete_detail', athlete_id=athlete.id) }}"
-               class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">
+               class="btn btn-secondary">
                 Zrušiť
             </a>
         </div>

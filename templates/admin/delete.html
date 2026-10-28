@@ -9,7 +9,7 @@
             <a href="{{ url_for('admin_panel.users') }}" class="hover:text-on-surface transition-colors">Používatelia</a>
             · zmazanie účtu
         </p>
-        <h1 class="text-[44px] leading-none font-headline font-extrabold uppercase text-on-surface">
+        <h1 class="page-title">
             Zmazať <span class="mono normal-case font-medium">{{ user.username }}</span>?
         </h1>
         <p class="text-[13px] text-on-surface-variant mt-3 leading-relaxed">
@@ -20,7 +20,7 @@
 
     {% if blocker %}
     <div class="bg-surface-container border-l-2 border-[#e66767] px-5 py-4 mb-8">
-        <p class="eyebrow mb-1" style="color:#e66767">Nedá sa zmazať</p>
+        <p class="eyebrow mb-1" style="color:var(--danger)">Nedá sa zmazať</p>
         <p class="text-[13px] text-on-surface">{{ blocker }}</p>
     </div>
     {% endif %}
@@ -46,7 +46,7 @@
     </p>
 
     {% if not blocker %}
-    <form method="POST" class="bg-surface-container border border-white/10 p-6 space-y-5">
+    <form method="POST" class="card p-6 space-y-5">
         <div>
             <label for="confirm">Na potvrdenie opíš používateľské meno</label>
             <input type="text" id="confirm" name="confirm" placeholder="{{ user.username }}"
@@ -54,19 +54,19 @@
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
             <button type="submit"
-                    class="bg-[#e66767] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-[#0b0b0c] hover:bg-[#f07a7a] transition-colors">
+                    class="btn btn-danger hover:bg-[#f07a7a] transition-colors">
                 Nenávratne zmazať
             </button>
             <a href="{{ url_for('admin_panel.edit_user', user_id=user.id) }}"
-               class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">Späť</a>
+               class="btn btn-secondary">Späť</a>
         </div>
     </form>
     {% else %}
     <div class="flex flex-wrap items-center gap-2.5">
         <a href="{{ url_for('admin_panel.edit_user', user_id=user.id) }}"
-           class="bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]">Upraviť účet</a>
+           class="btn btn-primary">Upraviť účet</a>
         <a href="{{ url_for('admin_panel.users') }}"
-           class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">Späť na zoznam</a>
+           class="btn btn-secondary">Späť na zoznam</a>
     </div>
     {% endif %}
 

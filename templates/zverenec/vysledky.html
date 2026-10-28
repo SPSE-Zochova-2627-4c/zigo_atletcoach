@@ -9,12 +9,12 @@
     <div class="flex items-end justify-between flex-wrap gap-5 mb-9">
         <div>
             <p class="eyebrow mb-2">{{ current_user.role_label }} · {{ current_user.display_name }}</p>
-            <h1 class="text-[44px] leading-none font-headline font-extrabold uppercase text-on-surface">Výsledky a osobné rekordy</h1>
+            <h1 class="page-title">Výsledky a osobné rekordy</h1>
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
-            <a href="#pridat" class="bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]">Pridať výsledok</a>
+            <a href="#pridat" class="btn btn-primary">Pridať výsledok</a>
             <a href="{{ url_for('grafy.index') }}"
-               class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">Grafy</a>
+               class="btn btn-secondary">Grafy</a>
         </div>
     </div>
 
@@ -34,7 +34,7 @@
             </div>
             <div class="flex items-center gap-2.5">
                 <form method="POST" action="{{ url_for('zverenec.accept_coach') }}">
-                    <button type="submit" class="bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]">Prijať</button>
+                    <button type="submit" class="btn btn-primary">Prijať</button>
                 </form>
                 <form method="POST" action="{{ url_for('zverenec.reject_coach') }}">
                     <button type="submit" class="border border-white/15 hover:border-[#e66767] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface hover:text-[#e66767] transition-colors">Odmietnuť</button>

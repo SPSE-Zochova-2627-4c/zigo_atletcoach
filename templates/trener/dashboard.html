@@ -8,34 +8,34 @@
     <div class="flex items-end justify-between flex-wrap gap-5 mb-9">
         <div>
             <p class="eyebrow mb-2">{{ current_user.role_label }} · {{ current_user.display_name }}</p>
-            <h1 class="text-[44px] leading-none font-headline font-extrabold uppercase text-on-surface">Prehľad</h1>
+            <h1 class="page-title">Prehľad</h1>
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
             <a href="{{ url_for('trener.athletes') }}"
-               class="bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]">Zverenci</a>
+               class="btn btn-primary">Zverenci</a>
             <a href="{{ url_for('planovanie.index') }}"
-               class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">Plán</a>
+               class="btn btn-secondary">Plán</a>
             <a href="{{ url_for('grafy.index') }}"
-               class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">Grafy</a>
+               class="btn btn-secondary">Grafy</a>
             {% if current_user.is_admin %}
             <a href="{{ url_for('admin_panel.users') }}"
-               class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface-variant hover:text-on-surface transition-colors">Používatelia</a>
+               class="btn btn-secondary">Používatelia</a>
             {% endif %}
         </div>
     </div>
 
     <!-- ── Čísla ── -->
-    <div class="grid grid-cols-3 gap-px bg-white/10 border border-white/10">
-        <div class="bg-surface-container px-5 py-6">
+    <div class="grid grid-cols-3 gap-3">
+        <div class="card px-5 py-5">
             <p class="eyebrow mb-3">Zverenci</p>
             <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">{{ athletes|length }}</p>
         </div>
-        <div class="bg-surface-container px-5 py-6">
+        <div class="card px-5 py-5">
             <p class="eyebrow mb-3">Naplánované tento týždeň</p>
             <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">{{ planned_week }}</p>
             <p class="mono text-[11px] text-on-surface-variant mt-2">{{ week_start.strftime('%d.%m.') }} – {{ week_end.strftime('%d.%m.') }}</p>
         </div>
-        <div class="bg-surface-container px-5 py-6">
+        <div class="card px-5 py-5">
             <p class="eyebrow mb-3">Splnené za 28 dní</p>
             {% if completion_pct is not none %}
             <p class="font-headline font-extrabold text-[34px] leading-none" style="color:var(--volt)">

@@ -1,14 +1,18 @@
 /* Grafy výkonnosti (/grafy). Dáta sú vložené v <script id="grafy-data"> už zo servera,
    takže sa nič nenačítava dodatočne a tabuľka pod grafom ukazuje tie isté čísla.
-   Pravidlá: jedna os Y na graf, farby sérií len #879c26 / #3987e5 / #d55181,
+   Pravidlá: jedna os Y na graf, farby sérií z tokenov --series-1 … --series-3,
    legenda len pri dvoch sériách. */
 document.addEventListener('DOMContentLoaded', () => {
     const holder = document.getElementById('grafy-data');
     if (!holder || typeof Chart === 'undefined') return;
     const DATA = JSON.parse(holder.textContent);
 
-    const LIME = '#879c26', BLUE = '#3987e5', MAGENTA = '#d55181';
-    const SURFACE = '#161617';
+    // Farby z dizajnových tokenov v base.html, aby grafy ladili s témou.
+    const css = getComputedStyle(document.documentElement);
+    const tok = (name, fallback) => (css.getPropertyValue(name) || '').trim() || fallback;
+    const LIME = tok('--series-1', '#c8381d'), BLUE = tok('--series-2', '#1f6f8b'), MAGENTA = tok('--series-3', '#2e7d4f');
+    const SURFACE = tok('--surface', '#ffffff');
+    const MUTED = tok('--muted', '#655f53'), INK = tok('--text', '#15140f'), PAPER = tok('--bg', '#f3f1ea'), GRID = tok('--border', '#e1dccf');
     const MONO = { family: 'IBM Plex Mono', size: 10 };
 
     // 11.23 → "11.23", 125.4 → "2:05.40" – rovnaké ako fmt_time() v grafy.py.
@@ -30,15 +34,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 y: {
                     reverse: reverse,
                     beginAtZero: beginAtZero,
-                    grid:   { color: 'rgba(236,233,227,0.06)', drawTicks: false },
+                    grid:   { color: GRID, drawTicks: false },
                     border: { display: false },
-                    ticks:  { color: '#8b8b84', padding: 10, font: MONO,
+                    ticks:  { color: MUTED, padding: 10, font: MONO,
                               callback: yTick || ((v) => v) }
                 },
                 x: {
                     grid:   { display: false },
-                    border: { color: 'rgba(236,233,227,0.14)' },
-                    ticks:  { color: '#8b8b84', maxRotation: 0, autoSkipPadding: 22, font: MONO }
+                    border: { color: GRID },
+                    ticks:  { color: MUTED, maxRotation: 0, autoSkipPadding: 22, font: MONO }
                 }
             },
             plugins: {
@@ -46,22 +50,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     display: legend,
                     position: 'top',
                     align: 'end',
-                    labels: { color: '#8b8b84', boxWidth: 8, boxHeight: 8, padding: 14,
+                    labels: { color: MUTED, boxWidth: 8, boxHeight: 8, padding: 14,
                               font: { family: 'IBM Plex Mono', size: 10 } }
                 },
                 tooltip: {
-                    backgroundColor: '#0b0b0c',
-                    borderColor: 'rgba(236,233,227,0.20)',
+                    backgroundColor: INK,
+                    borderColor: INK,
                     borderWidth: 1,
                     cornerRadius: 2,
                     padding: 10,
                     displayColors: legend,
                     boxWidth: 8, boxHeight: 8,
-                    titleColor: '#8b8b84',
+                    titleColor: '#b9b3a6',
                     titleFont: { family: 'IBM Plex Mono', size: 10, weight: '500' },
-                    bodyColor: '#ece9e3',
+                    bodyColor: PAPER,
                     bodyFont: { family: 'IBM Plex Mono', size: 13, weight: '600' },
-                    footerColor: '#8b8b84',
+                    footerColor: '#b9b3a6',
                     footerFont: { family: 'IBM Plex Mono', size: 10, weight: '400' },
                     callbacks: {
                         label: tooltipLabel || ((c) => c.parsed.y === null ? 'bez záznamu' : String(c.parsed.y)),

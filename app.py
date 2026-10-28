@@ -530,6 +530,7 @@ def index():
 
     return render_template(
         'index.html',
+        today=date.today(),
         weekly_km=round(weekly_km, 1),
         last_hrv=last_hrv,
         avg_hrv_7=round(avg_hrv_7, 1) if avg_hrv_7 is not None else None,
@@ -2238,9 +2239,12 @@ def coach_comment(kind, analysis_id):
 from auth import bp as auth_bp  # noqa: E402
 app.register_blueprint(auth_bp)
 
-import trener, zverenec, planovanie, grafy, stopky, admin_panel, world_athletics  # noqa: E402,E401
-for _module in (trener, zverenec, planovanie, grafy, stopky, admin_panel, world_athletics):
+import trener, zverenec, planovanie, grafy, stopky, admin_panel, world_athletics, pravne  # noqa: E402,E401
+for _module in (trener, zverenec, planovanie, grafy, stopky, admin_panel, world_athletics, pravne):
     app.register_blueprint(_module.bp)
+
+import navigacia  # noqa: E402
+navigacia.init_app(app)   # počty do bočného menu (zverenci, žiadosti, tréningy týždňa)
 
 
 if __name__ == '__main__':

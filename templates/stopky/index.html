@@ -14,7 +14,7 @@
     <div class="flex items-end justify-between flex-wrap gap-5 mb-8">
         <div>
             <p class="eyebrow mb-2">{{ eyebrow }}</p>
-            <h1 class="text-[44px] leading-none font-headline font-extrabold uppercase text-on-surface">{{ title }}</h1>
+            <h1 class="page-title">{{ title }}</h1>
         </div>
         <p class="mono text-[11px] text-on-surface-variant max-w-[48ch] leading-relaxed">
             Medzerník = štart / stop · L = medzičas · R = reset.
@@ -64,22 +64,22 @@
             <!-- Ovládanie kamery -->
             <div class="mt-5 flex flex-wrap gap-2.5">
                 <button type="button" id="btn-cam"
-                        class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">
+                        class="btn btn-secondary">
                     Zapnúť kameru
                 </button>
                 <button type="button" id="btn-calib" disabled
-                        class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">
+                        class="btn btn-secondary">
                     Kalibrovať
                 </button>
-                <button type="button" id="btn-flip" disabled class="hidden border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">
+                <button type="button" id="btn-flip" disabled class="hidden btn btn-secondary">
                     Otočiť kameru
                 </button>
                 <button type="button" id="btn-sound" disabled
-                        class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface-variant hover:text-on-surface transition-colors">
+                        class="btn btn-secondary">
                     Štart na zvuk
                 </button>
                 <button type="button" id="btn-file"
-                        class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">
+                        class="btn btn-secondary">
                     Video zo záznamu
                 </button>
                 <input type="file" id="file-input" accept="video/*" class="hidden">
@@ -197,7 +197,7 @@
             <!-- ── Uloženie výsledku ── -->
             {% if current_user %}
             <form method="POST" action="{{ url_for('stopky.save') }}"
-                  class="mt-4 bg-surface-container border border-white/10 p-5 space-y-4 hidden" id="save-box">
+                  class="mt-4 card p-5 space-y-4 hidden" id="save-box">
                 <div class="flex items-baseline justify-between gap-4">
                     <p class="eyebrow">Uložiť výsledok</p>
                     <p class="mono text-[13px] text-on-surface" id="save-summary">—</p>
@@ -237,7 +237,7 @@
                     <label for="note">Poznámka</label>
                     <textarea id="note" name="note" rows="2" maxlength="500" placeholder="dráha, vietor, tréning…"></textarea>
                 </div>
-                <button type="submit" class="w-full bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]">
+                <button type="submit" class="w-full btn btn-primary">
                     Uložiť výsledok
                 </button>
                 <p class="text-[11px] text-on-surface-variant">
@@ -294,7 +294,7 @@
     <!-- ── Ako to funguje ── -->
     <section class="mt-12">
         <div class="rule"><p class="eyebrow">Ako fotobunka funguje</p></div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-px bg-white/10 border border-white/10">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {% set steps = [
                 ('01', 'Postav kameru alebo nahraj záznam',
                  'Telefón alebo notebook postav kolmo na dráhu, stabilne, s pokojným pozadím za cieľom. Zapni kameru a potiahni čiaru presne na cieľ – môže byť aj šikmá. Alebo nahraj video zo záznamu: čas sa potom meria z časovej stopy videa.'),
@@ -304,7 +304,7 @@
                  'Po štarte je fotobunka počas ochrannej doby nečinná. Keď sa naraz zmení aspoň štvrtina bodov na čiare v dvoch snímkach po sebe, čas sa zastaví.'),
             ] %}
             {% for num, heading, text in steps %}
-            <div class="bg-surface-container px-5 py-6">
+            <div class="card px-5 py-5">
                 <p class="mono text-[11px] text-on-surface-variant mb-4">{{ num }}</p>
                 <p class="font-headline font-bold text-on-surface mb-2">{{ heading }}</p>
                 <p class="text-[13px] text-on-surface-variant leading-relaxed">{{ text }}</p>

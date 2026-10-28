@@ -4,69 +4,79 @@
 {% block content %}
 <main class="pb-8">
 
-    <!-- ── Úvod ── -->
-    <section class="pt-14 pb-12 border-b border-white/10">
-        <p class="eyebrow mb-4">Analýza bežeckej techniky z videa</p>
-        <h1 class="font-headline font-black uppercase leading-[0.88] tracking-[-0.035em]
-                   text-[58px] sm:text-[84px] lg:text-[104px] text-on-surface">
-            Atlet<span style="color:var(--volt)">Coach</span>
-        </h1>
-        <div class="mt-7 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-7">
-            <p class="text-on-surface-variant max-w-[46ch] leading-relaxed">
-                Natoč sa spomalene z boku. Appka z videa vyčíta čas kontaktu so zemou
-                pre každý krok zvlášť, kadenciu aj asymetriu medzi nohami. Biometrika
-                a tréningy zo Stravy k tomu dávajú kontext.
-            </p>
-            <div class="flex flex-wrap gap-2.5">
-                <a href="{{ url_for('video_page') }}"
-                   class="bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]">
-                    Analyzovať video
-                </a>
-                <a href="{{ url_for('hurdles_page') }}"
-                   class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">
-                    Prekážky
-                </a>
-                {% if not strava_logged_in %}
-                <a href="{{ url_for('strava_login') }}"
-                   class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface-variant hover:text-on-surface transition-colors">
-                    Pripojiť Stravu
-                </a>
+    <!-- ── Úvod: dnešok ── -->
+    <section class="card card-hero" style="padding: 28px 32px">
+        <div class="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-8 items-center">
+            <div>
+                <p class="eyebrow" style="color:var(--accent)">Dnes · {{ today.strftime('%d. %m. %Y') if today else '' }}</p>
+                <h1 class="font-headline font-bold text-[32px] sm:text-[40px] leading-[1.05] tracking-[-0.03em] text-on-surface mt-2">
+                    Ahoj, {{ (current_user.full_name or current_user.username).split(' ')[0] }}.
+                </h1>
+                <p class="text-on-surface-variant leading-relaxed mt-4 max-w-[52ch]">
+                    Natoč sa spomalene z boku a appka z videa vyčíta kontakt so zemou pre každý krok, kadenciu
+                    aj asymetriu medzi nohami. Regenerácia a tréningy k tomu dávajú kontext.
+                </p>
+                <div class="flex flex-wrap gap-2.5 mt-6">
+                    <a href="{{ url_for('video_page') }}" class="btn btn-primary">
+                        <span class="material-symbols-outlined" aria-hidden="true">videocam</span>Analyzovať video
+                    </a>
+                    <a href="{{ url_for('planovanie.index') }}" class="btn btn-secondary">Môj plán</a>
+                    {% if not strava_logged_in %}
+                    <a href="{{ url_for('strava_login') }}" class="btn btn-ghost">Pripojiť Stravu</a>
+                    {% else %}
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-ghost">Strava prehľad</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card p-5">
+                <p class="eyebrow mb-3">Regenerácia dnes</p>
+                {% if last_recovery is not none %}
+                <div class="flex items-baseline gap-3">
+                    <span class="score-num">{{ last_recovery }}</span>
+                    <span class="text-on-surface-variant text-[15px]">%</span>
+                </div>
+                <div class="tiny-bar {{ 'good' if last_recovery >= 67 else ('warn' if last_recovery >= 34 else 'bad') }}" aria-hidden="true"><span style="width:{{ last_recovery }}%"></span></div>
+                <p class="text-[13px] text-on-surface-variant mt-3">
+                    {% if last_recovery >= 67 %}Dobre zregenerovaný – vhodný deň na intenzívny tréning.
+                    {% elif last_recovery >= 34 %}Stredná regenerácia – skôr tempové behy alebo technika.
+                    {% else %}Nízka regenerácia – dnes radšej ľahký tréning alebo oddych.{% endif %}
+                    <span class="block mt-1 text-[11px]">Orientačný údaj z HRV, nie zdravotná rada.</span>
+                </p>
                 {% else %}
-                <a href="{{ url_for('dashboard') }}"
-                   class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface-variant hover:text-on-surface transition-colors">
-                    Strava dashboard
-                </a>
+                <p class="font-headline font-semibold text-on-surface text-lg">Zatiaľ bez záznamu</p>
+                <p class="text-[13px] text-on-surface-variant mt-1 mb-4">Zapíš ranné HRV a regeneráciu – appka ti ukáže, ako si na tom dnes.</p>
+                <a href="{{ url_for('log_data') }}" class="btn btn-secondary btn-sm">Zapísať regeneráciu</a>
                 {% endif %}
             </div>
         </div>
     </section>
 
     <!-- ── Posledné meranie techniky ── -->
-    <section class="py-11 border-b border-white/10">
+    <section class="pt-12">
         {% if last_video %}
         <div class="flex items-baseline justify-between flex-wrap gap-3 mb-7">
             <div class="flex items-baseline gap-4 flex-wrap">
                 <p class="eyebrow">Posledné meranie</p>
-                <p class="font-headline font-bold text-xl text-on-surface">{{ last_video.label or 'Meranie' }}</p>
+                <p class="section-title">{{ last_video.label or 'Meranie' }}</p>
             </div>
             <p class="mono text-[11px] text-on-surface-variant">
                 {{ last_video.created_at.strftime('%d.%m.%Y %H:%M') }} ·
                 {{ last_video.steps_detected or 0 }} krokov ·
                 {{ '%.0f'|format(last_video.fps or 0) }} fps
                 {% if last_video.fps and last_video.fps < 100 %}
-                <span style="color:#c98500"> · presnosť len orientačná</span>
+                <span style="color:var(--warn)"> · presnosť len orientačná</span>
                 {% endif %}
             </p>
         </div>
 
-        <div class="grid grid-cols-3 gap-px bg-white/10 border border-white/10">
+        <div class="grid grid-cols-3 gap-3">
             {% set measures = [
                 ('Kontakt so zemou', '%.0f'|format(last_video.contact_ms_mean) if last_video.contact_ms_mean else '—', 'ms'),
                 ('Kadencia',         '%.0f'|format(last_video.cadence_spm) if last_video.cadence_spm else '—', 'krokov/min'),
                 ('Asymetria',        '%.1f'|format(last_video.asymmetry_pct) if last_video.asymmetry_pct is not none else '—', '%'),
             ] %}
             {% for label, value, unit in measures %}
-            <div class="bg-surface-container px-5 py-7">
+            <div class="card px-5 py-6">
                 <p class="eyebrow mb-3">{{ label }}</p>
                 <p class="font-headline font-extrabold leading-none text-[40px] sm:text-[52px]
                           {{ 'text-on-surface' if not loop.first else '' }}"
@@ -89,25 +99,25 @@
             Z frontálneho záberu sa časy kontaktu vyčítať nedajú.
         </p>
         <a href="{{ url_for('video_page') }}"
-           class="inline-block bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]">
+           class="inline-block btn btn-primary">
             Nahrať prvé video
         </a>
         {% endif %}
     </section>
 
     <!-- ── Dnešný stav ── -->
-    <section class="py-11 border-b border-white/10">
+    <section class="pt-12">
         <div class="rule"><p class="eyebrow">Dnešný stav</p></div>
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-px bg-white/10 border border-white/10">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
 
-            <div class="bg-surface-container px-5 py-6">
+            <div class="card px-5 py-5">
                 <p class="eyebrow mb-3">Týždenné km</p>
                 <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">
                     {% if weekly_km > 0 %}{{ weekly_km }}<span class="mono text-xs font-normal text-on-surface-variant ml-1.5">km</span>{% else %}<span class="text-on-surface-variant text-[20px] align-middle">—</span>{% endif %}
                 </p>
             </div>
 
-            <div class="bg-surface-container px-5 py-6">
+            <div class="card px-5 py-5">
                 <p class="eyebrow mb-3">HRV dnes</p>
                 <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">
                     {% if last_hrv %}{{ last_hrv|int }}<span class="mono text-xs font-normal text-on-surface-variant ml-1.5">ms</span>{% else %}<span class="text-on-surface-variant text-[20px] align-middle">—</span>{% endif %}
@@ -115,17 +125,17 @@
                 {% if avg_hrv_7 %}
                 <p class="mono text-[11px] text-on-surface-variant mt-2">
                     7d priemer {{ avg_hrv_7 }} ms
-                    {% if last_hrv and last_hrv > avg_hrv_7 %}<span style="color:#879c26">▲</span>
-                    {% elif last_hrv and last_hrv < avg_hrv_7 %}<span style="color:#e66767">▼</span>{% endif %}
+                    {% if last_hrv and last_hrv > avg_hrv_7 %}<span style="color:var(--success)">▲</span>
+                    {% elif last_hrv and last_hrv < avg_hrv_7 %}<span style="color:var(--danger)">▼</span>{% endif %}
                 </p>
                 {% endif %}
             </div>
 
-            <div class="bg-surface-container px-5 py-6">
-                <p class="eyebrow mb-3">Recovery</p>
+            <div class="card px-5 py-5">
+                <p class="eyebrow mb-3">Regenerácia</p>
                 {% if last_recovery is not none %}
                 <p class="font-headline font-extrabold text-[34px] leading-none"
-                   style="color:{% if last_recovery >= 67 %}#a8c22f{% elif last_recovery >= 34 %}#d9a23a{% else %}#e66767{% endif %}">
+                   style="color:{% if last_recovery >= 67 %}var(--success){% elif last_recovery >= 34 %}var(--warn){% else %}var(--danger){% endif %}">
                     {{ last_recovery }}<span class="mono text-xs font-normal text-on-surface-variant ml-1.5">%</span>
                 </p>
                 <p class="mono text-[11px] text-on-surface-variant mt-2">
@@ -136,7 +146,7 @@
                 {% endif %}
             </div>
 
-            <div class="bg-surface-container px-5 py-6">
+            <div class="card px-5 py-5">
                 <p class="eyebrow mb-3">Pokojový tep</p>
                 <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">
                     {% if last_rhr %}{{ last_rhr }}<span class="mono text-xs font-normal text-on-surface-variant ml-1.5">bpm</span>{% else %}<span class="text-on-surface-variant text-[20px] align-middle">—</span>{% endif %}
@@ -146,7 +156,7 @@
     </section>
 
     <!-- ── Rýchly prístup + posledné záznamy ── -->
-    <section class="py-11 grid grid-cols-1 lg:grid-cols-2 gap-x-14 gap-y-11">
+    <section class="pt-12 grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-10">
 
         <div>
             <div class="rule"><p class="eyebrow">Rýchly prístup</p></div>
@@ -154,8 +164,8 @@
                 ('planovanie.index', 'Plán od trénera',       'Naplánované tréningy a ich splnenie'),
                 ('zverenec.results', 'Výsledky a osobné rekordy', 'Preteky, PB podľa disciplíny'),
                 ('trainings',        'Zaloguj tréning',       'Interval, tempo, šprint'),
-                ('log_data',         'Zaloguj WHOOP dáta',    'HRV, recovery, pokojový tep'),
-                ('ai_portal',        'AI tréner',             'Readiness + chat'),
+                ('log_data',         'Zapíš regeneráciu',     'HRV, regenerácia, pokojový tep'),
+                ('ai_portal',        'AI tréner',             'Pripravenosť + chat'),
                 ('osobaky',          'Strava osobáky',        '400 m, 800 m, 5 km, 10 km…'),
             ] %}
             {% for endpoint, title, sub in links %}
@@ -182,7 +192,7 @@
                     <tr class="border-b border-white/10">
                         <th class="py-2.5 text-left">Dátum</th>
                         <th class="py-2.5 text-right">HRV</th>
-                        <th class="py-2.5 text-right">Recovery</th>
+                        <th class="py-2.5 text-right">Regenerácia</th>
                     </tr>
                 </thead>
                 <tbody class="mono text-[13px]">
@@ -192,7 +202,7 @@
                         <td class="py-3 text-right text-on-surface">{{ log.hrv|int }} ms</td>
                         <td class="py-3 text-right">
                             {% if log.recovery is not none %}
-                            <span style="color:{% if log.recovery >= 67 %}#a8c22f{% elif log.recovery >= 34 %}#d9a23a{% else %}#e66767{% endif %}">{{ log.recovery }} %</span>
+                            <span style="color:{% if log.recovery >= 67 %}var(--success){% elif log.recovery >= 34 %}var(--warn){% else %}var(--danger){% endif %}">{{ log.recovery }} %</span>
                             {% else %}<span class="text-on-surface-variant">—</span>{% endif %}
                         </td>
                     </tr>

@@ -13,7 +13,7 @@
 {% macro pb_table(pbs) %}
 <div class="rule"><p class="eyebrow">Osobné rekordy</p><p class="eyebrow">{{ pbs|length }} disciplín</p></div>
 {% if pbs %}
-<div class="grid grid-cols-2 md:grid-cols-3 gap-px bg-white/10 border border-white/10">
+<div class="grid grid-cols-2 md:grid-cols-3 gap-3">
     {% for r in pbs %}
     <div class="bg-surface-container px-5 py-5">
         <p class="eyebrow mb-3">{{ r.discipline }}</p>
@@ -87,7 +87,7 @@
 
 
 {% macro result_form(action, disciplines, other_discipline, today, heading='Pridať výsledok') %}
-<div class="bg-surface-container border border-white/10 p-6" id="pridat">
+<div class="card p-6" id="pridat">
     <div class="rule"><p class="eyebrow">{{ heading }}</p></div>
     <form method="POST" action="{{ action }}" class="space-y-5">
         <div>
@@ -149,7 +149,7 @@
             <textarea id="note" name="note" rows="2" placeholder="Podmienky, pocity, tretry…"></textarea>
         </div>
 
-        <button type="submit" class="w-full bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]">Pridať výsledok</button>
+        <button type="submit" class="w-full btn btn-primary">Pridať výsledok</button>
     </form>
 </div>
 <script>

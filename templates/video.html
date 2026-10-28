@@ -7,7 +7,7 @@
     <!-- ── Hlavička ── -->
     <div class="mb-8 page-content">
         <p class="eyebrow mb-2">Biomechanika</p>
-        <h2 class="text-4xl md:text-5xl font-headline font-extrabold tracking-tight text-on-surface">ANALÝZA VIDEA</h2>
+        <h1 class="page-title">Analýza videa</h1>
         <p class="text-sm text-on-surface-variant mt-2 max-w-2xl">
             Nahraj video svojho behu a appka z neho vyčíta <strong class="text-on-surface">čas kontaktu so zemou</strong>,
             letovú fázu, frekvenciu, dĺžku kroku, uhly v kĺboch a odhad rýchlosti — krok po kroku, pre ľavú aj pravú nohu.
@@ -27,7 +27,7 @@
         <!-- ══ ĽAVÝ STĹPEC: nahrávanie ══ -->
         <div class="lg:col-span-1 space-y-5">
 
-            <div class="bg-surface-container-high rounded-3xl p-6 card-enter delay-1">
+            <div class="card rounded-3xl p-6 card-enter delay-1">
                 <h3 class="font-headline font-bold text-lg mb-4">Nahrať video</h3>
 
                 <form id="video-form" class="space-y-4">
@@ -140,7 +140,7 @@
             </div>
 
             <!-- ── Ako natáčať ── -->
-            <div class="bg-surface-container-high rounded-3xl p-6 card-enter delay-2">
+            <div class="card rounded-3xl p-6 card-enter delay-2">
                 <h3 class="font-headline font-bold text-lg mb-3 flex items-center gap-2">
                     <span class="material-symbols-outlined text-primary">tips_and_updates</span>
                     Ako natáčať
@@ -161,7 +161,7 @@
             </div>
 
             <!-- ── História ── -->
-            <div class="bg-surface-container-high rounded-3xl p-6 card-enter delay-3">
+            <div class="card rounded-3xl p-6 card-enter delay-3">
                 <h3 class="font-headline font-bold text-lg mb-3">História meraní</h3>
                 <div id="history-list" class="space-y-2">
                     {% if history %}
@@ -196,7 +196,7 @@
 
         <!-- ══ PRAVÝ STĹPEC: výsledky ══ -->
         <div class="lg:col-span-2">
-            <div id="empty-state" class="bg-surface-container-high rounded-3xl p-10 text-center card-enter delay-2">
+            <div id="empty-state" class="card rounded-3xl p-10 text-center card-enter delay-2">
                 <span class="material-symbols-outlined text-5xl text-on-surface-variant">timeline</span>
                 <p class="font-headline font-bold text-lg mt-3">Zatiaľ tu nič nie je</p>
                 <p class="text-sm text-on-surface-variant mt-1 max-w-md mx-auto">
@@ -221,7 +221,7 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="stat-grid"></div>
 
                 <!-- hodnotenie techniky -->
-                <div class="bg-surface-container-high rounded-3xl p-5">
+                <div class="card rounded-3xl p-5">
                     <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
                         <div>
                             <h3 class="font-headline font-bold text-lg">Hodnotenie techniky</h3>
@@ -238,7 +238,7 @@
                 </div>
 
                 <!-- AI tréner -->
-                <div class="bg-surface-container-high rounded-3xl p-5">
+                <div class="card rounded-3xl p-5">
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <div>
                             <h3 class="font-headline font-bold text-lg">AI tréner</h3>
@@ -256,7 +256,7 @@
                 </div>
 
                 <!-- kľúčové momenty -->
-                <div id="keyframes-box" class="hidden bg-surface-container-high rounded-3xl p-5">
+                <div id="keyframes-box" class="hidden card rounded-3xl p-5">
                     <h3 class="font-headline font-bold text-lg mb-1">Kľúčové momenty s uhlami</h3>
                     <p class="text-xs text-on-surface-variant mb-4">
                         Dopad a odraz vybraných krokov. Oranžový/modrý oblúk = uhol v kolene (180° = vystreté),
@@ -267,7 +267,7 @@
                 </div>
 
                 <!-- video s kostrou -->
-                <div id="overlay-box" class="hidden bg-surface-container-high rounded-3xl p-5">
+                <div id="overlay-box" class="hidden card rounded-3xl p-5">
                     <h3 class="font-headline font-bold text-lg mb-3">Video s kostrou a uhlami</h3>
                     <video id="overlay-video" controls playsinline class="w-full rounded-2xl bg-black"></video>
                     <p class="text-xs text-on-surface-variant mt-2">
@@ -278,7 +278,7 @@
                 </div>
 
                 <!-- graf -->
-                <div class="bg-surface-container-high rounded-3xl p-5">
+                <div class="card rounded-3xl p-5">
                     <h3 class="font-headline font-bold text-lg mb-1">Krok po kroku</h3>
                     <p class="text-xs text-on-surface-variant mb-4">
                         Kontakt so zemou (stĺpce) a letová fáza (čiara). Rovnomerná výška stĺpcov = stabilná technika.
@@ -287,13 +287,13 @@
                 </div>
 
                 <!-- porovnanie nôh -->
-                <div class="bg-surface-container-high rounded-3xl p-5">
+                <div class="card rounded-3xl p-5">
                     <h3 class="font-headline font-bold text-lg mb-4">Ľavá vs. pravá</h3>
                     <div id="legs-box" class="space-y-3"></div>
                 </div>
 
                 <!-- tabuľka -->
-                <div class="bg-surface-container-high rounded-3xl p-5">
+                <div class="card rounded-3xl p-5">
                     <h3 class="font-headline font-bold text-lg mb-1">Detail krokov</h3>
                     <p class="text-xs text-on-surface-variant mb-4">
                         Stĺpec <strong class="text-on-surface">Kontakt</strong> je výsledok z polohy kostry,
@@ -758,7 +758,7 @@
             return '<tr class="border-b border-white/5">' +
                 '<td class="py-2 pr-4 text-on-surface-variant">' + st.index + '</td>' +
                 '<td class="py-2 pr-4"><span class="px-2 py-0.5 rounded-lg text-xs font-bold" style="background:' +
-                    (st.side_code === 'L' ? 'rgba(135,156,38,0.35);color:#ece9e3' : 'rgba(57,135,229,0.35);color:#ece9e3') +
+                    (st.side_code === 'L' ? 'rgba(46,125,79,0.14);color:#236b41' : 'rgba(31,111,139,0.14);color:#185a71') +
                     '">' + st.side + '</span></td>' +
                 '<td class="py-2 pr-4 text-right text-on-surface-variant">' + st.touchdown_s.toFixed(3) + '</td>' +
                 '<td class="py-2 pr-4 text-right font-bold">' + fmt(st.contact_ms, ' ms', 1) + '</td>' +

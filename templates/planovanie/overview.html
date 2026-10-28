@@ -9,20 +9,20 @@
     <div class="flex items-end justify-between flex-wrap gap-5 mb-9">
         <div>
             <p class="eyebrow mb-2">Plán · posledných {{ past_days }} dní · {{ since|plan_date }} – {{ today|plan_date }}</p>
-            <h1 class="text-[44px] leading-none font-headline font-extrabold uppercase text-on-surface">Prehľad splnenia</h1>
+            <h1 class="page-title">Prehľad splnenia</h1>
         </div>
         <a href="{{ url_for('planovanie.index') }}"
-           class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">Kalendár</a>
+           class="btn btn-secondary">Kalendár</a>
     </div>
 
     <!-- ── Čísla ── -->
-    <div class="grid grid-cols-3 gap-px bg-white/10 border border-white/10">
-        <div class="bg-surface-container px-5 py-6">
+    <div class="grid grid-cols-3 gap-3">
+        <div class="card px-5 py-5">
             <p class="eyebrow mb-3">Naplánované</p>
             <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">{{ totals.planned }}</p>
             <p class="mono text-[11px] text-on-surface-variant mt-2">s termínom do dnes</p>
         </div>
-        <div class="bg-surface-container px-5 py-6">
+        <div class="card px-5 py-5">
             <p class="eyebrow mb-3">Splnené</p>
             {% if totals.pct is not none %}
             <p class="font-headline font-extrabold text-[34px] leading-none" style="color:var(--volt)">
@@ -34,10 +34,10 @@
             <p class="mono text-[11px] text-on-surface-variant mt-2">žiadne uplynulé tréningy</p>
             {% endif %}
         </div>
-        <div class="bg-surface-container px-5 py-6">
+        <div class="card px-5 py-5">
             <p class="eyebrow mb-3">Nesplnené po termíne</p>
             <p class="font-headline font-extrabold text-[34px] leading-none {% if not totals.missed %}text-on-surface{% endif %}"
-               {% if totals.missed %}style="color:#e66767"{% endif %}>{{ totals.missed }}</p>
+               {% if totals.missed %}style="color:var(--danger)"{% endif %}>{{ totals.missed }}</p>
         </div>
     </div>
 
@@ -70,10 +70,10 @@
                         </td>
                         <td class="py-3 text-right mono text-on-surface">{{ r.planned }}</td>
                         <td class="py-3 text-right mono text-on-surface">{{ r.done }}</td>
-                        <td class="py-3 text-right mono {% if not r.missed %}text-on-surface-variant{% endif %}" {% if r.missed %}style="color:#e66767"{% endif %}>{{ r.missed }}</td>
+                        <td class="py-3 text-right mono {% if not r.missed %}text-on-surface-variant{% endif %}" {% if r.missed %}style="color:var(--danger)"{% endif %}>{{ r.missed }}</td>
                         <td class="py-3 text-right mono">
                             {% if r.pct is none %}<span class="text-on-surface-variant">—</span>
-                            {% else %}<span style="color:{% if r.pct >= 80 %}#a8c22f{% elif r.pct >= 50 %}#d9a23a{% else %}#e66767{% endif %}">{{ r.pct }} %</span>{% endif %}
+                            {% else %}<span style="color:{% if r.pct >= 80 %}var(--success){% elif r.pct >= 50 %}#d9a23a{% else %}var(--danger){% endif %}">{{ r.pct }} %</span>{% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -84,7 +84,7 @@
             {% endif %}
 
             {% if missed_list %}
-            <div class="rule mt-10"><p class="eyebrow" style="color:#e66767">Nesplnené po termíne</p></div>
+            <div class="rule mt-10"><p class="eyebrow" style="color:var(--danger)">Nesplnené po termíne</p></div>
             <ul class="text-[13px]">
                 {% for p in missed_list %}
                 <li class="flex items-baseline justify-between gap-4 py-2.5 border-b border-white/5">
@@ -92,7 +92,7 @@
                         <a href="{{ url_for('planovanie.day', iso=p.date.isoformat(), athlete_id=(p.athlete_id if is_planner else None)) }}" class="text-on-surface hover:text-[color:var(--volt)] transition-colors">{{ p.title }}</a>
                         {% if is_planner %}<span class="mono text-on-surface-variant ml-2">{{ p.athlete.username if p.athlete else '—' }}</span>{% endif %}
                     </span>
-                    <span class="mono text-[12px] flex-shrink-0" style="color:#e66767">{{ p.date|plan_date }}</span>
+                    <span class="mono text-[12px] flex-shrink-0" style="color:var(--danger)">{{ p.date|plan_date }}</span>
                 </li>
                 {% endfor %}
             </ul>
@@ -112,7 +112,7 @@
                 <a href="{{ url_for('planovanie.day', iso=p.date.isoformat(), athlete_id=(p.athlete_id if is_planner else None)) }}"
                    class="group flex items-baseline justify-between gap-4 py-2.5 border-b border-white/5 hover:border-white/25 transition-colors">
                     <span class="min-w-0 truncate {% if p.completed %}text-on-surface-variant{% else %}text-on-surface{% endif %} group-hover:text-[color:var(--volt)] transition-colors">
-                        {% if p.completed %}<span style="color:#a8c22f">✓</span> {% endif %}{{ p.title }}
+                        {% if p.completed %}<span style="color:var(--success)">✓</span> {% endif %}{{ p.title }}
                     </span>
                     {% if is_planner %}<span class="mono text-[12px] text-on-surface-variant flex-shrink-0">{{ p.athlete.username if p.athlete else '—' }}</span>{% endif %}
                 </a>

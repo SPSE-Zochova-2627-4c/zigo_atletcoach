@@ -6,14 +6,14 @@
     <div class="mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
         <div>
             <p class="eyebrow mb-2">World Athletics · {{ athlete.display_name }}</p>
-            <h1 class="text-[44px] leading-none font-headline font-extrabold uppercase text-on-surface">Import rekordov</h1>
+            <h1 class="page-title">Import rekordov</h1>
             <p class="text-[13px] text-on-surface-variant mt-3 leading-relaxed max-w-[60ch]">
                 Vyhľadaj zverenca na worldathletics.org a načítaj jeho osobné rekordy v bežeckých disciplínach.
                 Pred uložením uvidíš náhľad – nič sa neimportuje bez potvrdenia.
             </p>
         </div>
         <a href="{{ url_for('trener.athlete_detail', athlete_id=athlete.id) }}"
-           class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors self-start lg:self-auto">
+           class="btn btn-secondary self-start lg:self-auto">
             ← Detail zverenca
         </a>
     </div>
@@ -24,7 +24,7 @@
         <div class="lg:col-span-5">
             <div class="rule"><p class="eyebrow">Hľadať atléta</p></div>
             <form method="GET" action="{{ url_for('wa.search_page', athlete_id=athlete.id) }}"
-                  class="bg-surface-container border border-white/10 p-6 space-y-5">
+                  class="card p-6 space-y-5">
                 <div>
                     <label for="q">Meno, WA ID alebo URL profilu</label>
                     <input type="text" id="q" name="q" value="{{ query }}" maxlength="120"
@@ -34,7 +34,7 @@
                         worldathletics.org/athletes/… otvorí náhľad priamo.
                     </p>
                 </div>
-                <button type="submit" class="w-full bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]">
+                <button type="submit" class="w-full btn btn-primary">
                     Hľadať na World Athletics
                 </button>
             </form>
@@ -42,7 +42,7 @@
             {% if athlete.world_athletics_id %}
             <div class="mt-8">
                 <div class="rule"><p class="eyebrow">Priradený profil</p></div>
-                <div class="bg-surface-container border border-white/10 p-6">
+                <div class="card p-6">
                     <p class="eyebrow mb-2">World Athletics ID</p>
                     <p class="mono text-[20px] text-on-surface">{{ athlete.world_athletics_id }}</p>
                     <p class="text-[13px] text-on-surface-variant mt-2">
@@ -50,13 +50,13 @@
                     </p>
                     <div class="mt-5 flex flex-wrap gap-2.5">
                         <form method="POST" action="{{ url_for('wa.refresh', athlete_id=athlete.id) }}">
-                            <button type="submit" class="bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]">
+                            <button type="submit" class="btn btn-primary">
                                 Obnoviť z WA
                             </button>
                         </form>
                         <form method="POST" action="{{ url_for('wa.preview', athlete_id=athlete.id) }}">
                             <input type="hidden" name="wa_id" value="{{ athlete.world_athletics_id }}">
-                            <button type="submit" class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">
+                            <button type="submit" class="btn btn-secondary">
                                 Náhľad
                             </button>
                         </form>
@@ -91,7 +91,7 @@
             </p>
 
             {% elif not results %}
-            <div class="bg-surface-container border border-white/10 p-6">
+            <div class="card p-6">
                 <p class="font-headline font-bold text-on-surface mb-2">Nič sa nenašlo</p>
                 <p class="text-[13px] text-on-surface-variant leading-relaxed">
                     Skús priezvisko bez diakritiky alebo vlož priamo ID či URL profilu z worldathletics.org.

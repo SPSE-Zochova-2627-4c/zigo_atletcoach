@@ -11,7 +11,7 @@
             <p class="eyebrow mb-2">
                 Kalendár{% if athlete and aid %} · {{ athlete.display_name }}{% elif not is_planner %} · môj plán{% endif %}
             </p>
-            <h1 class="text-[44px] leading-none font-headline font-extrabold uppercase text-on-surface">Plán tréningov</h1>
+            <h1 class="page-title">Plán tréningov</h1>
         </div>
         <div class="flex flex-wrap items-end gap-2.5">
             {% if choices %}
@@ -27,17 +27,17 @@
                     </select>
                 </div>
                 <noscript>
-                    <button type="submit" class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">Zobraziť</button>
+                    <button type="submit" class="btn btn-secondary">Zobraziť</button>
                 </noscript>
             </form>
             {% endif %}
             <a href="{{ url_for('planovanie.overview') }}"
-               class="border border-white/15 hover:border-white/35 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">
+               class="btn btn-secondary">
                 Prehľad splnenia
             </a>
             {% if is_planner %}
             <a href="{{ url_for('planovanie.week_form') }}"
-               class="bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]">
+               class="btn btn-primary">
                 Týždenný plán z textu
             </a>
             {% endif %}
@@ -51,7 +51,7 @@
         Pridaj zverenca v sekcii Zverenci a počkaj, kým vzťah potvrdí. Potom sa tu objaví jeho kalendár,
         do ktorého mu naplánuješ tréningy.
     </p>
-    <a href="{{ url_for('trener.athletes') }}" class="inline-block bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]">Zverenci</a>
+    <a href="{{ url_for('trener.athletes') }}" class="inline-block btn btn-primary">Zverenci</a>
     {% else %}
 
     <!-- ── Mesiac ── -->
@@ -75,7 +75,7 @@
     </div>
 
     <!-- ── Mriežka Po–Ne ── -->
-    <div class="grid grid-cols-7 gap-px bg-white/10 border border-white/10">
+    <div class="grid grid-cols-7 gap-3">
         {% for d in WEEKDAYS_SHORT_SK %}
         <div class="bg-surface-container-low px-2 py-2 eyebrow">{{ d }}</div>
         {% endfor %}
@@ -119,24 +119,24 @@
     <!-- ── Čísla za mesiac ── -->
     <section class="mt-11">
         <div class="rule"><p class="eyebrow">{{ month_name }} {{ year }} v číslach</p></div>
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-px bg-white/10 border border-white/10">
-            <div class="bg-surface-container px-5 py-6">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="card px-5 py-5">
                 <p class="eyebrow mb-3">Naplánované</p>
                 <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">{{ stats.planned }}</p>
             </div>
-            <div class="bg-surface-container px-5 py-6">
+            <div class="card px-5 py-5">
                 <p class="eyebrow mb-3">Splnené</p>
                 <p class="font-headline font-extrabold text-[34px] leading-none" style="color:var(--volt)">{{ stats.done }}</p>
                 {% if stats.planned %}
                 <p class="mono text-[11px] text-on-surface-variant mt-2">{{ (100 * stats.done / stats.planned)|round|int }} % z plánu</p>
                 {% endif %}
             </div>
-            <div class="bg-surface-container px-5 py-6">
+            <div class="card px-5 py-5">
                 <p class="eyebrow mb-3">Nesplnené po termíne</p>
                 <p class="font-headline font-extrabold text-[34px] leading-none {% if stats.missed == 0 %}text-on-surface{% endif %}"
-                   {% if stats.missed %}style="color:#e66767"{% endif %}>{{ stats.missed }}</p>
+                   {% if stats.missed %}style="color:var(--danger)"{% endif %}>{{ stats.missed }}</p>
             </div>
-            <div class="bg-surface-container px-5 py-6">
+            <div class="card px-5 py-5">
                 <p class="eyebrow mb-3">Zápisy v denníku</p>
                 <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">{{ stats.logs }}</p>
             </div>

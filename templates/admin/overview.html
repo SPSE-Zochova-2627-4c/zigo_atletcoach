@@ -8,18 +8,18 @@
     <div class="flex items-end justify-between flex-wrap gap-5 mb-9">
         <div>
             <p class="eyebrow mb-2">Administrátor · stav aplikácie</p>
-            <h1 class="text-[44px] leading-none font-headline font-extrabold uppercase text-on-surface">Prehľad systému</h1>
+            <h1 class="page-title">Prehľad systému</h1>
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
             <a href="{{ url_for('admin_panel.users') }}"
-               class="bg-primary px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em]">Používatelia</a>
+               class="btn btn-primary">Používatelia</a>
             <p class="mono text-[11px] text-on-surface-variant">{{ now.strftime('%d.%m.%Y %H:%M') }}</p>
         </div>
     </div>
 
     <!-- ── Účty ── -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/10 border border-white/10">
-        <div class="bg-surface-container px-5 py-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="card px-5 py-5">
             <p class="eyebrow mb-3">Účty spolu</p>
             <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">{{ totals.users }}</p>
             {% if totals.must_change %}
@@ -27,12 +27,12 @@
             {% endif %}
         </div>
         {% for r in ROLE_ORDER %}
-        <div class="bg-surface-container px-5 py-6">
+        <div class="card px-5 py-5">
             <p class="eyebrow mb-3">{{ ROLE_LABELS[r] }}{% if r != 'admin' %}i{% endif %}</p>
             <p class="font-headline font-extrabold text-[34px] leading-none {{ 'text-on-surface' if r != 'admin' else '' }}"
                {% if r == 'admin' %}style="color:var(--volt)"{% endif %}>{{ role_counts.get(r, 0) }}</p>
             {% if r == 'zverenec' and totals.pending_links %}
-            <p class="mono text-[11px] mt-2" style="color:#c98500">{{ totals.pending_links }} nepotvrdených trénerov</p>
+            <p class="mono text-[11px] mt-2" style="color:var(--warn)">{{ totals.pending_links }} nepotvrdených trénerov</p>
             {% endif %}
         </div>
         {% endfor %}
@@ -41,7 +41,7 @@
     <!-- ── Dáta ── -->
     <section class="mt-11">
         <div class="rule"><p class="eyebrow">Údaje v databáze</p></div>
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-px bg-white/10 border border-white/10">
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
             {% for label, value, sub in [
                 ('Tréningy', totals.trainings, none),
                 ('Výsledky', totals.results, none),
@@ -147,7 +147,7 @@
                     </tr>
                     <tr class="border-b border-white/5">
                         <td class="py-3 text-on-surface-variant">Debug režim</td>
-                        <td class="py-3 text-right mono" style="color:{{ '#c98500' if environment.debug else '#a8c22f' }}">
+                        <td class="py-3 text-right mono" style="color:{{ 'var(--warn)' if environment.debug else 'var(--success)' }}">
                             {{ 'zapnutý' if environment.debug else 'vypnutý' }}
                         </td>
                     </tr>
@@ -158,7 +158,7 @@
                             <p class="mono text-[10px] text-on-surface-variant/70">{{ environment.mediapipe.text }}</p>
                             {% endif %}
                         </td>
-                        <td class="py-3 text-right mono align-top" style="color:{{ '#a8c22f' if environment.mediapipe.ok else '#e66767' }}">
+                        <td class="py-3 text-right mono align-top" style="color:{{ 'var(--success)' if environment.mediapipe.ok else 'var(--danger)' }}">
                             {{ 'dostupná' if environment.mediapipe.ok else 'nedostupná' }}
                         </td>
                     </tr>
@@ -177,7 +177,7 @@
                             {{ label }}
                             <p class="mono text-[10px] text-on-surface-variant/70">{{ name }}</p>
                         </td>
-                        <td class="py-3 text-right mono align-top" style="color:{{ '#a8c22f' if ok else '#c98500' }}">
+                        <td class="py-3 text-right mono align-top" style="color:{{ 'var(--success)' if ok else 'var(--warn)' }}">
                             {{ 'nastavený' if ok else 'chýba' }}
                         </td>
                     </tr>

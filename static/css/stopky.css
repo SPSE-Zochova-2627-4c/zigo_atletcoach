@@ -4,7 +4,7 @@
 /* ── Kamera + plátno s čiarou ── */
 .cam-wrap {
     position: relative;
-    background: #101011;
+    background: var(--bg-elev);
     border: 1px solid var(--line);
     aspect-ratio: 16 / 9;          /* JS prepíše podľa skutočného pomeru kamery */
     overflow: hidden;
@@ -42,11 +42,11 @@
     pointer-events: none;
 }
 .state-label {
-    color: rgba(139,139,132,0.55);
+    color: var(--muted);
     padding: 3px 6px;
     background: rgba(11,11,12,0.72);
 }
-.state-label.on { color: #ece9e3; }
+.state-label.on { color: var(--text); }
 .state-label.on.volt { color: var(--volt); }
 
 .cam-msg {
@@ -57,7 +57,7 @@
     justify-content: center;
     text-align: center;
     padding: 40px 24px 24px;       /* miesto pre stavové popisky hore */
-    background: #101011;
+    background: var(--bg-elev);
 }
 .cam-wrap.cam-on .cam-msg { display: none; }
 
@@ -65,12 +65,12 @@
 .activity {
     position: relative;
     height: 4px;
-    background: rgba(236,233,227,0.08);
+    background: var(--track);
 }
 .activity-fill {
     height: 100%;
     width: 0;
-    background: #8b8b84;
+    background: var(--muted);
     transition: width 60ms linear;
 }
 .activity-fill.hot { background: var(--volt); }
@@ -134,11 +134,11 @@
 .time.running { color: var(--volt); }
 
 .laps { max-height: 220px; overflow-y: auto; }
-.laps li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid rgba(236,233,227,0.05); }
+.laps li { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--border); }
 .laps li:last-child { border-bottom: none; }
-.laps .lap-idx { color: #8b8b84; width: 2.5ch; }
-.laps .lap-split { color: #ece9e3; }
-.laps .lap-total { color: #8b8b84; }
+.laps .lap-idx { color: var(--muted); width: 2.5ch; }
+.laps .lap-split { color: var(--text); }
+.laps .lap-total { color: var(--muted); }
 
 /* Tlačidlo „Štart na zvuk“ počas čakania na tlesknutie. */
 .stopky button.listening {
