@@ -1,21 +1,26 @@
+/* Staršie štýly z prvej verzie appky. Žiadna šablóna ich momentálne nenačítava
+   (vzhľad definuje templates/base.html); tokeny sú zladené s dizajnovým systémom
+   AtletCoach – svetlý papierový podklad, atramentový text, jeden červený akcent,
+   IBM Plex – aby pri prípadnom použití nerozbili kontrast ani vzhľad. */
 :root {
-    --bg-color: #f0f0f5;
+    --bg-color: #f3f1ea;
     --card-bg: #ffffff;
-    --card-border: #d9d9e0;
-    --primary-color: #fc4c02; /* Strava Orange */
-    --primary-hover: #e04302;
-    --text-main: #242428;
-    --text-muted: #6d6d78;
-    --accent: #22d3ee;
-    --success: #10b981;
-    --danger: #ef4444;
+    --card-border: #e1dccf;
+    --primary-color: #15140f;      /* atrament – hlavné tlačidlo */
+    --primary-hover: #2a2822;
+    --text-main: #15140f;
+    --text-muted: #655f53;         /* 6,3:1 na bielej */
+    --accent: #c8381d;             /* 5,2:1 na bielej */
+    --accent-text: #a82d15;        /* 6,9:1 na bielej */
+    --success: #2e7d4f;
+    --danger: #b3261e;
 }
 
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
 }
 
 body {
@@ -30,13 +35,13 @@ body {
 .glass-panel {
     background: var(--card-bg);
     border: 1px solid var(--card-border);
-    border-radius: 12px;
+    border-radius: 6px;
     padding: 24px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 1px 2px rgba(21, 20, 15, 0.05);
 }
 
 .glass-header {
-    background: #ffffff;
+    background: var(--card-bg);
     border-bottom: 1px solid var(--card-border);
     padding: 16px 32px;
     display: flex;
@@ -45,14 +50,13 @@ body {
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .brand {
     font-size: 1.5rem;
-    font-weight: 800;
+    font-weight: 700;
     letter-spacing: -0.5px;
-    color: var(--primary-color) !important;
+    color: var(--text-main) !important;
 }
 
 .nav-links a {
@@ -60,11 +64,11 @@ body {
     text-decoration: none;
     margin-left: 24px;
     font-weight: 600;
-    transition: color 0.2s ease;
+    transition: color 0.12s linear;
 }
 
 .nav-links a:hover, .nav-links a.active {
-    color: var(--primary-color);
+    color: var(--accent-text);
 }
 
 /* Main Layout */
@@ -99,44 +103,48 @@ body {
     color: var(--text-muted);
     font-size: 0.9rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.01em;
 }
 
 .form-control {
     width: 100%;
-    background: #ffffff;
-    border: 1px solid var(--card-border);
+    background: var(--card-bg);
+    border: 1px solid #c9c2b2;
     color: var(--text-main);
     padding: 12px 16px;
-    border-radius: 6px;
+    border-radius: 4px;
     font-size: 1rem;
-    transition: all 0.2s ease;
+    transition: border-color 0.12s linear, box-shadow 0.12s linear;
 }
 
 .form-control:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(252, 76, 2, 0.15);
+    box-shadow: 0 0 0 3px rgba(21, 20, 15, 0.12);
 }
 
 /* Buttons */
 .btn {
     display: inline-block;
     padding: 12px 24px;
-    border-radius: 6px;
+    border-radius: 4px;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    border: none;
-    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    transition: background 0.12s linear, color 0.12s linear, border-color 0.12s linear;
     text-align: center;
     text-decoration: none;
 }
 
+.btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
 .btn-primary {
     background: var(--primary-color);
-    color: white;
+    color: var(--bg-color);
 }
 
 .btn-primary:hover {
@@ -144,12 +152,13 @@ body {
 }
 
 .btn-accent {
-    background: var(--text-main);
-    color: white;
+    background: var(--card-bg);
+    color: var(--text-main);
+    border-color: #c9c2b2;
 }
 
 .btn-accent:hover {
-    background: #000000;
+    background: #ebe8df;
 }
 
 .btn-block {
@@ -184,9 +193,9 @@ h2 {
 
 .time-display {
     font-size: 5rem;
-    font-weight: 800;
+    font-weight: 700;
     letter-spacing: -2px;
-    color: var(--primary-color);
+    color: var(--text-main);
     margin: 16px 0;
-    transition: opacity 0.3s ease;
+    font-variant-numeric: tabular-nums;
 }
