@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Prehľad systému · AtletCoach{% endblock %}
 
+{% set ROLE_PLURAL = {'zverenec': 'Zverenci', 'trener': 'Tréneri', 'admin': 'Administrátori'} %}
+
 {% block content %}
 <main class="mt-10 pb-12">
 
@@ -28,11 +30,11 @@
         </div>
         {% for r in ROLE_ORDER %}
         <div class="card px-5 py-5">
-            <p class="eyebrow mb-3">{{ ROLE_LABELS[r] }}{% if r != 'admin' %}i{% endif %}</p>
+            <p class="eyebrow mb-3">{{ ROLE_PLURAL.get(r, ROLE_LABELS[r]) }}</p>
             <p class="font-headline font-extrabold text-[34px] leading-none {{ 'text-on-surface' if r != 'admin' else '' }}"
                {% if r == 'admin' %}style="color:var(--volt)"{% endif %}>{{ role_counts.get(r, 0) }}</p>
             {% if r == 'zverenec' and totals.pending_links %}
-            <p class="mono text-[11px] mt-2" style="color:var(--warn)">{{ totals.pending_links }} nepotvrdených trénerov</p>
+            <p class="mono text-[11px] mt-2" style="color:var(--warn-text)">{{ totals.pending_links }} nepotvrdených trénerov</p>
             {% endif %}
         </div>
         {% endfor %}
@@ -66,14 +68,14 @@
         <div>
             <div class="rule">
                 <p class="eyebrow">Posledné registrácie</p>
-                <a href="{{ url_for('admin_panel.users') }}" class="eyebrow hover:text-on-surface transition-colors">Všetci →</a>
+                <a href="{{ url_for('admin_panel.users') }}" class="eyebrow hover:text-on-surface transition-colors">Všetci<span class="sr-only"> používatelia</span> <span aria-hidden="true">→</span></a>
             </div>
             <table class="w-full">
                 <thead>
                     <tr class="border-b border-white/10">
-                        <th class="py-2.5 text-left">Používateľ</th>
-                        <th class="py-2.5 text-left">Rola</th>
-                        <th class="py-2.5 text-right">Vytvorený</th>
+                        <th scope="col" class="py-2.5 text-left">Používateľ</th>
+                        <th scope="col" class="py-2.5 text-left">Rola</th>
+                        <th scope="col" class="py-2.5 text-right">Vytvorený</th>
                     </tr>
                 </thead>
                 <tbody class="text-[13px]">
@@ -84,7 +86,7 @@
                                class="mono text-on-surface hover:text-[color:var(--volt)] transition-colors">{{ u.username }}</a>
                             {% if u.full_name %}<span class="text-on-surface-variant ml-2">{{ u.full_name }}</span>{% endif %}
                         </td>
-                        <td class="py-3"><span class="eyebrow">{{ u.role_label }}</span></td>
+                        <td class="py-3"><span class="chip {% if u.is_admin %}accent{% elif u.is_coach %}info{% endif %}"><span class="dot" aria-hidden="true"></span>{{ u.role_label }}</span></td>
                         <td class="py-3 text-right mono text-on-surface-variant">{{ u.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
                     </tr>
                     {% endfor %}
@@ -96,12 +98,18 @@
         <div>
             <div class="rule"><p class="eyebrow">Disk a databáza</p></div>
             <table class="w-full">
+                <thead>
+                    <tr class="border-b border-white/10">
+                        <th scope="col" class="py-2.5 text-left">Úložisko</th>
+                        <th scope="col" class="py-2.5 text-right">Veľkosť</th>
+                    </tr>
+                </thead>
                 <tbody class="text-[13px]">
                     {% for s in storage %}
                     <tr class="border-b border-white/5">
                         <td class="py-3 text-on-surface-variant">
                             Videá{% if loop.index > 1 %} (starý adresár){% endif %}
-                            <p class="mono text-[10px] text-on-surface-variant/70 break-all">{{ s.path }}</p>
+                            <p class="mono text-[10px] text-on-surface-variant break-all">{{ s.path }}</p>
                         </td>
                         <td class="py-3 text-right mono text-on-surface whitespace-nowrap align-top">
                             {{ s.size_text }}
@@ -112,7 +120,7 @@
                     <tr class="border-b border-white/5">
                         <td class="py-3 text-on-surface-variant">
                             Databáza
-                            <p class="mono text-[10px] text-on-surface-variant/70 break-all">{{ dbinfo.path }}</p>
+                            <p class="mono text-[10px] text-on-surface-variant break-all">{{ dbinfo.path }}</p>
                         </td>
                         <td class="py-3 text-right mono text-on-surface whitespace-nowrap align-top">{{ dbinfo.size_text }}</td>
                     </tr>
@@ -128,6 +136,12 @@
         <div>
             <div class="rule"><p class="eyebrow">Prostredie</p></div>
             <table class="w-full">
+                <thead>
+                    <tr class="border-b border-white/10">
+                        <th scope="col" class="py-2.5 text-left">Súčasť</th>
+                        <th scope="col" class="py-2.5 text-right">Verzia / stav</th>
+                    </tr>
+                </thead>
                 <tbody class="text-[13px]">
                     <tr class="border-b border-white/5">
                         <td class="py-3 text-on-surface-variant">Python</td>
@@ -147,7 +161,7 @@
                     </tr>
                     <tr class="border-b border-white/5">
                         <td class="py-3 text-on-surface-variant">Debug režim</td>
-                        <td class="py-3 text-right mono" style="color:{{ 'var(--warn)' if environment.debug else 'var(--success)' }}">
+                        <td class="py-3 text-right mono" style="color:{{ 'var(--warn-text)' if environment.debug else 'var(--success-text)' }}">
                             {{ 'zapnutý' if environment.debug else 'vypnutý' }}
                         </td>
                     </tr>
@@ -155,10 +169,10 @@
                         <td class="py-3 text-on-surface-variant">
                             Analýza videa (OpenCV + MediaPipe)
                             {% if not environment.mediapipe.ok %}
-                            <p class="mono text-[10px] text-on-surface-variant/70">{{ environment.mediapipe.text }}</p>
+                            <p class="mono text-[10px] text-on-surface-variant">{{ environment.mediapipe.text }}</p>
                             {% endif %}
                         </td>
-                        <td class="py-3 text-right mono align-top" style="color:{{ 'var(--success)' if environment.mediapipe.ok else 'var(--danger)' }}">
+                        <td class="py-3 text-right mono align-top" style="color:{{ 'var(--success-text)' if environment.mediapipe.ok else 'var(--danger-text)' }}">
                             {{ 'dostupná' if environment.mediapipe.ok else 'nedostupná' }}
                         </td>
                     </tr>
@@ -170,14 +184,20 @@
         <div>
             <div class="rule"><p class="eyebrow">Kľúče v .env</p></div>
             <table class="w-full">
+                <thead>
+                    <tr class="border-b border-white/10">
+                        <th scope="col" class="py-2.5 text-left">Kľúč</th>
+                        <th scope="col" class="py-2.5 text-right">Stav</th>
+                    </tr>
+                </thead>
                 <tbody class="text-[13px]">
                     {% for name, label, ok in environment.env %}
                     <tr class="border-b border-white/5">
                         <td class="py-3 text-on-surface-variant">
                             {{ label }}
-                            <p class="mono text-[10px] text-on-surface-variant/70">{{ name }}</p>
+                            <p class="mono text-[10px] text-on-surface-variant">{{ name }}</p>
                         </td>
-                        <td class="py-3 text-right mono align-top" style="color:{{ 'var(--success)' if ok else 'var(--warn)' }}">
+                        <td class="py-3 text-right mono align-top" style="color:{{ 'var(--success-text)' if ok else 'var(--warn-text)' }}">
                             {{ 'nastavený' if ok else 'chýba' }}
                         </td>
                     </tr>

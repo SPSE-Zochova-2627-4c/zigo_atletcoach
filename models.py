@@ -42,6 +42,9 @@ class User(db.Model):
     # sa riadky týždenného plánu z textu trénera priradia správnym zverencom.
     group_name = db.Column(db.String(60), nullable=True)
     nickname = db.Column(db.String(60), nullable=True)
+    # Kedy používateľ odsúhlasil Podmienky používania a Ochranu osobných údajov.
+    # None = ešte nie (účet založil tréner/admin) – pri prvom prihlásení sa súhlas vyžiada.
+    terms_accepted_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     coach = db.relationship('User', remote_side=[id], foreign_keys=[coach_id],

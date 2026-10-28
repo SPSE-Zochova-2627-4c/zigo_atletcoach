@@ -286,13 +286,17 @@ Navigácia v `templates/base.html` sa skladá podľa roly; názvy endpointov sú
 
 ### Vzhľad (`templates/base.html`)
 
-Jeden dizajnový systém pre všetky stránky: svetlý papierový podklad, atramentový text, jediný akcent v odtieni
-tartanovej dráhy, písma IBM Plex Sans a IBM Plex Mono. Rozloženie je ako pri výsledkovej listine – bočné menu
-s ikonami a počtami (zverenci, čakajúce žiadosti, tréningy týždňa), dlaždice s číslami (`.kpi`), tabuľky ako karty,
-štítky stavov (`.chip`) a sekcie „01 · názov“ (`.rule`). Tokeny sú v `:root` a v konfigurácii Tailwindu, takže
-staršie šablóny sa preladili bez prepisovania. Nič sa nenačítava z CDN ani z Google Fonts – písma, ikony,
-Tailwind, Chart.js a Leaflet sú v `static/vendor` (licencie v `static/vendor/LICENSES.md`), takže z prehliadača
-používateľa nejde žiadna požiadavka na cudzí server; výnimkou sú dlaždice mapy na stránke Heatmapa (CARTO).
+Jeden dizajnový systém pre všetky stránky, so svetlým a tmavým režimom (prepínač v hornej lište, voľba sa pamätá
+v prehliadači, inak podľa systému). Neutrálna paleta – biele karty na jemne sivom podklade, atramentový text,
+jediný modrý akcent; v tmavom režime to isté na čiernom. Písmo Inter (text, nadpisy) a IBM Plex Mono (popisky,
+dáta). Rozloženie: bočné menu s ikonami a počtami (zverenci, čakajúce žiadosti, tréningy týždňa – `navigacia.py`),
+dlaždice s číslami (`.kpi`), tabuľky ako karty, štítky stavov (`.chip`), sekcie „01 · názov“ (`.rule`).
+Pohyb: plynulý prechod medzi stránkami (View Transitions), objavenie obsahu, postupné objavenie kariet, napočítanie
+čísel v dlaždiciach, reakcie tlačidiel a kariet na hover; pri nastavení „obmedziť pohyb“ v systéme sa všetko vypne.
+Tokeny sú v `:root` (svetlý) a `:root[data-theme="dark"]`; farby Tailwindu ukazujú na tie isté premenné, takže
+staršie šablóny sa preladili bez prepisovania. Nič sa nenačítava z CDN ani z Google Fonts – písma, ikony, Tailwind,
+Chart.js a Leaflet sú v `static/vendor` (licencie v `static/vendor/LICENSES.md`); výnimkou sú dlaždice mapy na
+stránke Heatmapa (CARTO).
 
 ### Prístupové práva (`auth.py`)
 
@@ -312,7 +316,7 @@ používateľa nejde žiadna požiadavka na cudzí server; výnimkou sú dlaždi
 
 | Tabuľka | Kľúčové stĺpce |
 |---|---|
-| `user` | `username` (unikátne), `password_hash`, `role` (`zverenec` / `trener` / `admin`), `full_name`, `coach_id` → `user.id`, **`coach_confirmed`** (tréner vidí údaje až keď je `True`), `world_athletics_id`, `must_change_password`, `group_name` a `nickname` (priradenie týždenného plánu z textu), `created_at` |
+| `user` | `username` (unikátne), `password_hash`, `role` (`zverenec` / `trener` / `admin`), `full_name`, `coach_id` → `user.id`, **`coach_confirmed`** (tréner vidí údaje až keď je `True`), `world_athletics_id`, `must_change_password`, `group_name` a `nickname` (priradenie týždenného plánu z textu), `terms_accepted_at` (kedy používateľ prijal podmienky a ochranu údajov), `created_at` |
 | `race_result` | `user_id` (atlét), `discipline`, `result_s` (sekundy), `date`, `competition`, `place`, `wind`, `source` (`manual` / `world_athletics` / `stopky`), `note`, `created_by` (kto zapísal). Osobný rekord = `min(result_s)` na disciplínu, počíta sa, neukladá. |
 | `planned_training` | `athlete_id`, `coach_id`, `date`, `title`, `description`, `completed`, `completed_at`, `athlete_note`, `training_log_id` → `training_log.id`, `batch_id` (jedno vloženie týždňa z textu), `time_text` („16:00“) |
 | `plan_item` | `plan_id` → `planned_training.id`, `position`, `kind` (`sila` / `beh` / `ine`), `text`, `exercise`, `reps`, `reps_max`, `per_side`, `sets`, `distance_m`, `intensity_pct`, `result_json` (kilá na sériu alebo sekundy na úsek), `result_note`, `added_by_athlete` |
@@ -325,7 +329,7 @@ používateľa nejde žiadna požiadavka na cudzí server; výnimkou sú dlaždi
 | `strava_token` | `user_id`, `athlete_id`, `access_token`, `refresh_token`, `expires_at` |
 
 Každý riadok s údajmi má **`user_id` = vlastník**, a každý dotaz je ním filtrovaný. Tabuľky vytvorí
-`db.create_all()`; chýbajúce stĺpce v staršej databáze (`user_id`, `coach_confirmed`, `height_cm`, `group_name`, `nickname`, `batch_id`, `time_text`) doplní
+`db.create_all()`; chýbajúce stĺpce v staršej databáze (`user_id`, `coach_confirmed`, `height_cm`, `group_name`, `nickname`, `batch_id`, `time_text`, `terms_accepted_at`) doplní
 `_ensure_columns()` cez `ALTER TABLE ADD COLUMN`, takže databáza z verzie pred účtami zostane funkčná. Riadky bez
 vlastníka (z verzie pred účtami) vidí len administrátor.
 
@@ -528,6 +532,22 @@ v školskej sieti). Toto by si vyžadovalo skutočné nasadenie:
 
 ### Čo je urobené
 
+**Súhlasy a ochrana údajov.** Registrácia vyžaduje súhlas s Podmienkami používania a Ochranou osobných údajov
+(a potvrdenie veku 16 rokov alebo súhlasu rodiča) – čas prijatia je v `user.terms_accepted_at`. Účet založený
+trénerom vyžaduje trénerovo potvrdenie súhlasu zverenca a zverenec podmienky prijme pri prvom prihlásení (zmena
+hesla). Údaje o zdraví (HRV, regenerácia, pokojový tep) sa zapíšu alebo importujú len s výslovným súhlasom
+(čl. 9 GDPR) a každý záznam sa dá zmazať. AI chat a AI tréner upozorňujú, že údaje idú do Groq (USA) a že odpoveď
+nie je zdravotná rada; systémové prompty zakazujú diagnózy. Stránky `/ochrana-udajov`, `/podmienky`, `/cookies`
+sú dostupné bez prihlásenia; prehliadač pri bežnom používaní nekontaktuje žiadny cudzí server (knižnice a písma sú
+lokálne), výnimkou sú dlaždice mapy na Heatmape.
+
+**Prístupnosť (WCAG 2.1 AA).** Odkaz „Preskočiť na obsah“, viditeľný fokus, každé pole formulára má popisok,
+tlačidlá len s ikonou majú názov, grafy a mapa majú textovú alternatívu (tabuľky pod grafmi), hlásenia sú živý
+región, poradie nadpisov bez preskokov, kontrast textu ≥ 4,5:1 v oboch režimoch, výber v grafoch sa neodosiela
+pri zmene (tlačidlo Zobraziť), animácie rešpektujú „obmedziť pohyb“. Kontrolované statickým skriptom nad
+vyrenderovanými stránkami a nástrojom axe-core v headless Chrome.
+
+
 - **Izolácia údajov** – každý riadok má vlastníka (`user_id`), viditeľnosť rieši jediná funkcia
   `athlete_ids_visible_to()` a routy s id ju používajú cez `require_visible_athlete` / `row_visible` /
   `scope_query`. Cudzí id → 403, neexistujúci → 404 (bez prezradenia, ktoré id existujú).
@@ -616,7 +636,7 @@ python test_plan_text.py          # rozbor týždenného plánu z textu trénera
 |---|---|
 | Jazyk a server | Python 3.9 – 3.12, Flask 3.1, Jinja2 šablóny, python-dotenv |
 | Databáza | SQLite cez Flask-SQLAlchemy 3.1 (aditívna migrácia `ALTER TABLE`) |
-| Frontend | HTML, CSS, Tailwind CSS (uložený lokálne v `static/vendor`, bez CDN), JavaScript (bez frameworku), písma IBM Plex Sans / Mono a ikony Material Symbols (lokálne, licencie v `static/vendor/LICENSES.md`), manifest webovej appky (ikona na ploche telefónu) |
+| Frontend | HTML, CSS, Tailwind CSS (uložený lokálne v `static/vendor`, bez CDN), JavaScript (bez frameworku), písma Inter a IBM Plex Mono a ikony Material Symbols (lokálne, licencie v `static/vendor/LICENSES.md`), svetlý a tmavý režim, manifest webovej appky (ikona na ploche telefónu) |
 | Grafy a mapy | Chart.js 4.4, Leaflet 1.9 + Leaflet.heat (lokálne kópie; heatmapa behov, vlastný dekodér Google polyline) |
 | Počítačové videnie | OpenCV 4.10 (optický tok Lucas-Kanade, RANSAC odhad pohybu kamery, kreslenie prekryvu), MediaPipe Pose 0.10 (33 bodov kostry), NumPy 1.26 |
 | Fotobunka | Web API prehliadača: `getUserMedia`, `<canvas>` `getImageData`, Web Audio (štart na zvuk), `localStorage` |

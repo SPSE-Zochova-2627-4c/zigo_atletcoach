@@ -1,8 +1,12 @@
 /* Grafy výkonnosti (/grafy). Dáta sú vložené v <script id="grafy-data"> už zo servera,
    takže sa nič nenačítava dodatočne a tabuľka pod grafom ukazuje tie isté čísla.
    Pravidlá: jedna os Y na graf, farby sérií z tokenov --series-1 … --series-3,
-   legenda len pri dvoch sériách. */
+   legenda len pri dvoch sériách; dve série sa líšia aj výplňou (obrys vs. plná), nie len farbou.
+   Pri „obmedziť pohyb“ v systéme sa grafy nekreslia animovane. */
 document.addEventListener('DOMContentLoaded', () => {
+    // Pri prepnutí témy sa stránka prekreslí nanovo (grafy berú farby z tokenov pri štarte).
+    document.addEventListener('atletcoach:tema', () => { if (document.readyState === 'complete' && window.__grafyInit) location.reload(); });
+    window.__grafyInit = true;
     const holder = document.getElementById('grafy-data');
     if (!holder || typeof Chart === 'undefined') return;
     const DATA = JSON.parse(holder.textContent);
@@ -14,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const SURFACE = tok('--surface', '#ffffff');
     const MUTED = tok('--muted', '#655f53'), INK = tok('--text', '#15140f'), PAPER = tok('--bg', '#f3f1ea'), GRID = tok('--border', '#e1dccf');
     const MONO = { family: 'IBM Plex Mono', size: 10 };
+    const REDUCE_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // 11.23 → "11.23", 125.4 → "2:05.40" – rovnaké ako fmt_time() v grafy.py.
     function fmtTime(s) {
@@ -29,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return {
             responsive: true,
             maintainAspectRatio: true,
+            animation: REDUCE_MOTION ? false : undefined,
             interaction: { mode: 'index', intersect: false },
             scales: {
                 y: {
@@ -93,16 +99,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Stĺpce: 4 px zaoblený vrch, päta rovná na základni, 2 px medzera cez rámik vo farbe plochy.
-    function barDataset(label, values, color) {
+    // outline=true nakreslí stĺpec len ako obrys – druhá séria sa tak odlíši aj bez farby.
+    function barDataset(label, values, color, outline = false) {
         return {
             label: label,
             data: values,
-            backgroundColor: color,
-            borderColor: SURFACE,
-            borderWidth: { left: 1, right: 1, top: 0, bottom: 0 },
+            backgroundColor: outline ? SURFACE : color,
+            borderColor: outline ? color : SURFACE,
+            borderWidth: outline ? 2 : { left: 1, right: 1, top: 0, bottom: 0 },
             borderRadius: 4,
             borderSkipped: 'bottom',
             hoverBackgroundColor: color,
+            hoverBorderColor: outline ? color : SURFACE,
             maxBarThickness: 44
         };
     }
@@ -178,13 +186,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /* ── 4. Plnenie plánu: dve série → legenda áno ── */
+    /* ── 4. Plnenie plánu: dve série → legenda áno; naplánované = obrys, splnené = plný stĺpec ── */
     const plan = DATA.plan;
     if (el('chart-plan') && plan.meta.total_planned > 0) {
         new Chart(el('chart-plan'), {
             type: 'bar',
             data: { labels: plan.labels, datasets: [
-                barDataset(plan.meta.series[0], plan.values, BLUE),
+                barDataset(plan.meta.series[0], plan.values, BLUE, true),
                 barDataset(plan.meta.series[1], plan.meta.completed, LIME)
             ]},
             options: Object.assign(baseOptions({

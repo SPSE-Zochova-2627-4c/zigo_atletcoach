@@ -2,11 +2,7 @@
    Časy formátuje filter `cas` (trener.format_result), aby obe strany ukazovali to isté. #}
 
 {% macro source_badge(source) %}
-<span class="eyebrow inline-block border px-1.5 py-0.5 leading-none
-             {% if source == 'world_athletics' %}border-[#3987e5]/60 text-[#3987e5]
-             {% elif source == 'stopky' %}border-[#d55181]/60 text-[#d55181]
-             {% else %}border-white/15{% endif %}"
-      style="font-size:9px">{{ source|zdroj }}</span>
+<span class="chip {% if source == 'world_athletics' %}info{% elif source == 'stopky' %}accent{% endif %}"><span class="dot" aria-hidden="true"></span><span class="sr-only">zdroj: </span>{{ source|zdroj }}</span>
 {% endmacro %}
 
 
@@ -41,14 +37,14 @@
 <table class="w-full">
     <thead>
         <tr class="border-b border-white/10">
-            <th class="py-2.5 text-left">Dátum</th>
-            <th class="py-2.5 text-left">Disciplína</th>
-            <th class="py-2.5 text-right">Čas</th>
-            <th class="py-2.5 text-left pl-4">Preteky</th>
-            <th class="py-2.5 text-right">Um.</th>
-            <th class="py-2.5 text-right">Vietor</th>
-            <th class="py-2.5 text-left pl-4">Zdroj</th>
-            {% if delete_endpoint %}<th class="py-2.5 text-right"></th>{% endif %}
+            <th scope="col" class="py-2.5 text-left">Dátum</th>
+            <th scope="col" class="py-2.5 text-left">Disciplína</th>
+            <th scope="col" class="py-2.5 text-right">Čas</th>
+            <th scope="col" class="py-2.5 text-left pl-4">Preteky</th>
+            <th scope="col" class="py-2.5 text-right"><span aria-hidden="true">Um.</span><span class="sr-only">Umiestnenie</span></th>
+            <th scope="col" class="py-2.5 text-right">Vietor</th>
+            <th scope="col" class="py-2.5 text-left pl-4">Zdroj</th>
+            {% if delete_endpoint %}<th scope="col" class="py-2.5 text-right"><span class="sr-only">Akcie</span></th>{% endif %}
         </tr>
     </thead>
     <tbody class="text-[13px]">
@@ -58,11 +54,11 @@
             <td class="py-3 text-on-surface whitespace-nowrap">{{ r.discipline }}</td>
             <td class="py-3 mono text-right whitespace-nowrap {{ 'font-semibold' if r.id in pb_ids else 'text-on-surface' }}"
                 {% if r.id in pb_ids %}style="color:var(--volt)" title="Osobný rekord"{% endif %}>
-                {{ r.result_s|cas }}{% if r.id in pb_ids %}<span class="eyebrow ml-1.5" style="color:var(--volt)">PB</span>{% endif %}
+                {{ r.result_s|cas }}{% if r.id in pb_ids %}<span class="eyebrow ml-1.5" style="color:var(--volt)">PB<span class="sr-only"> – osobný rekord</span></span>{% endif %}
             </td>
             <td class="py-3 pl-4 text-on-surface-variant">
                 {{ r.competition or '—' }}
-                {% if r.note %}<p class="text-[12px] text-on-surface-variant/70 mt-0.5">{{ r.note }}</p>{% endif %}
+                {% if r.note %}<p class="text-[12px] text-on-surface-variant mt-0.5">{{ r.note }}</p>{% endif %}
             </td>
             <td class="py-3 mono text-right text-on-surface-variant">{{ r.place or '—' }}</td>
             <td class="py-3 mono text-right text-on-surface-variant whitespace-nowrap">{% if r.wind is not none %}{{ '%+.1f'|format(r.wind) }}{% else %}—{% endif %}</td>
@@ -70,8 +66,8 @@
             {% if delete_endpoint %}
             <td class="py-3 text-right whitespace-nowrap">
                 <form method="POST" action="{{ url_for(delete_endpoint, result_id=r.id) }}" class="inline"
-                      onsubmit="return confirm('Zmazať výsledok {{ r.discipline }} {{ r.result_s|cas }}?');">
-                    <button type="submit" class="eyebrow hover:text-[#e66767] transition-colors">Zmazať</button>
+                      onsubmit="return confirm('Nenávratne zmazať výsledok {{ r.discipline }} {{ r.result_s|cas }} z {{ r.date.strftime('%d.%m.%Y') }}?');">
+                    <button type="submit" class="eyebrow hover:text-[color:var(--danger-text)] transition-colors">Zmazať<span class="sr-only"> výsledok {{ r.discipline }} {{ r.result_s|cas }} z {{ r.date.strftime('%d.%m.%Y') }}</span></button>
                 </form>
             </td>
             {% endif %}
@@ -102,24 +98,24 @@
             <input type="text" id="discipline_other" name="discipline_other" maxlength="40" placeholder="napr. 300m, 2000mSC, 5 km cesta">
         </div>
 
-        <div>
-            <label>Výsledný čas</label>
+        <fieldset>
+            <legend>Výsledný čas (min : s : stotiny)</legend>
             <div class="grid grid-cols-3 gap-2">
                 <div>
-                    <span class="eyebrow block mb-1">Minúty</span>
-                    <input type="number" id="t_min" name="t_min" placeholder="0" min="0" max="1439" style="text-align:center;">
+                    <span class="eyebrow block mb-1" aria-hidden="true">Minúty</span>
+                    <input type="number" id="t_min" name="t_min" placeholder="0" min="0" max="1439" style="text-align:center;" aria-label="minúty">
                 </div>
                 <div>
-                    <span class="eyebrow block mb-1">Sekundy</span>
-                    <input type="number" id="t_sec" name="t_sec" placeholder="00" min="0" max="59" style="text-align:center;">
+                    <span class="eyebrow block mb-1" aria-hidden="true">Sekundy</span>
+                    <input type="number" id="t_sec" name="t_sec" placeholder="00" min="0" max="59" style="text-align:center;" aria-label="sekundy">
                 </div>
                 <div>
-                    <span class="eyebrow block mb-1">Stotiny</span>
-                    <input type="number" id="t_hun" name="t_hun" placeholder="00" min="0" max="99" style="text-align:center;">
+                    <span class="eyebrow block mb-1" aria-hidden="true">Stotiny</span>
+                    <input type="number" id="t_hun" name="t_hun" placeholder="00" min="0" max="99" style="text-align:center;" aria-label="stotiny">
                 </div>
             </div>
             <p class="mono text-[11px] text-on-surface-variant mt-2">Šprint: len sekundy a stotiny. Napr. 11 · 23 = 11.23</p>
-        </div>
+        </fieldset>
 
         <div class="grid grid-cols-2 gap-3">
             <div>

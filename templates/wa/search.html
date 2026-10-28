@@ -10,11 +10,13 @@
             <p class="text-[13px] text-on-surface-variant mt-3 leading-relaxed max-w-[60ch]">
                 Vyhľadaj zverenca na worldathletics.org a načítaj jeho osobné rekordy v bežeckých disciplínach.
                 Pred uložením uvidíš náhľad – nič sa neimportuje bez potvrdenia.
+                Import nie je oficiálna služba World Athletics: čítame verejný profil, takže načítané
+                časy si pred uložením skontroluj.
             </p>
         </div>
         <a href="{{ url_for('trener.athlete_detail', athlete_id=athlete.id) }}"
            class="btn btn-secondary self-start lg:self-auto">
-            ← Detail zverenca
+            <span aria-hidden="true">←</span> Detail zverenca
         </a>
     </div>
 
@@ -74,7 +76,7 @@
             </div>
 
             {% if failed %}
-            <div class="bg-surface-container border border-white/10 border-l-2 border-l-[#c98500] p-6">
+            <div class="bg-surface-container border border-white/10 border-l-2 border-l-[color:var(--warn)] p-6" role="status">
                 <p class="font-headline font-bold text-on-surface mb-2">Načítanie z World Athletics zlyhalo</p>
                 <p class="text-[13px] text-on-surface-variant leading-relaxed">
                     Dôvod je v hlásení hore. Rekordy zverenca môžeš zatiaľ zapísať ručne
@@ -106,11 +108,11 @@
             <table class="w-full">
                 <thead>
                     <tr class="border-b border-white/10">
-                        <th class="py-2.5 text-left">Meno</th>
-                        <th class="py-2.5 text-left">Krajina</th>
-                        <th class="py-2.5 text-left">Narodený</th>
-                        <th class="py-2.5 text-left">Disciplíny</th>
-                        <th class="py-2.5 text-right"></th>
+                        <th scope="col" class="py-2.5 text-left">Meno</th>
+                        <th scope="col" class="py-2.5 text-left">Krajina</th>
+                        <th scope="col" class="py-2.5 text-left">Narodený</th>
+                        <th scope="col" class="py-2.5 text-left">Disciplíny</th>
+                        <th scope="col" class="py-2.5 text-right"><span class="sr-only">Akcie</span></th>
                     </tr>
                 </thead>
                 <tbody class="text-[13px]">
@@ -128,7 +130,7 @@
                                 <input type="hidden" name="wa_id" value="{{ r.wa_id }}">
                                 <button type="submit"
                                         class="border border-white/15 hover:border-white/35 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-on-surface transition-colors">
-                                    Importovať
+                                    Importovať<span class="sr-only"> – náhľad rekordov: {{ r.name }}, {{ r.country }}</span>
                                 </button>
                             </form>
                         </td>
@@ -138,7 +140,7 @@
             </table>
             </div>
             <p class="mono text-[10px] text-on-surface-variant mt-4">
-                Tlačidlo otvorí náhľad rekordov – uložia sa až po potvrdení.
+                Tlačidlo Importovať otvorí náhľad rekordov – uložia sa až po potvrdení.
             </p>
             {% endif %}
         </div>

@@ -323,6 +323,8 @@
             const on = key === name;
             stateEls[key].classList.toggle('on', on);
             stateEls[key].classList.toggle('volt', on && name !== 'ready');
+            // Čítačka obrazovky počuje len aktívny stav; ostatné tri popisky sú len vizuálna stupnica.
+            stateEls[key].setAttribute('aria-hidden', on ? 'false' : 'true');
         });
     }
 

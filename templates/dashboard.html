@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Strava dashboard · AtletCoach{% endblock %}
+{% block title %}Prehľad aktivít zo Stravy · AtletCoach{% endblock %}
 
 {% block content %}
 <main class="mt-10 pb-12">
@@ -8,45 +8,41 @@
     <div class="flex items-end justify-between flex-wrap gap-5 mb-9">
         <div>
             <p class="eyebrow mb-2">Strava · posledné aktivity</p>
-            <h1 class="page-title">Dashboard</h1>
-            <p class="mono text-[11px] text-on-surface-variant mt-2">{{ trainings|length }} najnovších aktivít</p>
+            <h1 class="page-title">Prehľad aktivít</h1>
+            <p class="mono text-[11px] text-on-surface-variant mt-2">{{ trainings|length }} najnovších aktivít zo Stravy</p>
         </div>
-        <div class="flex items-center gap-2.5">
-            <a href="{{ url_for('osobaky') }}"
-               class="border border-white/15 hover:border-white/35 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface-variant hover:text-on-surface transition-colors">
-                Osobáky
-            </a>
+        <div class="flex items-center gap-2.5 flex-wrap">
+            <a href="{{ url_for('osobaky') }}" class="btn btn-secondary btn-sm">Osobné rekordy</a>
+            <a href="{{ url_for('heatmap') }}" class="btn btn-secondary btn-sm">Moje trasy</a>
             {% if logged_in %}
-            <a href="{{ url_for('strava_logout') }}"
-               class="border border-white/15 hover:border-[#e66767] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface-variant hover:text-[#e66767] transition-colors">
-                Odpojiť Stravu
-            </a>
+            <a href="{{ url_for('strava_logout') }}" class="btn btn-danger btn-sm">Odpojiť Stravu</a>
             {% endif %}
         </div>
     </div>
 
     <!-- Tabuľka aktivít -->
-    <div class="overflow-x-auto border border-white/10">
+    <div class="overflow-x-auto">
         <table class="w-full text-sm min-w-[720px]">
+            <caption class="sr-only">Posledné aktivity zo Stravy: dátum, názov, vzdialenosť, čas, tempo a priemerný tep</caption>
             <thead>
-                <tr class="border-b border-white/10 bg-surface-container">
-                    <th class="px-4 py-3.5 text-left">Dátum</th>
-                    <th class="px-4 py-3.5 text-left">Aktivita</th>
-                    <th class="px-4 py-3.5 text-right">Vzdialenosť</th>
-                    <th class="px-4 py-3.5 text-right">Čas</th>
-                    <th class="px-4 py-3.5 text-right">Tempo</th>
-                    <th class="px-4 py-3.5 text-right">Tep</th>
+                <tr>
+                    <th scope="col" class="px-4 py-3.5 text-left">Dátum</th>
+                    <th scope="col" class="px-4 py-3.5 text-left">Aktivita</th>
+                    <th scope="col" class="px-4 py-3.5 text-right">Vzdialenosť</th>
+                    <th scope="col" class="px-4 py-3.5 text-right">Čas</th>
+                    <th scope="col" class="px-4 py-3.5 text-right">Tempo</th>
+                    <th scope="col" class="px-4 py-3.5 text-right">Tep</th>
                 </tr>
             </thead>
             <tbody>
                 {% for t in trainings %}
-                <tr class="border-b border-white/5 hover:bg-surface-container transition-colors">
+                <tr class="border-b border-[color:var(--border)] transition-colors">
                     <td class="px-4 py-3.5 mono text-[12px] text-on-surface-variant whitespace-nowrap">{{ t.date }}</td>
                     <td class="px-4 py-3.5">
                         <span class="mono text-[10px] uppercase tracking-[0.1em] text-on-surface-variant mr-2.5">
-                            {% if 'Ride' in t.type or 'Cycling' in t.type %}bike
-                            {% elif 'Swim' in t.type %}swim
-                            {% else %}run{% endif %}
+                            {% if 'Ride' in t.type or 'Cycling' in t.type %}bicykel
+                            {% elif 'Swim' in t.type %}plávanie
+                            {% else %}beh{% endif %}
                         </span>
                         <span class="text-on-surface">{{ t.name }}</span>
                     </td>
@@ -54,10 +50,10 @@
                         {{ t.distance }}<span class="text-on-surface-variant"> km</span>
                     </td>
                     <td class="px-4 py-3.5 text-right mono text-on-surface-variant whitespace-nowrap">{{ t.moving_time }}</td>
-                    <td class="px-4 py-3.5 text-right mono whitespace-nowrap" style="color:var(--volt)">{{ t.pace }}</td>
+                    <td class="px-4 py-3.5 text-right mono whitespace-nowrap" style="color:var(--accent-text)">{{ t.pace }}</td>
                     <td class="px-4 py-3.5 text-right mono whitespace-nowrap">
                         {% if t.hr %}<span class="text-on-surface">{{ t.hr }}</span><span class="text-on-surface-variant"> bpm</span>
-                        {% else %}<span class="text-on-surface-variant">—</span>{% endif %}
+                        {% else %}<span class="text-on-surface-variant" aria-hidden="true">—</span><span class="sr-only">bez údaju</span>{% endif %}
                     </td>
                 </tr>
                 {% else %}
@@ -71,6 +67,12 @@
             </tbody>
         </table>
     </div>
+
+    {# Označenie zdroja dát podľa pravidiel značky Stravy – oficiálne logo, nezmenené. #}
+    <p class="mt-5 flex items-center gap-3 flex-wrap text-[11px] text-on-surface-variant">
+        <img src="{{ url_for('static', filename='strava/api_logo_pwrdBy_strava_horiz_orange.svg') }}" alt="Powered by Strava" width="158" height="16">
+        <span>Údaje o aktivitách poskytuje Strava; tempo pri behu je v min/km, pri bicykli v km/h a pri plávaní na 100 m.</span>
+    </p>
 
 </main>
 {% endblock %}

@@ -19,7 +19,7 @@
     </div>
 
     {% if blocker %}
-    <div class="bg-surface-container border-l-2 border-[#e66767] px-5 py-4 mb-8">
+    <div class="bg-surface-container border-l-2 border-l-[color:var(--danger)] px-5 py-4 mb-8" role="alert">
         <p class="eyebrow mb-1" style="color:var(--danger)">Nedá sa zmazať</p>
         <p class="text-[13px] text-on-surface">{{ blocker }}</p>
     </div>
@@ -27,6 +27,12 @@
 
     <div class="rule"><p class="eyebrow">Spolu s účtom sa nenávratne zmaže</p></div>
     <table class="w-full mb-8">
+        <thead>
+            <tr class="border-b border-white/10">
+                <th scope="col" class="py-2.5 text-left">Údaje</th>
+                <th scope="col" class="py-2.5 text-right">Počet</th>
+            </tr>
+        </thead>
         <tbody class="text-[13px]">
             {% for label, key in [('Tréningy', 'trainings'), ('Výsledky z pretekov', 'results'),
                                   ('Analýzy videa (aj súbory)', 'videos'), ('Analýzy prekážok (aj súbory)', 'hurdles'),
@@ -54,8 +60,8 @@
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
             <button type="submit"
-                    class="btn btn-danger hover:bg-[#f07a7a] transition-colors">
-                Nenávratne zmazať
+                    class="btn btn-danger transition-colors">
+                Nenávratne zmazať účet {{ user.username }}
             </button>
             <a href="{{ url_for('admin_panel.edit_user', user_id=user.id) }}"
                class="btn btn-secondary">Späť</a>

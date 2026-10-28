@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Používatelia · AtletCoach{% endblock %}
 
+{% set ROLE_PLURAL = {'zverenec': 'Zverenci', 'trener': 'Tréneri', 'admin': 'Administrátori'} %}
+
 {% block content %}
 <main class="mt-10 pb-12">
 
@@ -26,8 +28,9 @@
         </div>
         {% for r in ROLE_ORDER %}
         <a href="{{ url_for('admin_panel.users', rola=r, q=q or none) }}"
-           class="card px-5 py-5 hover:bg-surface-container-high transition-colors">
-            <p class="eyebrow mb-3">{{ ROLE_LABELS[r] }}{% if r != 'admin' %}i{% endif %}</p>
+           class="card px-5 py-5 hover:bg-surface-container-high transition-colors"
+           aria-label="{{ ROLE_PLURAL.get(r, ROLE_LABELS[r]) }}: {{ role_counts.get(r, 0) }} – filtrovať zoznam">
+            <p class="eyebrow mb-3">{{ ROLE_PLURAL.get(r, ROLE_LABELS[r]) }}</p>
             <p class="font-headline font-extrabold text-[34px] leading-none {{ 'text-on-surface' if r != 'admin' else '' }}"
                {% if r == 'admin' %}style="color:var(--volt)"{% endif %}>{{ role_counts.get(r, 0) }}</p>
         </a>
@@ -71,15 +74,15 @@
         <table class="w-full min-w-[860px]">
             <thead>
                 <tr class="border-b border-white/10">
-                    <th class="py-2.5 text-left">Používateľ</th>
-                    <th class="py-2.5 text-left">Meno</th>
-                    <th class="py-2.5 text-left">Rola</th>
-                    <th class="py-2.5 text-left">Tréner / zverenci</th>
-                    <th class="py-2.5 text-right">Tréningy</th>
-                    <th class="py-2.5 text-right">Výsledky</th>
-                    <th class="py-2.5 text-right">Videá</th>
-                    <th class="py-2.5 text-right">Vytvorený</th>
-                    <th class="py-2.5 text-right">Akcie</th>
+                    <th scope="col" class="py-2.5 text-left">Používateľ</th>
+                    <th scope="col" class="py-2.5 text-left">Meno</th>
+                    <th scope="col" class="py-2.5 text-left">Rola</th>
+                    <th scope="col" class="py-2.5 text-left">Tréner / zverenci</th>
+                    <th scope="col" class="py-2.5 text-right">Tréningy</th>
+                    <th scope="col" class="py-2.5 text-right">Výsledky</th>
+                    <th scope="col" class="py-2.5 text-right">Videá</th>
+                    <th scope="col" class="py-2.5 text-right">Vytvorený</th>
+                    <th scope="col" class="py-2.5 text-right">Akcie</th>
                 </tr>
             </thead>
             <tbody class="text-[13px]">
@@ -90,28 +93,26 @@
                     <td class="py-3">
                         <a href="{{ url_for('admin_panel.edit_user', user_id=u.id) }}"
                            class="mono text-on-surface hover:text-[color:var(--volt)] transition-colors">{{ u.username }}</a>
-                        {% if is_me %}<span class="eyebrow ml-2">ty</span>{% endif %}
+                        {% if is_me %}<span class="chip ml-2">ty<span class="sr-only"> – tvoj účet</span></span>{% endif %}
                         {% if u.must_change_password %}
-                        <span class="eyebrow ml-2" style="color:var(--warn)" title="Pri prihlásení si musí zmeniť heslo">zmena hesla</span>
+                        <span class="chip warn ml-2" title="Pri prihlásení si musí zmeniť heslo"><span class="dot" aria-hidden="true"></span>zmena hesla<span class="sr-only"> – pri prihlásení si musí zmeniť heslo</span></span>
                         {% endif %}
                     </td>
                     <td class="py-3 text-on-surface-variant">{{ u.full_name or '—' }}</td>
                     <td class="py-3">
-                        <span class="eyebrow inline-block border px-2 py-0.5
-                                     {% if u.is_admin %}border-[color:var(--volt)]{% elif u.is_coach %}border-white/30 text-on-surface{% else %}border-white/10{% endif %}"
-                              {% if u.is_admin %}style="color:var(--volt)"{% endif %}>{{ u.role_label }}</span>
+                        <span class="chip {% if u.is_admin %}accent{% elif u.is_coach %}info{% endif %}"><span class="dot" aria-hidden="true"></span>{{ u.role_label }}</span>
                     </td>
                     <td class="py-3 mono text-on-surface-variant">
                         {% if u.is_athlete %}
                             {% if u.coach %}
                                 <span class="text-on-surface">{{ u.coach.username }}</span>
-                                {% if not u.coach_confirmed %}<span class="eyebrow ml-1" style="color:var(--warn)">čaká</span>{% endif %}
+                                {% if not u.coach_confirmed %}<span class="chip warn ml-1"><span class="dot" aria-hidden="true"></span>čaká<span class="sr-only"> na potvrdenie zverencom</span></span>{% endif %}
                             {% else %}—{% endif %}
                         {% elif u.is_coach %}
                             {% set n = counts.athletes.get(u.id, 0) %}
                             {% set p = pending.get(u.id, 0) %}
                             <span class="text-on-surface">{{ n - p }}</span> zverenc{{ 'ov' if (n - p) != 1 else '' }}
-                            {% if p %}<span class="eyebrow ml-1" style="color:var(--warn)">+{{ p }} čaká</span>{% endif %}
+                            {% if p %}<span class="chip warn ml-1"><span class="dot" aria-hidden="true"></span>+{{ p }} čaká<span class="sr-only"> na potvrdenie</span></span>{% endif %}
                         {% else %}—{% endif %}
                     </td>
                     <td class="py-3 text-right mono text-on-surface-variant">{{ counts.trainings.get(u.id, 0) }}</td>
@@ -120,17 +121,17 @@
                     <td class="py-3 text-right mono text-on-surface-variant">{{ u.created_at.strftime('%d.%m.%Y') }}</td>
                     <td class="py-3 text-right whitespace-nowrap">
                         <a href="{{ url_for('admin_panel.edit_user', user_id=u.id) }}"
-                           class="text-[11px] font-semibold uppercase tracking-[0.08em] text-on-surface-variant hover:text-on-surface transition-colors">Upraviť</a>
-                        <span class="text-white/20 mx-1.5">·</span>
+                           class="text-[11px] font-semibold uppercase tracking-[0.08em] text-on-surface-variant hover:text-on-surface transition-colors">Upraviť<span class="sr-only"> účet {{ u.username }}</span></a>
+                        <span class="text-on-surface-variant mx-1.5" aria-hidden="true">·</span>
                         <a href="{{ url_for('admin_panel.edit_user', user_id=u.id) }}#reset-hesla"
-                           class="text-[11px] font-semibold uppercase tracking-[0.08em] text-on-surface-variant hover:text-on-surface transition-colors">Reset hesla</a>
-                        <span class="text-white/20 mx-1.5">·</span>
+                           class="text-[11px] font-semibold uppercase tracking-[0.08em] text-on-surface-variant hover:text-on-surface transition-colors">Reset hesla<span class="sr-only"> – {{ u.username }}</span></a>
+                        <span class="text-on-surface-variant mx-1.5" aria-hidden="true">·</span>
                         {% if is_me or last_admin %}
-                        <span class="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/25 cursor-not-allowed"
-                              title="{{ 'Vlastný účet sa nedá zmazať' if is_me else 'Posledný administrátor' }}">Zmazať</span>
+                        {% set reason = 'vlastný účet sa nedá zmazať' if is_me else 'posledný administrátor sa nedá zmazať' %}
+                        <span class="text-[11px] font-semibold uppercase tracking-[0.08em] text-on-surface-variant" title="{{ reason|capitalize }}">nedá sa zmazať<span class="sr-only"> – {{ reason }}</span></span>
                         {% else %}
                         <a href="{{ url_for('admin_panel.delete_user', user_id=u.id) }}"
-                           class="text-[11px] font-semibold uppercase tracking-[0.08em] text-on-surface-variant hover:text-[#e66767] transition-colors">Zmazať</a>
+                           class="text-[11px] font-semibold uppercase tracking-[0.08em] text-on-surface-variant hover:text-[color:var(--danger-text)] transition-colors">Zmazať<span class="sr-only"> účet {{ u.username }}</span></a>
                         {% endif %}
                     </td>
                 </tr>
@@ -141,7 +142,7 @@
         {% else %}
         <p class="text-on-surface-variant py-8">
             Žiadny účet nezodpovedá filtru.
-            <a href="{{ url_for('admin_panel.users') }}" class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">Zobraziť všetkých →</a>
+            <a href="{{ url_for('admin_panel.users') }}" class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">Zobraziť všetkých <span aria-hidden="true">→</span></a>
         </p>
         {% endif %}
     </section>

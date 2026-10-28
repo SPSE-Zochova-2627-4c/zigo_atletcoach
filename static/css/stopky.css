@@ -30,7 +30,9 @@
 }
 .cam-wrap.cam-off canvas { cursor: default; }
 
-/* Stavy fotobunky v rohu obrazu – aktívny je biely / volt, ostatné stlmené. */
+/* Stavy fotobunky v rohu obrazu – ležia na tmavom prekrytí nad videom, preto majú svetlý text
+   (tokeny --muted / --text sú pre svetlý papier a tu by mali kontrast 3,2:1 a 1,1:1).
+   Neaktívne: #c9c2b2 na prekrytí ≥ 4,7:1; aktívne: biela ≥ 8,4:1; pretnutie/beh: biela na akcente 6,0:1. */
 .cam-status {
     position: absolute;
     top: 10px;
@@ -42,12 +44,12 @@
     pointer-events: none;
 }
 .state-label {
-    color: var(--muted);
+    color: #c9c2b2;
     padding: 3px 6px;
     background: rgba(11,11,12,0.72);
 }
-.state-label.on { color: var(--text); }
-.state-label.on.volt { color: var(--volt); }
+.state-label.on { color: #ffffff; }
+.state-label.on.volt { color: #ffffff; background: var(--accent); }
 
 .cam-msg {
     position: absolute;

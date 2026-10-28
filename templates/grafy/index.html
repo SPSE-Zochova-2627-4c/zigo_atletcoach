@@ -6,7 +6,7 @@
 
     {# ── Hlavička + výber zverenca / disciplíny ──
        Výber je GET formulár: stránka sa načíta znova s ?athlete_id=&discipline=,
-       takže funguje aj bez JavaScriptu; onchange ho len odošle sám. #}
+       odošle ho tlačidlo Zobraziť – nie zmena výberu, aby sa dal ovládať klávesnicou. #}
     <div class="flex items-end justify-between flex-wrap gap-5 mb-9">
         <div>
             <p class="eyebrow mb-2">{{ eyebrow }}{% if athlete.id != current_user.id %} · {{ athlete.display_name }}{% else %} · moje údaje{% endif %}</p>
@@ -17,7 +17,7 @@
             {% if athletes and athletes|length > 1 %}
             <div class="min-w-[200px]">
                 <label for="athlete_id">Zverenec</label>
-                <select id="athlete_id" name="athlete_id" onchange="this.form.submit()">
+                <select id="athlete_id" name="athlete_id">
                     {% for a in athletes %}
                     <option value="{{ a.id }}" {% if a.id == athlete.id %}selected{% endif %}>
                         {{ a.username }}{% if a.id == current_user.id %} (ja){% elif a.full_name %} – {{ a.full_name }}{% endif %}
@@ -32,17 +32,14 @@
             {% if disciplines %}
             <div class="min-w-[150px]">
                 <label for="discipline">Disciplína</label>
-                <select id="discipline" name="discipline" onchange="this.form.submit()">
+                <select id="discipline" name="discipline">
                     {% for d in disciplines %}
                     <option value="{{ d }}" {% if d == discipline %}selected{% endif %}>{{ d }}</option>
                     {% endfor %}
                 </select>
             </div>
             {% endif %}
-            <noscript>
-                <button type="submit"
-                        class="btn btn-secondary">Zobraziť</button>
-            </noscript>
+            <button type="submit" class="btn btn-secondary btn-sm">Zobraziť</button>
         </form>
     </div>
 
@@ -86,7 +83,7 @@
         </div>
 
         <div class="card p-5">
-            <canvas id="chart-results" height="90"></canvas>
+            <canvas id="chart-results" height="90" role="img" aria-label="Graf vývoja výsledkov{% if discipline %} v disciplíne {{ discipline }}{% endif %}; rovnaké čísla sú v tabuľke pod grafom"></canvas>
         </div>
 
         <details class="mt-4">
@@ -107,7 +104,7 @@
                         {% for r in res.meta.rows %}
                         <tr class="border-b border-white/5">
                             <td class="px-4 py-2 text-on-surface-variant">{{ r.date }}</td>
-                            <td class="px-4 py-2 text-right {{ 'font-semibold' if r.is_pb else 'text-on-surface' }}" {% if r.is_pb %}style="color:var(--volt)"{% endif %}>{{ r.time }}{% if r.is_pb %} <span class="eyebrow">PB</span>{% endif %}</td>
+                            <td class="px-4 py-2 text-right {{ 'font-semibold' if r.is_pb else 'text-on-surface' }}" {% if r.is_pb %}style="color:var(--volt)"{% endif %}>{{ r.time }}{% if r.is_pb %} <span class="eyebrow">PB<span class="sr-only"> – osobný rekord</span></span>{% endif %}</td>
                             <td class="px-4 py-2 text-on-surface">{{ r.competition or '—' }}</td>
                             <td class="px-4 py-2 text-right text-on-surface-variant">{{ r.place or '—' }}</td>
                             <td class="px-4 py-2 text-right text-on-surface-variant">{% if r.wind is not none %}{{ '%+.1f'|format(r.wind) }}{% else %}—{% endif %}</td>
@@ -157,7 +154,7 @@
                                    class="text-on-surface hover:text-[color:var(--volt)] transition-colors">{{ p.discipline }}</a>
                             </td>
                             <td class="py-3 text-right font-semibold" style="color:var(--volt)">{{ p.time }}</td>
-                            <td class="py-3 pl-6 text-on-surface-variant">{{ p.date }}{% if p.competition %} <span class="text-on-surface-variant/60">· {{ p.competition }}</span>{% endif %}</td>
+                            <td class="py-3 pl-6 text-on-surface-variant">{{ p.date }}{% if p.competition %} <span class="text-on-surface-variant">· {{ p.competition }}</span>{% endif %}</td>
                             <td class="py-3 text-right text-on-surface-variant">{{ p.count }}</td>
                         </tr>
                         {% endfor %}
@@ -171,7 +168,7 @@
                     <p class="eyebrow">bežiace minimum · nižší čas = vyššie</p>
                 </div>
                 <div class="card p-5">
-                    <canvas id="chart-pb" height="110"></canvas>
+                    <canvas id="chart-pb" height="110" role="img" aria-label="Graf posunu osobného rekordu{% if discipline %} v disciplíne {{ discipline }}{% endif %}; rovnaké čísla sú v tabuľke pod grafom"></canvas>
                 </div>
                 <details class="mt-4">
                     <summary class="eyebrow cursor-pointer hover:text-on-surface transition-colors select-none">Zobraziť ako tabuľku</summary>
@@ -189,7 +186,7 @@
                                 <tr class="border-b border-white/5">
                                     <td class="px-4 py-2 text-on-surface-variant">{{ r.date }}</td>
                                     <td class="px-4 py-2 text-right text-on-surface">{{ r.result }}</td>
-                                    <td class="px-4 py-2 text-right {{ 'text-on-surface' if r.improved else 'text-on-surface-variant' }}">{{ r.pb }}{% if r.improved %} <span class="eyebrow">▲</span>{% endif %}</td>
+                                    <td class="px-4 py-2 text-right {{ 'text-on-surface' if r.improved else 'text-on-surface-variant' }}">{{ r.pb }}{% if r.improved %} <span class="eyebrow" aria-hidden="true">▲</span><span class="sr-only"> – nový rekord</span>{% endif %}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -216,7 +213,7 @@
             <p class="mono text-[11px] text-on-surface-variant">spolu {{ vol.meta.total_km }} km · z denníka tréningov</p>
         </div>
         <div class="card p-5">
-            <canvas id="chart-volume" height="90"></canvas>
+            <canvas id="chart-volume" height="90" role="img" aria-label="Graf kilometrov za týždeň; rovnaké čísla sú v tabuľke pod grafom"></canvas>
         </div>
         <details class="mt-4">
             <summary class="eyebrow cursor-pointer hover:text-on-surface transition-colors select-none">Zobraziť ako tabuľku</summary>
@@ -270,7 +267,7 @@
             </p>
         </div>
         <div class="card p-5">
-            <canvas id="chart-plan" height="90"></canvas>
+            <canvas id="chart-plan" height="90" role="img" aria-label="Graf naplánovaných a splnených tréningov za týždeň; rovnaké čísla sú v tabuľke pod grafom"></canvas>
         </div>
         <details class="mt-4">
             <summary class="eyebrow cursor-pointer hover:text-on-surface transition-colors select-none">Zobraziť ako tabuľku</summary>
@@ -304,7 +301,7 @@
             <p class="eyebrow mb-3">Zatiaľ nie je čo kresliť</p>
             <p class="text-on-surface mb-1">Za posledných {{ plan["values"]|length }} týždňov nebol naplánovaný žiadny tréning.</p>
             <a href="{{ url_for('planovanie.index') }}"
-               class="inline-block mt-5 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface-variant hover:text-on-surface transition-colors border-b border-white/25 pb-0.5">Otvoriť plán →</a>
+               class="inline-block mt-5 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface-variant hover:text-on-surface transition-colors border-b border-white/25 pb-0.5">Otvoriť plán <span aria-hidden="true">→</span></a>
         </div>
         {% endif %}
     </section>
@@ -322,7 +319,7 @@
                     <p class="eyebrow">ms · priemer na krok</p>
                 </div>
                 <div class="card p-5">
-                    <canvas id="chart-contact" height="110"></canvas>
+                    <canvas id="chart-contact" height="110" role="img" aria-label="Graf kontaktu so zemou v milisekundách; rovnaké čísla sú v tabuľke pod grafmi"></canvas>
                 </div>
             </div>
             <div>
@@ -331,7 +328,7 @@
                     <p class="eyebrow">krokov / min</p>
                 </div>
                 <div class="card p-5">
-                    <canvas id="chart-cadence" height="110"></canvas>
+                    <canvas id="chart-cadence" height="110" role="img" aria-label="Graf kadencie v krokoch za minútu; rovnaké čísla sú v tabuľke pod grafmi"></canvas>
                 </div>
             </div>
         </div>
@@ -359,7 +356,7 @@
                             <td class="px-4 py-2 text-right text-on-surface">{% if v.cadence is not none %}{{ '%.0f'|format(v.cadence) }}{% else %}—{% endif %}</td>
                             <td class="px-4 py-2 text-right text-on-surface-variant">{% if v.asymmetry is not none %}{{ '%.1f'|format(v.asymmetry) }}{% else %}—{% endif %}</td>
                             <td class="px-4 py-2 text-right text-on-surface-variant">{{ v.steps if v.steps is not none else '—' }}</td>
-                            <td class="px-4 py-2 text-right {{ 'text-on-surface-variant' if not v.fps or v.fps >= 100 else '' }}" {% if v.fps and v.fps < 100 %}style="color:var(--warn)"{% endif %}>{% if v.fps %}{{ '%.0f'|format(v.fps) }}{% else %}—{% endif %}</td>
+                            <td class="px-4 py-2 text-right {{ 'text-on-surface-variant' if not v.fps or v.fps >= 100 else '' }}" {% if v.fps and v.fps < 100 %}style="color:var(--warn-text)" title="Menej ako 100 snímok za sekundu – meranie je menej presné"{% endif %}>{% if v.fps %}{{ '%.0f'|format(v.fps) }}{% else %}—{% endif %}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -386,11 +383,12 @@
                 {% if athlete.id != current_user.id %}<input type="hidden" name="athlete_id" value="{{ athlete.id }}">{% endif %}
                 {% if discipline %}<input type="hidden" name="discipline" value="{{ discipline }}">{% endif %}
                 {% if data.behy.meta.distance is not none %}<input type="hidden" name="distance" value="{{ data.behy.meta.distance }}">{% endif %}
-                <select name="exercise" onchange="this.form.submit()" class="text-[11px]" aria-label="Cvik">
+                <select name="exercise" id="exercise" class="text-[11px]" aria-label="Cvik">
                     {% for e in gym.meta.exercises %}
                     <option value="{{ e }}" {% if e == gym.meta.exercise %}selected{% endif %}>{{ e }}</option>
                     {% endfor %}
                 </select>
+                <button type="submit" class="btn btn-secondary btn-sm">Zobraziť</button>
             </form>
             {% endif %}
         </div>
@@ -404,7 +402,7 @@
             <p class="mono text-[11px] text-on-surface-variant">{{ gym["values"]|length }} tréningov · maximum <span class="text-on-surface">{{ '%g'|format(gym.meta.best) }} kg</span></p>
         </div>
         <div class="card p-5">
-            <canvas id="chart-gym" height="90"></canvas>
+            <canvas id="chart-gym" height="90" role="img" aria-label="Graf najväčšej váhy na sériu{% if gym.meta.exercise %} – {{ gym.meta.exercise }}{% endif %}; rovnaké čísla sú v tabuľke pod grafom"></canvas>
         </div>
         <details class="mt-4">
             <summary class="eyebrow cursor-pointer hover:text-on-surface transition-colors select-none">Zobraziť ako tabuľku</summary>
@@ -452,11 +450,12 @@
                 {% if athlete.id != current_user.id %}<input type="hidden" name="athlete_id" value="{{ athlete.id }}">{% endif %}
                 {% if discipline %}<input type="hidden" name="discipline" value="{{ discipline }}">{% endif %}
                 {% if gym.meta.exercise %}<input type="hidden" name="exercise" value="{{ gym.meta.exercise }}">{% endif %}
-                <select name="distance" onchange="this.form.submit()" class="text-[11px]" aria-label="Vzdialenosť">
+                <select name="distance" id="distance" class="text-[11px]" aria-label="Vzdialenosť úseku">
                     {% for d in runs.meta.distances %}
                     <option value="{{ d }}" {% if runs.meta.distance is not none and d == ('%g'|format(runs.meta.distance)) %}selected{% endif %}>{{ d }} m</option>
                     {% endfor %}
                 </select>
+                <button type="submit" class="btn btn-secondary btn-sm">Zobraziť</button>
             </form>
             {% endif %}
         </div>
@@ -470,7 +469,7 @@
             <p class="mono text-[11px] text-on-surface-variant">{{ runs["values"]|length }} tréningov · najlepší <span class="text-on-surface">{{ runs.meta.best_text }}</span></p>
         </div>
         <div class="card p-5">
-            <canvas id="chart-runs" height="90"></canvas>
+            <canvas id="chart-runs" height="90" role="img" aria-label="Graf najrýchlejšieho úseku{% if runs.meta.distance_text %} na {{ runs.meta.distance_text }}{% endif %}; rovnaké čísla sú v tabuľke pod grafom"></canvas>
         </div>
         <details class="mt-4">
             <summary class="eyebrow cursor-pointer hover:text-on-surface transition-colors select-none">Zobraziť ako tabuľku</summary>

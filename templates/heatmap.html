@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block title %}Moje trasy zo Stravy · AtletCoach{% endblock %}
 
 {% block head %}
 {# Leaflet je uložený lokálne (static/vendor) – z prehliadača idú von len dlaždice mapy z CARTO. #}
@@ -8,9 +9,10 @@
 <style>
     #map { width: 100%; height: 100%; border-radius: 2px; }
     .leaflet-container { background: var(--bg-elev-2); }
+    .leaflet-control-attribution a { color: var(--muted); }
     .info-chip {
         background: var(--surface);
-        border: 1px solid rgba(236,233,227,0.14);
+        border: 1px solid var(--border-strong);
         border-radius: 2px;
         padding: 0.45rem 0.85rem;
         color: var(--text);
@@ -25,8 +27,8 @@
 {% block content %}
 <main class="mt-6 pb-12 space-y-6">
 
-    <!-- Header -->
-    <div class="flex items-end justify-between">
+    <!-- Hlavička -->
+    <div class="flex items-end justify-between flex-wrap gap-3">
         <div>
             <p class="eyebrow mb-2">Strava</p>
             <h1 class="page-title">Moje trasy</h1>
@@ -42,69 +44,82 @@
     </div>
 
     <!-- Mapa -->
-    <div class="relative rounded-3xl overflow-hidden" style="height: 620px;">
+    <div class="relative rounded-3xl overflow-hidden card" style="height: 620px;">
 
-        <!-- Loading overlay -->
-        <div id="loading-overlay" class="absolute inset-0 z-[1000] flex flex-col items-center justify-center card rounded-3xl">
+        <!-- Načítavanie -->
+        <div id="loading-overlay" class="absolute inset-0 z-[1000] flex flex-col items-center justify-center card rounded-3xl" role="status" aria-live="polite">
             <div class="w-16 h-16 rounded-2xl bg-primary/15 flex items-center justify-center mb-4">
-                <span class="material-symbols-outlined text-primary text-3xl animate-pulse">route</span>
+                <span class="material-symbols-outlined text-primary text-3xl animate-pulse" aria-hidden="true">route</span>
             </div>
             <p class="font-headline font-bold text-on-surface text-lg mb-1">Načítavam tvoje trasy</p>
-            <p class="text-sm text-on-surface-variant mb-6" id="loading-msg">Fetching Strava activities...</p>
-            <div class="w-48 h-1.5 bg-surface-container rounded-full overflow-hidden">
+            <p class="text-sm text-on-surface-variant mb-6" id="loading-msg">Načítavam aktivity zo Stravy…</p>
+            <div class="w-48 h-1.5 bg-[color:var(--track)] rounded-full overflow-hidden" aria-hidden="true">
                 <div id="loading-bar" class="h-full bg-primary rounded-full transition-all duration-500" style="width:5%"></div>
             </div>
         </div>
 
-        <!-- Error overlay -->
-        <div id="error-overlay" class="hidden absolute inset-0 z-[1000] flex flex-col items-center justify-center card rounded-3xl">
-            <span class="material-symbols-outlined text-red-400 text-4xl mb-3">error</span>
+        <!-- Chyba -->
+        <div id="error-overlay" class="hidden absolute inset-0 z-[1000] flex flex-col items-center justify-center card rounded-3xl px-6 text-center" role="alert">
+            <span class="material-symbols-outlined text-4xl mb-3" style="color:var(--danger)" aria-hidden="true">error</span>
             <p class="font-headline font-bold text-on-surface mb-1">Nepodarilo sa načítať trasy</p>
-            <p class="text-sm text-on-surface-variant mb-4" id="error-msg"></p>
-            <a href="{{ url_for('strava_login') }}" class="bg-primary text-white font-bold px-5 py-2.5 rounded-2xl text-sm hover:opacity-90">
-                Prihlásiť sa cez Stravu
-            </a>
+            <p class="text-sm text-on-surface-variant mb-5" id="error-msg"></p>
+            <div class="flex items-center gap-3 flex-wrap justify-center">
+                <button type="button" onclick="loadHeatmap()" class="btn btn-secondary">Skúsiť znova</button>
+                {# Pripojenie cez OAuth – oficiálne tlačidlo Stravy, nezmenené. #}
+                <a href="{{ url_for('strava_login') }}" class="inline-flex rounded-md">
+                    <img src="{{ url_for('static', filename='strava/btn_strava_connect_with_orange.svg') }}" alt="Connect with Strava" lang="en" width="198" height="40">
+                </a>
+            </div>
         </div>
 
-        <!-- No data overlay -->
-        <div id="nodata-overlay" class="hidden absolute inset-0 z-[1000] flex flex-col items-center justify-center card rounded-3xl">
-            <span class="material-symbols-outlined text-on-surface-variant text-4xl mb-3">directions_run</span>
-            <p class="font-headline font-bold text-on-surface mb-1">Žiadne behy s GPS</p>
-            <p class="text-sm text-on-surface-variant text-center max-w-xs">Strava nenašla žiadne aktivity s GPS dátami. Skontroluj či máš nahrané behy.</p>
+        <!-- Bez dát -->
+        <div id="nodata-overlay" class="hidden absolute inset-0 z-[1000] flex flex-col items-center justify-center card rounded-3xl px-6" role="status">
+            <span class="material-symbols-outlined text-on-surface-variant text-4xl mb-3" aria-hidden="true">directions_run</span>
+            <p class="font-headline font-bold text-on-surface mb-1">Žiadne behy so záznamom trasy</p>
+            <p class="text-sm text-on-surface-variant text-center max-w-xs">Na Strave sa nenašli žiadne behy so záznamom trasy (GPS). Skontroluj, či máš nahrané behy.</p>
         </div>
 
-        <div id="map"></div>
+        {# Mapa je obrázok pre čítačky; textovú alternatívu dopĺňa odstavec #map-alt pod mapou. #}
+        <div id="map" role="img" aria-label="Mapa s trasami behov" aria-describedby="map-alt"></div>
 
         <!-- Legenda -->
         <div id="legend" class="hidden absolute bottom-4 left-4 z-[999]">
             <div class="info-chip flex items-center gap-3">
-                <div class="flex gap-1 items-center">
+                <div class="flex gap-1 items-center" aria-hidden="true">
                     <div class="w-3 h-3 rounded-full" style="background:#ff2200"></div>
                     <div class="w-3 h-3 rounded-full" style="background:#ff6600"></div>
                     <div class="w-3 h-3 rounded-full" style="background:#ffaa00"></div>
                     <div class="w-3 h-3 rounded-full" style="background:#ffff00"></div>
                 </div>
-                <span>Málo → Veľa behov</span>
+                <span>Málo <span aria-hidden="true">→</span><span class="sr-only">až</span> veľa behov</span>
             </div>
         </div>
 
-        <!-- Reload -->
+        <!-- Obnoviť -->
         <div class="absolute top-4 right-4 z-[999]">
-            <button onclick="loadHeatmap()" id="reload-btn"
-                class="hidden info-chip flex items-center gap-1.5 hover:border-primary/40 cursor-pointer transition-colors border border-transparent">
-                <span class="material-symbols-outlined text-sm">refresh</span> Obnoviť
+            <button type="button" onclick="loadHeatmap()" id="reload-btn"
+                class="hidden info-chip flex items-center gap-1.5 hover:border-primary/40 cursor-pointer transition-colors">
+                <span class="material-symbols-outlined text-sm" aria-hidden="true">refresh</span> Obnoviť
             </button>
         </div>
     </div>
 
+    <!-- Textová alternatíva mapy -->
+    <p id="map-alt" class="text-xs text-on-surface-variant" aria-live="polite">Mapa sa načítava.</p>
+
     <!-- Info -->
-    <div class="bg-surface-container-low rounded-2xl p-4 flex items-start gap-3">
-        <span class="material-symbols-outlined text-on-surface-variant text-base flex-shrink-0 mt-0.5">info</span>
+    <div class="bg-surface-container-low border border-[color:var(--border)] rounded-2xl p-4 flex items-start gap-3">
+        <span class="material-symbols-outlined text-on-surface-variant text-base flex-shrink-0 mt-0.5" aria-hidden="true">info</span>
         <p class="text-xs text-on-surface-variant leading-relaxed">
-            Mapa zobrazuje všetky tvoje Strava behy. <strong class="text-on-surface">Jasnejšie miesta</strong> znamenajú
-            trasy kde behávš najčastejšie. Dáta sa načítavajú priamo zo Stravy pri každom otvorení.
+            Mapa zobrazuje tvoje behy zo Stravy, ktoré majú záznam trasy (GPS). <strong class="text-on-surface">Jasnejšie miesta</strong> sú
+            trasy, kde behávaš najčastejšie. Údaje sa načítavajú zo Stravy pri každom otvorení stránky a v appke sa neukladajú.
         </p>
     </div>
+
+    {# Označenie zdroja dát podľa pravidiel značky Stravy – oficiálne logo, nezmenené. #}
+    <p class="flex items-center gap-3 text-[11px] text-on-surface-variant">
+        <img src="{{ url_for('static', filename='strava/api_logo_pwrdBy_strava_horiz_orange.svg') }}" alt="Powered by Strava" width="158" height="16">
+    </p>
 
 </main>
 {% endblock %}
@@ -124,8 +139,14 @@ function initMap() {
     }).addTo(map);
 
     L.control.attribution({ prefix: false })
-        .addAttribution('© <a href="https://www.openstreetmap.org/copyright" style="color:#8b8b84" target="_blank" rel="noopener">OpenStreetMap</a> contributors · © <a href="https://carto.com/attributions" style="color:#8b8b84" target="_blank" rel="noopener">CARTO</a>')
+        .addAttribution('© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors · © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>')
         .addTo(map);
+}
+
+function pluralBehy(n) {
+    if (n === 1) return 'beh';
+    if (n >= 2 && n <= 4) return 'behy';
+    return 'behov';
 }
 
 async function loadHeatmap() {
@@ -137,6 +158,7 @@ async function loadHeatmap() {
     const bar      = document.getElementById('loading-bar');
     const loadMsg  = document.getElementById('loading-msg');
     const reloadBtn = document.getElementById('reload-btn');
+    const mapAlt   = document.getElementById('map-alt');
 
     overlay.classList.remove('hidden');
     errOv.classList.add('hidden');
@@ -145,7 +167,8 @@ async function loadHeatmap() {
     statsBar.classList.add('hidden');
     reloadBtn.classList.add('hidden');
     bar.style.width = '10%';
-    loadMsg.textContent = 'Načítavam aktivity zo Stravy...';
+    loadMsg.textContent = 'Načítavam aktivity zo Stravy…';
+    mapAlt.textContent = 'Mapa sa načítava.';
 
     try {
         bar.style.width = '40%';
@@ -153,8 +176,9 @@ async function loadHeatmap() {
         bar.style.width = '80%';
 
         if (!res.ok) {
-            const data = await res.json();
-            throw new Error(data.error || `HTTP ${res.status}`);
+            let msg = `Chyba servera (HTTP ${res.status})`;
+            try { const data = await res.json(); if (data.error) msg = data.error; } catch (e) {}
+            throw new Error(msg);
         }
 
         const data = await res.json();
@@ -163,21 +187,21 @@ async function loadHeatmap() {
         if (!data.points || data.points.length === 0) {
             overlay.classList.add('hidden');
             noDataOv.classList.remove('hidden');
+            mapAlt.textContent = 'Na Strave sa nenašli žiadne behy so záznamom trasy, mapa je prázdna.';
             return;
         }
 
-        loadMsg.textContent = 'Vykresľujem mapu...';
+        loadMsg.textContent = 'Vykresľujem mapu…';
 
-        // Odstrán starú heatmap vrstvu ak existuje
+        // Odstráň starú vrstvu, ak existuje
         if (window._heatLayer) map.removeLayer(window._heatLayer);
 
-        // Vypočítaj stred
+        // Stred mapy = priemer bodov
         let sumLat = 0, sumLng = 0;
         for (const [lat, lng] of data.points) { sumLat += lat; sumLng += lng; }
         const centerLat = sumLat / data.points.length;
         const centerLng = sumLng / data.points.length;
 
-        // Heatmap vrstva
         window._heatLayer = L.heatLayer(data.points, {
             radius: 10,
             blur: 15,
@@ -195,9 +219,12 @@ async function loadHeatmap() {
 
         map.setView([centerLat, centerLng], 12);
 
-        // Štatistiky
-        document.getElementById('stat-activities').textContent = data.activity_count.toLocaleString('sk-SK');
-        document.getElementById('stat-points').textContent = data.points.length.toLocaleString('sk-SK');
+        // Štatistiky + textová alternatíva mapy
+        const n = data.activity_count;
+        const pts = data.points.length;
+        document.getElementById('stat-activities').textContent = n.toLocaleString('sk-SK');
+        document.getElementById('stat-points').textContent = pts.toLocaleString('sk-SK');
+        mapAlt.textContent = `Mapa zobrazuje ${n.toLocaleString('sk-SK')} ${pluralBehy(n)} so záznamom trasy zo Stravy (spolu ${pts.toLocaleString('sk-SK')} GPS bodov). Jasnejšie miesta sú trasy, kde behávaš najčastejšie.`;
 
         overlay.classList.add('hidden');
         legend.classList.remove('hidden');
@@ -208,6 +235,7 @@ async function loadHeatmap() {
         overlay.classList.add('hidden');
         errOv.classList.remove('hidden');
         document.getElementById('error-msg').textContent = e.message;
+        mapAlt.textContent = 'Mapu sa nepodarilo načítať.';
     }
 }
 

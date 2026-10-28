@@ -10,7 +10,7 @@
             <div>
                 <p class="eyebrow" style="color:var(--accent)">Analýza bežeckej techniky z videa</p>
                 <h1 class="font-headline font-bold text-[38px] sm:text-[50px] leading-[1.02] tracking-[-0.03em] text-on-surface mt-3">
-                    Tréner a jeho bežci<br><span class="gradient-text">na jednom mieste</span>
+                    Tréner a jeho bežci<br><span style="color:var(--accent-text)">na jednom mieste</span>
                 </h1>
                 <p class="text-on-surface-variant text-[15px] leading-relaxed mt-5 max-w-[52ch]">
                     Appka z videa vyčíta čas kontaktu so zemou, kadenciu a asymetriu, pri prekážkach odmeria
@@ -27,7 +27,7 @@
             </div>
 
             {# Ukážka, ako vyzerá výsledok analýzy – čísla sú ilustračné, nie namerané. #}
-            <div class="card p-5" aria-label="Ukážka výsledku analýzy videa" role="group">
+            <div class="card p-5" aria-label="Ukážka výsledku analýzy videa (ilustračné hodnoty)" role="group">
                 <div class="flex items-baseline justify-between gap-3 mb-4">
                     <p class="eyebrow" style="color:var(--accent)">Ukážka merania</p>
                     <span class="chip ok"><span class="dot" aria-hidden="true"></span>technika ok</span>
@@ -55,7 +55,7 @@
 
     <!-- ── Čo appka robí ── -->
     <section class="pt-12">
-        <div class="rule"><p class="eyebrow">01 · Čo appka robí</p></div>
+        <div class="rule"><h2 class="eyebrow">01 · Čo appka robí</h2></div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {% set blocks = [
                 ('videocam', 'Technika z videa',
@@ -72,7 +72,7 @@
                 <span class="inline-grid place-items-center w-9 h-9 rounded-lg mb-4" style="background:var(--accent-soft);color:var(--accent-text)">
                     <span class="material-symbols-outlined" aria-hidden="true">{{ icon }}</span>
                 </span>
-                <p class="section-title mb-2">{{ title }}</p>
+                <h3 class="section-title mb-2">{{ title }}</h3>
                 <p class="text-[13px] text-on-surface-variant leading-relaxed">{{ text }}</p>
             </div>
             {% endfor %}
@@ -81,7 +81,7 @@
 
     <!-- ── Úrovne prístupu ── -->
     <section class="pt-12">
-        <div class="rule"><p class="eyebrow">02 · Štyri úrovne prístupu</p></div>
+        <div class="rule"><h2 class="eyebrow">02 · Štyri úrovne prístupu</h2></div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             {% set levels = [
                 ('Neprihlásený', 'Stopky s fotobunkou bez ukladania.'),
@@ -93,7 +93,7 @@
             <div class="card p-5 flex items-start gap-4">
                 <span class="chip mono" aria-hidden="true">{{ '%02d'|format(loop.index) }}</span>
                 <div>
-                    <p class="font-headline font-semibold text-on-surface">{{ title }}</p>
+                    <h3 class="font-headline font-semibold text-on-surface">{{ title }}</h3>
                     <p class="text-[13px] text-on-surface-variant mt-1">{{ text }}</p>
                 </div>
             </div>

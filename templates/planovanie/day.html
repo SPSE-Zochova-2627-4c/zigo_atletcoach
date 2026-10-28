@@ -18,9 +18,9 @@
             <h1 class="page-title">{{ day|plan_date }}</h1>
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
-            <a href="{{ url_for('planovanie.day', iso=prev_day.isoformat(), athlete_id=aid) }}" class="{{ btn_secondary }}">← {{ prev_day.day }}. {{ prev_day.month }}.</a>
+            <a href="{{ url_for('planovanie.day', iso=prev_day.isoformat(), athlete_id=aid) }}" class="{{ btn_secondary }}" aria-label="Predchádzajúci deň: {{ prev_day.day }}. {{ prev_day.month }}."><span aria-hidden="true">←</span> {{ prev_day.day }}. {{ prev_day.month }}.</a>
             <a href="{{ url_for('planovanie.index', y=day.year, m=day.month, athlete_id=aid) }}" class="{{ btn_secondary }}">Kalendár</a>
-            <a href="{{ url_for('planovanie.day', iso=next_day.isoformat(), athlete_id=aid) }}" class="{{ btn_secondary }}">{{ next_day.day }}. {{ next_day.month }}. →</a>
+            <a href="{{ url_for('planovanie.day', iso=next_day.isoformat(), athlete_id=aid) }}" class="{{ btn_secondary }}" aria-label="Nasledujúci deň: {{ next_day.day }}. {{ next_day.month }}.">{{ next_day.day }}. {{ next_day.month }}. <span aria-hidden="true">→</span></a>
         </div>
     </div>
 
@@ -32,12 +32,12 @@
 
             {% for p in plans %}
             {% set status = statuses[p.id] %}
-            <article class="card p-5 mb-3 {% if status == 'missed' %}border-l-2 border-l-[#e66767]{% elif status == 'done' %}border-l-2 border-l-[#a8c22f]{% endif %}">
+            <article class="card p-5 mb-3 {% if status == 'missed' %}border-l-2 border-l-[color:var(--danger)]{% elif status == 'done' %}border-l-2 border-l-[color:var(--success)]{% endif %}">
                 <div class="flex items-start justify-between gap-4">
                     <div class="min-w-0">
-                        <p class="font-headline font-bold text-lg leading-tight {% if status == 'done' %}text-on-surface-variant{% else %}text-on-surface{% endif %}">
-                            {% if status == 'done' %}<span style="color:var(--success)">✓</span> {% endif %}{% if p.time_text %}<span class="mono text-[13px] text-on-surface-variant font-normal">{{ p.time_text }}</span> {% endif %}{{ p.title }}
-                        </p>
+                        <h2 class="font-headline font-bold text-lg leading-tight {% if status == 'done' %}text-on-surface-variant{% else %}text-on-surface{% endif %}">
+                            {% if status == 'done' %}<span style="color:var(--success)" aria-hidden="true">✓</span> {% endif %}{% if p.time_text %}<span class="mono text-[13px] text-on-surface-variant font-normal">{{ p.time_text }}</span> {% endif %}{{ p.title }}
+                        </h2>
                         {% if p.description %}
                         <p class="text-[13px] text-on-surface-variant mt-1.5 whitespace-pre-line leading-relaxed">{{ p.description }}</p>
                         {% endif %}
@@ -63,7 +63,7 @@
                             {% if perms[p.id].manage or (it.added_by_athlete and perms[p.id].complete) %}
                             <form method="post" action="{{ url_for('planovanie.item_delete', item_id=it.id) }}" onsubmit="return confirm('Zmazať položku „{{ it.text|e }}“?')">
                                 {% if aid %}<input type="hidden" name="athlete_id" value="{{ aid }}">{% endif %}
-                                <button type="submit" class="eyebrow hover:text-on-surface transition-colors" title="Zmazať">×</button>
+                                <button type="submit" class="eyebrow hover:text-on-surface transition-colors" aria-label="Zmazať položku „{{ it.text }}“"><span aria-hidden="true">×</span></button>
                             </form>
                             {% endif %}
                         </div>
@@ -85,7 +85,7 @@
                                 <div class="grid grid-cols-4 sm:grid-cols-6 gap-2">
                                     {% for i in range(it.slots) %}
                                     {% set val = it.results[i] if i < it.results|length else none %}
-                                    <input type="text" inputmode="decimal" name="v{{ i }}" value="{% if val is not none %}{{ '%g'|format(val) }}{% endif %}" placeholder="{{ it.unit }}" aria-label="{{ i + 1 }}.">
+                                    <input type="text" inputmode="decimal" name="v{{ i }}" value="{% if val is not none %}{{ '%g'|format(val) }}{% endif %}" placeholder="{{ it.unit }}" aria-label="{{ i + 1 }}. {{ 'séria' if it.kind == 'sila' else 'úsek' }} ({{ it.unit }})">
                                     {% endfor %}
                                 </div>
                                 <div class="flex flex-wrap items-end gap-3">
@@ -215,7 +215,7 @@
                         <button type="submit" class="{{ btn_secondary }}">Uložiť zmeny</button>
                     </form>
                     <form method="post" action="{{ url_for('planovanie.delete', plan_id=p.id) }}" class="mt-3"
-                          onsubmit="return confirm('Zmazať tréning „{{ p.title|e }}“?')">
+                          onsubmit="return confirm('Zmazať tréning „{{ p.title|e }}“ z plánu? Zápis v denníku ostane.')">
                         {% if aid %}<input type="hidden" name="athlete_id" value="{{ aid }}">{% endif %}
                         <button type="submit" class="text-[11px] font-semibold uppercase tracking-[0.1em] border-b border-transparent hover:border-current pb-0.5 transition-colors" style="color:var(--danger)">Zmazať tréning</button>
                     </form>
@@ -250,7 +250,7 @@
             <div class="rule">
                 <p class="eyebrow">Zápisy v denníku · {{ day|plan_date }}</p>
                 {% if not aid %}
-                <a href="{{ url_for('trainings') }}" class="eyebrow hover:text-on-surface transition-colors">Denník →</a>
+                <a href="{{ url_for('trainings') }}" class="eyebrow hover:text-on-surface transition-colors">Denník <span aria-hidden="true">→</span></a>
                 {% endif %}
             </div>
             {% if logs %}
@@ -275,7 +275,7 @@
                         <td class="py-3 text-right mono text-on-surface">{{ log|plan_duration or '—' }}</td>
                         <td class="py-3 pl-4">
                             {% set lp = linked.get(log.id) %}
-                            {% if lp %}<span class="plan-status plan-status--done">✓ {{ lp.title }}</span>
+                            {% if lp %}<span class="plan-status plan-status--done"><span aria-hidden="true">✓</span><span class="sr-only">splnené:</span> {{ lp.title }}</span>
                             {% else %}<span class="plan-status plan-status--pending">mimo plánu</span>{% endif %}
                         </td>
                     </tr>

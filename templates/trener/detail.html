@@ -78,7 +78,7 @@
         <div>
             <div class="rule">
                 <p class="eyebrow">Analýzy techniky</p>
-                <a href="{{ url_for('video_page') }}" class="eyebrow hover:text-on-surface transition-colors">Otvoriť Video →</a>
+                <a href="{{ url_for('video_page') }}" class="eyebrow hover:text-on-surface transition-colors">Otvoriť Video <span aria-hidden="true">→</span></a>
             </div>
             {% if videos %}
             <table class="w-full">
@@ -112,7 +112,7 @@
         <div>
             <div class="rule">
                 <p class="eyebrow">Prekážky</p>
-                <a href="{{ url_for('hurdles_page') }}" class="eyebrow hover:text-on-surface transition-colors">Otvoriť Prekážky →</a>
+                <a href="{{ url_for('hurdles_page') }}" class="eyebrow hover:text-on-surface transition-colors">Otvoriť Prekážky <span aria-hidden="true">→</span></a>
             </div>
             {% if hurdles %}
             <table class="w-full">
@@ -151,8 +151,8 @@
                 Odpojením prestaneš vidieť tréningy, analýzy a výsledky tohto zverenca. Jeho údaje zostanú jemu.
             </p>
             <form method="POST" action="{{ url_for('trener.detach_athlete', athlete_id=athlete.id) }}"
-                  onsubmit="return confirm('Odpojiť zverenca {{ athlete.username }}?');">
-                <button type="submit" class="border border-white/15 hover:border-[#e66767] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface-variant hover:text-[#e66767] transition-colors">Odpojiť zverenca</button>
+                  onsubmit="return confirm('Odpojiť zverenca {{ athlete.username }}? Prestaneš vidieť jeho tréningy, výsledky a analýzy; jeho údaje ostanú jemu.');">
+                <button type="submit" class="border border-white/15 hover:border-[color:var(--danger)] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface-variant hover:text-[color:var(--danger-text)] transition-colors">Odpojiť zverenca<span class="sr-only"> {{ athlete.username }}</span></button>
             </form>
         </div>
     </section>

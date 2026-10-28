@@ -5,7 +5,9 @@ Tréner tu:
   - vidí zoznam svojich (potvrdených) zverencov a čakajúce žiadosti,
   - pridá existujúceho zverenca podľa používateľského mena (vzťah musí
     zverenec potvrdiť – kým tak neurobí, tréner jeho údaje nevidí),
-  - vytvorí zverencovi nový účet (súhlas je implicitný, heslo nastavil tréner),
+  - vytvorí zverencovi nový účet (tréner potvrdí, že zverenec – a u mladšieho
+    ako 16 rokov aj rodič – so založením účtu súhlasí; podmienky si zverenec
+    odsúhlasí sám pri prvom prihlásení),
   - v detaile zverenca spravuje výsledky z pretekov; osobné rekordy sa počítajú.
 
 Pomocné funkcie (format_result, parse_time_fields, personal_bests, …) používa
@@ -307,26 +309,33 @@ def create_athlete():
     username = (request.form.get('username') or '').strip().lower()
     password = request.form.get('password') or ''
     full_name = (request.form.get('full_name') or '').strip()[:120]
+    consent = request.form.get('consent') == '1'
 
     errors = []
     if not USERNAME_RE.match(username):
         errors.append('Používateľské meno musí mať 3–32 znakov: malé písmená, číslice, bodka, pomlčka alebo podčiarkovník.')
     if len(password) < PASSWORD_MIN:
         errors.append(f'Heslo musí mať aspoň {PASSWORD_MIN} znakov.')
+    if not consent:
+        # Účet zakladá tréner v mene zverenca – bez potvrdenia súhlasu sa nevytvorí.
+        errors.append('Potvrď, že zverenec (a u mladšieho ako 16 rokov aj jeho rodič) so založením účtu '
+                      'a so spracovaním údajov súhlasí.')
     if not errors and User.query.filter_by(username=username).first():
         errors.append('Toto používateľské meno je už obsadené.')
     if errors:
         for e in errors:
             flash(e, 'danger')
-        return redirect(url_for('trener.athletes'))
+        return redirect(url_for('trener.athletes') + '#pridat')
 
-    # Účet zakladá tréner a heslo pozná – súhlas so vzťahom je implicitný.
+    # Účet zakladá tréner a heslo pozná, preto je vzťah hneď potvrdený. Podmienky používania
+    # si zverenec odsúhlasí sám pri prvom prihlásení (terms_accepted_at ostáva None).
     athlete = User(username=username, role='zverenec', full_name=full_name or None,
                    coach_id=g.user.id, coach_confirmed=True, must_change_password=True)
     athlete.set_password(password)
     db.session.add(athlete)
     db.session.commit()
-    flash(f'Účet „{athlete.username}“ vytvorený. Zverenec si pri prvom prihlásení zmení heslo.', 'success')
+    flash(f'Účet „{athlete.username}“ vytvorený. Zverenec si pri prvom prihlásení zmení heslo '
+          f'a potvrdí podmienky používania.', 'success')
     return redirect(url_for('trener.athlete_detail', athlete_id=athlete.id))
 
 

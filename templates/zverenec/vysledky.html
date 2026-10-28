@@ -20,13 +20,13 @@
 
     <!-- ── Tréner: žiadosť / potvrdený vzťah / bez trénera ── -->
     {% if coach_pending %}
-    <section class="mb-9 bg-surface-container border border-white/10 border-l-2 p-6" style="border-left-color:#d9a23a">
+    <section class="mb-9 bg-surface-container border border-white/10 border-l-2 p-6" style="border-left-color:var(--warn)" aria-labelledby="ziadost-trenera">
         <div class="flex items-start justify-between flex-wrap gap-5">
             <div>
-                <p class="eyebrow mb-2" style="color:#d9a23a">Žiadosť trénera</p>
-                <p class="font-headline font-bold text-2xl text-on-surface mb-2">
+                <p class="eyebrow mb-2" style="color:var(--warn-text)">Žiadosť trénera</p>
+                <h2 id="ziadost-trenera" class="font-headline font-bold text-2xl text-on-surface mb-2">
                     {{ coach.display_name }} <span class="mono text-[13px] font-normal text-on-surface-variant">({{ coach.username }})</span> ťa chce viesť ako tréner
-                </p>
+                </h2>
                 <p class="text-on-surface-variant text-[13px] max-w-[60ch]">
                     Po prijatí tréner uvidí tvoje tréningy, výsledky z pretekov, plán aj analýzy z videa a bude ti môcť
                     plánovať tréningy. Kým žiadosť neprijmeš, nevidí nič. Odpojiť sa môžeš kedykoľvek – tu, v sekcii Výsledky.
@@ -34,10 +34,10 @@
             </div>
             <div class="flex items-center gap-2.5">
                 <form method="POST" action="{{ url_for('zverenec.accept_coach') }}">
-                    <button type="submit" class="btn btn-primary">Prijať</button>
+                    <button type="submit" class="btn btn-primary">Prijať<span class="sr-only"> trénera {{ coach.username }}</span></button>
                 </form>
                 <form method="POST" action="{{ url_for('zverenec.reject_coach') }}">
-                    <button type="submit" class="border border-white/15 hover:border-[#e66767] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface hover:text-[#e66767] transition-colors">Odmietnuť</button>
+                    <button type="submit" class="border border-white/15 hover:border-[color:var(--danger)] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface hover:text-[color:var(--danger-text)] transition-colors">Odmietnuť<span class="sr-only"> žiadosť trénera {{ coach.username }}</span></button>
                 </form>
             </div>
         </div>
@@ -51,7 +51,7 @@
         </p>
         <form method="POST" action="{{ url_for('zverenec.leave_coach') }}"
               onsubmit="return confirm('Odpojiť sa od trénera {{ coach.username }}? Prestane vidieť tvoje údaje.');">
-            <button type="submit" class="eyebrow hover:text-[#e66767] transition-colors">Odpojiť sa od trénera</button>
+            <button type="submit" class="eyebrow hover:text-[color:var(--danger-text)] transition-colors">Odpojiť sa od trénera</button>
         </form>
     </section>
     {% else %}

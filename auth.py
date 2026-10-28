@@ -10,6 +10,7 @@ Blueprint 'auth' + pomocné funkcie, ktoré používajú všetky ostatné moduly
 """
 import time
 import re
+from datetime import datetime
 from functools import wraps
 from urllib.parse import urlparse
 
@@ -25,6 +26,8 @@ USERNAME_RE = re.compile(r'^[a-z0-9_.-]{3,32}$')
 PASSWORD_MIN = 6
 # Role, ktoré si používateľ môže vybrať pri registrácii. 'admin' nikdy z formulára.
 SELF_REGISTER_ROLES = ('zverenec', 'trener')
+TERMS_REQUIRED_MSG = ('Bez súhlasu s Podmienkami používania a Ochranou osobných údajov '
+                      'nie je možné pokračovať. Zaškrtni políčko so súhlasom.')
 
 # `from auth import current_user` – v kóde funguje ako g.user (current_user.id …).
 current_user = LocalProxy(lambda: g.get('user'))
@@ -269,11 +272,12 @@ def register():
     if g.user is not None and request.method == 'GET':
         return redirect(url_for('index'))
 
-    form = {'username': '', 'full_name': '', 'role': 'zverenec'}
+    form = {'username': '', 'full_name': '', 'role': 'zverenec', 'terms': False}
     if request.method == 'POST':
         form['username'] = (request.form.get('username') or '').strip().lower()
         form['full_name'] = (request.form.get('full_name') or '').strip()[:120]
         form['role'] = (request.form.get('role') or 'zverenec').strip()
+        form['terms'] = request.form.get('terms') == '1'
         password = request.form.get('password') or ''
         password2 = request.form.get('password2') or ''
 
@@ -286,6 +290,9 @@ def register():
             errors.append('Heslá sa nezhodujú.')
         if form['role'] not in SELF_REGISTER_ROLES:
             errors.append('Neplatná rola.')
+        if not form['terms']:
+            # Bez súhlasu účet nevznikne – aj keď prehliadač atribút `required` obíde.
+            errors.append(TERMS_REQUIRED_MSG)
         if not errors and User.query.filter_by(username=form['username']).first():
             errors.append('Toto používateľské meno je už obsadené.')
 
@@ -295,7 +302,8 @@ def register():
             return render_template('auth/register.html', form=form, roles=SELF_REGISTER_ROLES), 400
 
         user = User(username=form['username'], role=form['role'],
-                    full_name=form['full_name'] or None)
+                    full_name=form['full_name'] or None,
+                    terms_accepted_at=datetime.utcnow())
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
@@ -313,10 +321,14 @@ def register():
 @bp.route('/zmena-hesla', methods=['GET', 'POST'])
 @login_required
 def change_password():
+    # Účet založený trénerom/adminom ešte nemá odsúhlasené podmienky – vyžiadame ich
+    # tu, pri prvom prihlásení (keďže sem must_change_password každého presmeruje).
+    needs_terms = g.user.terms_accepted_at is None
     if request.method == 'POST':
         current = request.form.get('current_password') or ''
         new = request.form.get('new_password') or ''
         new2 = request.form.get('new_password2') or ''
+        terms = request.form.get('terms') == '1'
 
         errors = []
         if not g.user.check_password(current):
@@ -327,19 +339,23 @@ def change_password():
             errors.append('Nové heslá sa nezhodujú.')
         if not errors and g.user.check_password(new):
             errors.append('Nové heslo musí byť iné než súčasné.')
+        if needs_terms and not terms:
+            errors.append(TERMS_REQUIRED_MSG)
 
         if errors:
             for e in errors:
                 flash(e, 'danger')
-            return render_template('auth/change_password.html'), 400
+            return render_template('auth/change_password.html', needs_terms=needs_terms), 400
 
         g.user.set_password(new)
         g.user.must_change_password = False
+        if needs_terms:
+            g.user.terms_accepted_at = datetime.utcnow()
         db.session.commit()
         flash('Heslo bolo zmenené.', 'success')
         return redirect(url_for('index'))
 
-    return render_template('auth/change_password.html')
+    return render_template('auth/change_password.html', needs_terms=needs_terms)
 
 
 # -----------------------------

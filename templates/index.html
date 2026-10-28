@@ -16,20 +16,23 @@
                     Natoč sa spomalene z boku a appka z videa vyčíta kontakt so zemou pre každý krok, kadenciu
                     aj asymetriu medzi nohami. Regenerácia a tréningy k tomu dávajú kontext.
                 </p>
-                <div class="flex flex-wrap gap-2.5 mt-6">
+                <div class="flex flex-wrap items-center gap-2.5 mt-6">
                     <a href="{{ url_for('video_page') }}" class="btn btn-primary">
                         <span class="material-symbols-outlined" aria-hidden="true">videocam</span>Analyzovať video
                     </a>
                     <a href="{{ url_for('planovanie.index') }}" class="btn btn-secondary">Môj plán</a>
                     {% if not strava_logged_in %}
-                    <a href="{{ url_for('strava_login') }}" class="btn btn-ghost">Pripojiť Stravu</a>
+                    {# Pripojenie cez OAuth – oficiálne tlačidlo Stravy, nezmenené. #}
+                    <a href="{{ url_for('strava_login') }}" class="inline-flex rounded-md">
+                        <img src="{{ url_for('static', filename='strava/btn_strava_connect_with_orange.svg') }}" alt="Connect with Strava" lang="en" width="198" height="40">
+                    </a>
                     {% else %}
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-ghost">Strava prehľad</a>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-ghost">Prehľad aktivít</a>
                     {% endif %}
                 </div>
             </div>
             <div class="card p-5">
-                <p class="eyebrow mb-3">Regenerácia dnes</p>
+                <h2 class="eyebrow mb-3">Regenerácia dnes</h2>
                 {% if last_recovery is not none %}
                 <div class="flex items-baseline gap-3">
                     <span class="score-num">{{ last_recovery }}</span>
@@ -56,7 +59,7 @@
         {% if last_video %}
         <div class="flex items-baseline justify-between flex-wrap gap-3 mb-7">
             <div class="flex items-baseline gap-4 flex-wrap">
-                <p class="eyebrow">Posledné meranie</p>
+                <h2 class="eyebrow">Posledné meranie</h2>
                 <p class="section-title">{{ last_video.label or 'Meranie' }}</p>
             </div>
             <p class="mono text-[11px] text-on-surface-variant">
@@ -64,7 +67,7 @@
                 {{ last_video.steps_detected or 0 }} krokov ·
                 {{ '%.0f'|format(last_video.fps or 0) }} fps
                 {% if last_video.fps and last_video.fps < 100 %}
-                <span style="color:var(--warn)"> · presnosť len orientačná</span>
+                <span style="color:var(--warn-text)"> · presnosť len orientačná</span>
                 {% endif %}
             </p>
         </div>
@@ -80,19 +83,19 @@
                 <p class="eyebrow mb-3">{{ label }}</p>
                 <p class="font-headline font-extrabold leading-none text-[40px] sm:text-[52px]
                           {{ 'text-on-surface' if not loop.first else '' }}"
-                   {% if loop.first %}style="color:var(--volt)"{% endif %}>{% if value == '—' %}<span class="text-on-surface-variant text-[20px] align-middle">—</span>{% else %}{{ value }}{% endif %}</p>
+                   {% if loop.first %}style="color:var(--accent-text)"{% endif %}>{% if value == '—' %}<span class="text-on-surface-variant text-[20px] align-middle" aria-hidden="true">—</span><span class="sr-only">bez údaju</span>{% else %}{{ value }}{% endif %}</p>
                 <p class="mono text-[11px] text-on-surface-variant mt-2">{{ unit }}</p>
             </div>
             {% endfor %}
         </div>
 
         <a href="{{ url_for('video_page') }}"
-           class="inline-block mt-5 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface-variant hover:text-on-surface transition-colors border-b border-white/25 pb-0.5">
-            Celý rozbor krokov →
+           class="inline-block mt-5 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface-variant hover:text-on-surface transition-colors border-b border-[color:var(--border-strong)] pb-0.5">
+            Celý rozbor krokov <span aria-hidden="true">→</span>
         </a>
 
         {% else %}
-        <p class="eyebrow mb-4">Posledné meranie</p>
+        <h2 class="eyebrow mb-4">Posledné meranie</h2>
         <p class="font-headline font-bold text-2xl text-on-surface mb-2">Zatiaľ žiadne video</p>
         <p class="text-on-surface-variant max-w-[58ch] mb-6">
             Natoč sa spomalene (Slo-mo, 120 alebo 240 fps) presne z boku, celé telo v zábere.
@@ -107,26 +110,26 @@
 
     <!-- ── Dnešný stav ── -->
     <section class="pt-12">
-        <div class="rule"><p class="eyebrow">Dnešný stav</p></div>
+        <div class="rule"><h2 class="eyebrow">Dnešný stav</h2></div>
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
 
             <div class="card px-5 py-5">
                 <p class="eyebrow mb-3">Týždenné km</p>
                 <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">
-                    {% if weekly_km > 0 %}{{ weekly_km }}<span class="mono text-xs font-normal text-on-surface-variant ml-1.5">km</span>{% else %}<span class="text-on-surface-variant text-[20px] align-middle">—</span>{% endif %}
+                    {% if weekly_km > 0 %}{{ weekly_km }}<span class="mono text-xs font-normal text-on-surface-variant ml-1.5">km</span>{% else %}<span class="text-on-surface-variant text-[20px] align-middle" aria-hidden="true">—</span><span class="sr-only">bez údaju</span>{% endif %}
                 </p>
             </div>
 
             <div class="card px-5 py-5">
                 <p class="eyebrow mb-3">HRV dnes</p>
                 <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">
-                    {% if last_hrv %}{{ last_hrv|int }}<span class="mono text-xs font-normal text-on-surface-variant ml-1.5">ms</span>{% else %}<span class="text-on-surface-variant text-[20px] align-middle">—</span>{% endif %}
+                    {% if last_hrv %}{{ last_hrv|int }}<span class="mono text-xs font-normal text-on-surface-variant ml-1.5">ms</span>{% else %}<span class="text-on-surface-variant text-[20px] align-middle" aria-hidden="true">—</span><span class="sr-only">bez údaju</span>{% endif %}
                 </p>
                 {% if avg_hrv_7 %}
                 <p class="mono text-[11px] text-on-surface-variant mt-2">
                     7d priemer {{ avg_hrv_7 }} ms
-                    {% if last_hrv and last_hrv > avg_hrv_7 %}<span style="color:var(--success)">▲</span>
-                    {% elif last_hrv and last_hrv < avg_hrv_7 %}<span style="color:var(--danger)">▼</span>{% endif %}
+                    {% if last_hrv and last_hrv > avg_hrv_7 %}<span aria-hidden="true" style="color:var(--success-text)">▲</span><span class="sr-only">, dnes nad priemerom</span>
+                    {% elif last_hrv and last_hrv < avg_hrv_7 %}<span aria-hidden="true" style="color:var(--danger-text)">▼</span><span class="sr-only">, dnes pod priemerom</span>{% endif %}
                 </p>
                 {% endif %}
             </div>
@@ -135,21 +138,21 @@
                 <p class="eyebrow mb-3">Regenerácia</p>
                 {% if last_recovery is not none %}
                 <p class="font-headline font-extrabold text-[34px] leading-none"
-                   style="color:{% if last_recovery >= 67 %}var(--success){% elif last_recovery >= 34 %}var(--warn){% else %}var(--danger){% endif %}">
+                   style="color:{% if last_recovery >= 67 %}var(--success-text){% elif last_recovery >= 34 %}var(--warn-text){% else %}var(--danger-text){% endif %}">
                     {{ last_recovery }}<span class="mono text-xs font-normal text-on-surface-variant ml-1.5">%</span>
                 </p>
                 <p class="mono text-[11px] text-on-surface-variant mt-2">
                     {% if last_recovery >= 67 %}pripravený{% elif last_recovery >= 34 %}stredne{% else %}potrebuje oddych{% endif %}
                 </p>
                 {% else %}
-                <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface"><span class="text-on-surface-variant text-[20px] align-middle">—</span></p>
+                <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface"><span class="text-on-surface-variant text-[20px] align-middle" aria-hidden="true">—</span><span class="sr-only">bez údaju</span></p>
                 {% endif %}
             </div>
 
             <div class="card px-5 py-5">
                 <p class="eyebrow mb-3">Pokojový tep</p>
                 <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">
-                    {% if last_rhr %}{{ last_rhr }}<span class="mono text-xs font-normal text-on-surface-variant ml-1.5">bpm</span>{% else %}<span class="text-on-surface-variant text-[20px] align-middle">—</span>{% endif %}
+                    {% if last_rhr %}{{ last_rhr }}<span class="mono text-xs font-normal text-on-surface-variant ml-1.5">bpm</span>{% else %}<span class="text-on-surface-variant text-[20px] align-middle" aria-hidden="true">—</span><span class="sr-only">bez údaju</span>{% endif %}
                 </p>
             </div>
         </div>
@@ -159,51 +162,52 @@
     <section class="pt-12 grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-10">
 
         <div>
-            <div class="rule"><p class="eyebrow">Rýchly prístup</p></div>
+            <div class="rule"><h2 class="eyebrow">Rýchly prístup</h2></div>
             {% set links = [
-                ('planovanie.index', 'Plán od trénera',       'Naplánované tréningy a ich splnenie'),
-                ('zverenec.results', 'Výsledky a osobné rekordy', 'Preteky, PB podľa disciplíny'),
-                ('trainings',        'Zaloguj tréning',       'Interval, tempo, šprint'),
-                ('log_data',         'Zapíš regeneráciu',     'HRV, regenerácia, pokojový tep'),
-                ('ai_portal',        'AI tréner',             'Pripravenosť + chat'),
-                ('osobaky',          'Strava osobáky',        '400 m, 800 m, 5 km, 10 km…'),
+                ('planovanie.index', 'Plán od trénera',           'Naplánované tréningy a ich splnenie'),
+                ('zverenec.results', 'Výsledky a osobné rekordy', 'Preteky, osobné rekordy podľa disciplíny'),
+                ('trainings',        'Zapíš tréning',             'Intervaly, tempo, šprint'),
+                ('log_data',         'Zapíš regeneráciu',         'HRV, regenerácia, pokojový tep'),
+                ('ai_portal',        'AI tréner',                 'Pripravenosť a chat'),
+                ('osobaky',          'Osobáky zo Stravy',         '400 m, 800 m, 5 km, 10 km…'),
             ] %}
             {% for endpoint, title, sub in links %}
             <a href="{{ url_for(endpoint) }}"
-               class="group flex items-baseline justify-between gap-4 py-4 border-b border-white/10
-                      hover:border-white/30 transition-colors">
+               class="group flex items-baseline justify-between gap-4 py-4 border-b border-[color:var(--border)]
+                      hover:border-[color:var(--border-strong)] transition-colors">
                 <div>
-                    <p class="font-headline font-semibold text-on-surface group-hover:text-[color:var(--volt)] transition-colors">{{ title }}</p>
+                    <p class="font-headline font-semibold text-on-surface group-hover:text-[color:var(--accent-text)] transition-colors">{{ title }}</p>
                     <p class="text-[13px] text-on-surface-variant">{{ sub }}</p>
                 </div>
-                <span class="mono text-on-surface-variant group-hover:text-on-surface transition-colors">→</span>
+                <span class="mono text-on-surface-variant group-hover:text-on-surface transition-colors" aria-hidden="true">→</span>
             </a>
             {% endfor %}
         </div>
 
         <div>
             <div class="rule">
-                <p class="eyebrow">Posledné záznamy</p>
-                <a href="{{ url_for('log_data') }}" class="eyebrow hover:text-on-surface transition-colors">Všetky →</a>
+                <h2 class="eyebrow">Posledné záznamy</h2>
+                <a href="{{ url_for('log_data') }}" class="eyebrow hover:text-on-surface transition-colors">Všetky záznamy <span aria-hidden="true">→</span></a>
             </div>
             {% if recent_logs %}
             <table class="w-full">
+                <caption class="sr-only">Posledné záznamy regenerácie: dátum, HRV a regenerácia</caption>
                 <thead>
-                    <tr class="border-b border-white/10">
-                        <th class="py-2.5 text-left">Dátum</th>
-                        <th class="py-2.5 text-right">HRV</th>
-                        <th class="py-2.5 text-right">Regenerácia</th>
+                    <tr>
+                        <th scope="col" class="py-2.5 text-left">Dátum</th>
+                        <th scope="col" class="py-2.5 text-right">HRV</th>
+                        <th scope="col" class="py-2.5 text-right">Regenerácia</th>
                     </tr>
                 </thead>
                 <tbody class="mono text-[13px]">
                     {% for log in recent_logs %}
-                    <tr class="border-b border-white/5">
+                    <tr class="border-b border-[color:var(--border)]">
                         <td class="py-3 text-on-surface-variant">{{ log.date.strftime('%d. %m. %Y') }}</td>
                         <td class="py-3 text-right text-on-surface">{{ log.hrv|int }} ms</td>
                         <td class="py-3 text-right">
                             {% if log.recovery is not none %}
-                            <span style="color:{% if log.recovery >= 67 %}var(--success){% elif log.recovery >= 34 %}var(--warn){% else %}var(--danger){% endif %}">{{ log.recovery }} %</span>
-                            {% else %}<span class="text-on-surface-variant">—</span>{% endif %}
+                            <span style="color:{% if log.recovery >= 67 %}var(--success-text){% elif log.recovery >= 34 %}var(--warn-text){% else %}var(--danger-text){% endif %}">{{ log.recovery }} %</span>
+                            {% else %}<span class="text-on-surface-variant" aria-hidden="true">—</span><span class="sr-only">bez údaju</span>{% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -212,7 +216,7 @@
             {% else %}
             <p class="text-on-surface-variant py-8">
                 Zatiaľ žiadne záznamy.
-                <a href="{{ url_for('log_data') }}" class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">Pridaj prvý →</a>
+                <a href="{{ url_for('log_data') }}" class="text-on-surface border-b border-[color:var(--border-strong)] hover:border-[color:var(--text-soft)] transition-colors">Pridaj prvý <span aria-hidden="true">→</span></a>
             </p>
             {% endif %}
         </div>

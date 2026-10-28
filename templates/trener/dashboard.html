@@ -55,7 +55,7 @@
         <div>
             <div class="rule">
                 <p class="eyebrow">Zverenci</p>
-                <a href="{{ url_for('trener.athletes') }}" class="eyebrow hover:text-on-surface transition-colors">Spravovať →</a>
+                <a href="{{ url_for('trener.athletes') }}" class="eyebrow hover:text-on-surface transition-colors">Spravovať<span class="sr-only"> zverencov</span> <span aria-hidden="true">→</span></a>
             </div>
             {% if athletes %}
             <table class="w-full">
@@ -89,7 +89,7 @@
             </p>
             <a href="{{ url_for('trener.athletes') }}"
                class="inline-block text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface-variant hover:text-on-surface transition-colors border-b border-white/25 pb-0.5">
-                Pridať zverenca →
+                Pridať zverenca <span aria-hidden="true">→</span>
             </a>
             {% endif %}
         </div>

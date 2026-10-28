@@ -54,8 +54,8 @@
                 </div>
                 {% endif %}
 
-                <div>
-                    <p class="eyebrow mb-2">Rola</p>
+                <fieldset>
+                    <legend class="eyebrow mb-2">Rola</legend>
                     <div class="grid grid-cols-3 gap-3">
                         {% for value, sub in [('zverenec', 'vidí len svoje údaje'), ('trener', 'spravuje zverencov a plán'), ('admin', 'správa účtov a systému')] %}
                         <label class="bg-surface-container-low px-4 py-3.5 cursor-pointer flex items-start gap-3 hover:bg-surface-container-high transition-colors">
@@ -68,11 +68,11 @@
                         {% endfor %}
                     </div>
                     {% if user and user.is_coach %}
-                    <p class="mono text-[10px] text-on-surface-variant mt-2" style="color:var(--warn)">
+                    <p class="mono text-[10px] text-on-surface-variant mt-2" style="color:var(--warn-text)">
                         Zmena roly z trénera odpojí všetkých jeho zverencov.
                     </p>
                     {% endif %}
-                </div>
+                </fieldset>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -118,6 +118,12 @@
             <div>
                 <div class="rule"><p class="eyebrow">Dáta v systéme</p></div>
                 <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-white/10">
+                            <th scope="col" class="py-2.5 text-left">Údaje</th>
+                            <th scope="col" class="py-2.5 text-right">Počet</th>
+                        </tr>
+                    </thead>
                     <tbody class="text-[13px]">
                         {% for label, key in [('Tréningy', 'trainings'), ('Výsledky z pretekov', 'results'),
                                               ('Analýzy videa', 'videos'), ('Analýzy prekážok', 'hurdles'),
@@ -164,8 +170,8 @@
                     Zmaže účet aj všetky jeho údaje. Pred zmazaním sa zobrazí potvrdenie so súhrnom.
                 </p>
                 <a href="{{ url_for('admin_panel.delete_user', user_id=user.id) }}"
-                   class="inline-block border border-[#e66767]/50 hover:border-[#e66767] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">
-                    Zmazať účet…
+                   class="inline-block border border-[color:var(--danger)] hover:bg-[color:var(--danger-soft)] px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">
+                    Zmazať účet {{ user.username }}…
                 </a>
                 {% endif %}
             </div>

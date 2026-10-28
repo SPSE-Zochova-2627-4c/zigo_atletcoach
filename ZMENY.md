@@ -1,9 +1,11 @@
 # Zmeny „nový dizajn a príprava na spustenie“ (október 2026)
 
-- **Dizajn**: svetlý „výsledková listina“ vzhľad – papierový podklad, atramentový text, jeden tartanovo-červený
-  akcent, IBM Plex Sans + Mono, bočné menu s ikonami a počtami (`navigacia.py`), horná lišta s menom, dlaždice
-  s číslami, tabuľky ako karty, štítky stavov, sekcie „01 · názov“. Všetko cez tokeny v `base.html`
-  (staršie názvy tried ostali a preladili sa hromadne); nové ikony appky (`static/icons`, `logo.svg`).
+- **Dizajn**: neutrálny vzhľad so svetlým a tmavým režimom (prepínač v hornej lište, uložené v prehliadači) –
+  biele/čierne karty, atramentový text, jeden modrý akcent, Inter + IBM Plex Mono; bočné menu s ikonami a počtami
+  (`navigacia.py`), horná lišta s menom, dlaždice s číslami, tabuľky ako karty, štítky stavov, sekcie „01 · názov“.
+  Pohyb: prechod medzi stránkami (View Transitions), objavenie obsahu a kariet, napočítanie čísel, hover; rešpektuje
+  „obmedziť pohyb“. Tokeny v `base.html` (farby Tailwindu ukazujú na CSS premenné, takže staršie šablóny sa
+  preladili hromadne); nové ikony appky (`static/icons`, `logo.svg`).
 - **Tretie strany**: Tailwind, Chart.js, Leaflet + Leaflet.heat, písma IBM Plex a podmnožina ikon Material Symbols
   sú uložené v `static/vendor` s licenciami – z prehliadača nejde nič na Google ani CDN. Heatmapa má správnu
   atribúciu OpenStreetMap / CARTO. Oficiálne logo „Powered by Strava“ v `static/strava`.
@@ -11,6 +13,16 @@
   tretie strany, práva, mladší ako 16 rokov), Podmienky používania (vrátane platieb a vrátenia peňazí – appka je
   bezplatná), Cookies (jediná nevyhnutná cookie, localStorage). Kontakt z `ATLETCOACH_KONTAKT_EMAIL`, inak GitHub.
   Päta s údajmi o projekte, informačná lišta o cookies, stránka 404.
+- **Súhlasy**: registrácia a účet od trénera vyžadujú súhlas s podmienkami a ochranou údajov (`User.terms_accepted_at`,
+  pri účte od trénera ho zverenec prijme pri prvom prihlásení); zápis a import zdravotných údajov (HRV, regenerácia,
+  tep) len s výslovným súhlasom, záznamy sa dajú zmazať (`POST /log/<id>/zmazat`); AI chat a AI tréner upozorňujú
+  na Groq (USA) a že nejde o zdravotnú radu; prompty zakazujú diagnózy.
+- **Prístupnosť stránok**: popisky všetkých polí (aj polí času cez fieldset), názvy tlačidiel s ikonou, popisy grafov
+  a mapy, hlavičky tabuliek, poradie nadpisov, výber v grafoch cez tlačidlo Zobraziť namiesto odoslania pri zmene,
+  súbor videa vyberateľný z klávesnice, kontrast textu ≥ 4,5:1; kalendár v denníku tréningov opravený (klik na deň
+  nefungoval, názvy sa vkladali cez innerHTML). Oficiálne tlačidlo „Connect with Strava“ a logo „Powered by Strava“
+  namiesto prekreslených log; texty bez nepodložených sľubov (import z World Athletics je neoficiálny, čísla z videa
+  sú odhady).
 - **Prístupnosť layoutu**: odkaz „Preskočiť na obsah“, viditeľný fokus, hlásenia ako živý región (chyby ostávajú,
   kým ich nezavrieš), menu s `aria-expanded`, ikony `aria-hidden`, kontrast placeholderov a tlmeného textu ≥ 4,5:1.
 

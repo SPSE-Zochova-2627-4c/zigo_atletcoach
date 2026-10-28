@@ -16,16 +16,19 @@
         <div>
             <label for="username">Používateľské meno</label>
             <input type="text" id="username" name="username" value="{{ form.username }}" placeholder="napr. jan.novak"
-                   autocomplete="username" autocapitalize="off" spellcheck="false" minlength="3" maxlength="32" required autofocus>
-            <p class="mono text-[10px] text-on-surface-variant mt-1.5">3–32 znakov: a–z, 0–9, bodka, pomlčka, podčiarkovník</p>
+                   autocomplete="username" autocapitalize="off" spellcheck="false" minlength="3" maxlength="32" required autofocus
+                   aria-describedby="username-hint">
+            <p id="username-hint" class="mono text-[10px] text-on-surface-variant mt-1.5">3–32 znakov: a–z, 0–9, bodka, pomlčka, podčiarkovník</p>
         </div>
         <div>
             <label for="full_name">Meno a priezvisko</label>
-            <input type="text" id="full_name" name="full_name" value="{{ form.full_name }}" placeholder="nepovinné" maxlength="120" autocomplete="name">
+            <input type="text" id="full_name" name="full_name" value="{{ form.full_name }}" placeholder="nepovinné" maxlength="120" autocomplete="name"
+                   aria-describedby="full-name-hint">
+            <p id="full-name-hint" class="text-[12px] text-on-surface-variant mt-1.5">Nepovinné. Zobrazí sa trénerovi, ktorý ťa má medzi zverencami, a administrátorovi.</p>
         </div>
 
-        <div>
-            <p class="eyebrow mb-2">Rola</p>
+        <fieldset class="m-0 p-0 border-0 min-w-0">
+            <legend class="eyebrow mb-2">Rola</legend>
             <div class="grid grid-cols-2 gap-3">
                 {% for value, label, sub in [('zverenec', 'Zverenec', 'atlét, zapisuje si tréningy'), ('trener', 'Tréner', 'spravuje zverencov a plán')] %}
                 <label class="bg-surface-container-low px-4 py-3.5 cursor-pointer flex items-start gap-3 hover:bg-surface-container-high transition-colors">
@@ -37,7 +40,7 @@
                 </label>
                 {% endfor %}
             </div>
-        </div>
+        </fieldset>
 
         <div class="grid grid-cols-2 gap-3">
             <div>
@@ -50,6 +53,19 @@
             </div>
         </div>
 
+        <label class="flex items-start gap-3 text-[13px] text-on-surface-variant cursor-pointer">
+            <input type="checkbox" name="terms" value="1" required class="mt-1" {% if form.terms %}checked{% endif %}>
+            <span>
+                Prečítal som si
+                <a href="{{ url_for('pravne.podmienky') }}" target="_blank" rel="noopener"
+                   class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">Podmienky používania<span class="sr-only"> (otvorí sa v novom okne)</span></a>
+                a
+                <a href="{{ url_for('pravne.ochrana_udajov') }}" target="_blank" rel="noopener"
+                   class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">Ochranu osobných údajov<span class="sr-only"> (otvorí sa v novom okne)</span></a>
+                a súhlasím s nimi. Mám aspoň 16 rokov, alebo s účtom súhlasí môj rodič.
+            </span>
+        </label>
+
         <button type="submit" class="w-full btn btn-primary">
             Vytvoriť účet
         </button>
@@ -57,7 +73,7 @@
 
     <p class="mt-5 text-[13px] text-on-surface-variant">
         Už máš účet?
-        <a href="{{ url_for('auth.login') }}" class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">Prihlásenie →</a>
+        <a href="{{ url_for('auth.login') }}" class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">Prihlásenie <span aria-hidden="true">→</span></a>
     </p>
 </main>
 {% endblock %}

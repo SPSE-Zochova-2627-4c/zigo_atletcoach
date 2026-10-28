@@ -96,7 +96,8 @@ def _ensure_columns():
     inspector = inspect(db.engine)
     wanted = {'user_profile': [('height_cm', 'FLOAT')],
               'user': [('coach_confirmed', 'BOOLEAN NOT NULL DEFAULT 0'),
-                       ('group_name', 'VARCHAR(60)'), ('nickname', 'VARCHAR(60)')],
+                       ('group_name', 'VARCHAR(60)'), ('nickname', 'VARCHAR(60)'),
+                       ('terms_accepted_at', 'DATETIME')],
               'planned_training': [('batch_id', 'VARCHAR(36)'), ('time_text', 'VARCHAR(5)')]}
     for table in LEGACY_USER_TABLES:
         wanted.setdefault(table, []).append(('user_id', 'INTEGER'))
@@ -543,36 +544,78 @@ def index():
     )
 
 
+# HRV, regenerácia a pokojový tep sú údaje o zdraví (čl. 9 GDPR) – ukladajú sa len
+# s výslovným súhlasom, ktorý používateľ dáva pri každom zápise aj importe.
+HEALTH_CONSENT_MSG = ('Bez súhlasu so spracovaním údajov o zdraví sa meranie neuloží. '
+                      'Zaškrtni políčko so súhlasom a skús to znova.')
+
+
+def _health_consent_given():
+    return request.form.get('health_consent') == '1'
+
+
 @app.route('/log', methods=['GET', 'POST'])
 @login_required
 def log_data():
     if request.method == 'POST':
+        if not _health_consent_given():
+            flash(HEALTH_CONSENT_MSG, 'danger')
+            return redirect(url_for('log_data'))
+
         hrv = request.form.get('hrv', type=float)
         recovery = request.form.get('recovery', type=int)
         rhr = request.form.get('rhr', type=int)
 
-        if hrv is not None:
-            new_log = BiometricLog(
-                user_id=g.user.id,
-                hrv=hrv,
-                recovery=recovery,
-                rhr=rhr
-            )
-            db.session.add(new_log)
-            db.session.commit()
-            flash('Záznam uložený', 'success')
+        if hrv is None or not math.isfinite(hrv) or not (0 < hrv < 500):
+            flash('Zadaj HRV ako číslo v milisekundách (0–500).', 'danger')
+            return redirect(url_for('log_data'))
+        if recovery is not None and not (0 <= recovery <= 100):
+            flash('Regenerácia musí byť 0–100 %.', 'danger')
+            return redirect(url_for('log_data'))
+        if rhr is not None and not (20 <= rhr <= 250):
+            flash('Pokojový tep musí byť 20–250 úderov za minútu.', 'danger')
+            return redirect(url_for('log_data'))
 
+        new_log = BiometricLog(
+            user_id=g.user.id,
+            hrv=hrv,
+            recovery=recovery,
+            rhr=rhr
+        )
+        db.session.add(new_log)
+        db.session.commit()
+        flash('Meranie uložené.', 'success')
         return redirect(url_for('log_data'))
 
     logs = BiometricLog.query.filter_by(user_id=g.user.id) \
-        .order_by(BiometricLog.date.desc()).limit(5).all()
+        .order_by(BiometricLog.date.desc(), BiometricLog.id.desc()).limit(14).all()
     return render_template('log.html', logs=logs)
+
+
+@app.route('/log/<int:log_id>/zmazat', methods=['POST'])
+@login_required
+def log_delete(log_id):
+    """Zmazanie jedného biometrického záznamu – smie len jeho vlastník."""
+    row = db.session.get(BiometricLog, log_id)
+    if row is None:
+        abort(404)
+    if row.user_id != g.user.id:
+        abort(403)
+    when = row.date.strftime('%d. %m. %Y')
+    db.session.delete(row)
+    db.session.commit()
+    flash(f'Meranie z {when} bolo zmazané.', 'success')
+    return redirect(url_for('log_data'))
 
 
 @app.route('/import-whoop', methods=['POST'])
 @login_required
 def import_whoop():
     import io, csv as csv_mod, re as _re
+
+    if not _health_consent_given():
+        flash(HEALTH_CONSENT_MSG, 'danger')
+        return redirect(url_for('log_data'))
 
     files = request.files.getlist('whoop_csv')
     files = [f for f in files if f and f.filename.endswith('.csv')]
@@ -1133,7 +1176,7 @@ def readiness():
         today_log = my_logs.order_by(BiometricLog.date.desc()).first()
 
     if not today_log:
-        return jsonify({'error': 'Žiadne dáta. Najprv si zaloguj HRV a recovery.'}), 404
+        return jsonify({'error': 'Zatiaľ žiadne merania. Najprv si zapíš HRV a regeneráciu.'}), 404
 
     cutoff = today - timedelta(days=30)
     logs_30 = my_logs.filter(BiometricLog.date >= cutoff).all()
@@ -1154,22 +1197,22 @@ def readiness():
 
     if readiness_pct >= 80:
         label = "Trénuj naplno"
-        sublabel = "Si výborne zregenerovaný. Ideálny deň na intenzívny tréning alebo preteky."
+        sublabel = "Podľa HRV a regenerácie si dobre zregenerovaný. Vhodný deň na intenzívnejší tréning."
         color = "green"
         icon = "rocket_launch"
     elif readiness_pct >= 60:
         label = "Stredný tréning"
-        sublabel = "Dobrá forma. Vhodné tempové behy alebo stredné intervaly."
+        sublabel = "Hodnoty sú v poriadku. Vhodné tempové behy alebo stredné intervaly."
         color = "yellow"
         icon = "directions_run"
     elif readiness_pct >= 40:
         label = "Ľahký tréning"
-        sublabel = "Telo ešte regeneruje. Odporúčam ľahký klus alebo strečing."
+        sublabel = "Hodnoty naznačujú, že telo ešte regeneruje. Skôr ľahký klus alebo strečing."
         color = "orange"
         icon = "self_improvement"
     else:
         label = "Oddychuj"
-        sublabel = "HRV a recovery sú nízke. Dnes je lepší aktívny odpočinok než tréning."
+        sublabel = "HRV a regenerácia sú nízke. Dnes je lepší aktívny odpočinok než tréning."
         color = "red"
         icon = "bedtime"
 
@@ -1207,6 +1250,12 @@ Dávaj presné, akčné odporúčania. Nie generické rady — vždy vychádzaj 
 4. Dávaj konkrétne čísla: "bež 6×200m v 28-29s" nie "rob intervaly"
 5. Nezačínaj odpoveď s "Samozrejme" ani "Určite" — choď rovno k veci
 6. Ak niečo nevieš presne, povedz to a navrhni alternatívu
+7. NIE SI LEKÁR. Nedávaš diagnózy ani nelieč. Ak atlét píše o bolesti, zranení, závratoch,
+   búšení srdca, dlhšie zvýšenom pokojovom tepe alebo inom zdravotnom probléme, odporuč
+   lekára alebo fyzioterapeuta a navrhni len bezpečnú úpravu tréningu (oddych, zníženie
+   záťaže). HRV, recovery a RHR sú orientačné ukazovatele, nie zdravotný záver.
+   Atléti sú často 15–19-roční — žiadne rady o diétach na chudnutie, doplnkoch výživy
+   či liekoch; pri výžive len všeobecné zásady a odkaz na trénera alebo odborníka
 
 ## ODBORNÉ ZNALOSTI
 
@@ -2091,7 +2140,9 @@ konkrétny komentár v slovenčine (tykaj mu):
 
 Pravidlá: opieraj sa výhradne o dodané čísla, nič si nevymýšľaj. Ak je video pod 100 fps alebo sú
 v upozorneniach pochybnosti o kvalite, povedz, že časové údaje sú orientačné. Uhly platia len pri
-zábere presne z boku. Buď stručný (do 250 slov), bez nadpisov, môžeš použiť odrážky."""
+zábere presne z boku. Buď stručný (do 250 slov), bez nadpisov, môžeš použiť odrážky.
+Nie si lekár: nedávaj diagnózy. Ak čísla (napr. opakovaná asymetria) naznačujú možné zranenie
+alebo atlét spomína bolesť, odporuč fyzioterapeuta alebo lekára a nerob zdravotné závery."""
 
 
 def _groq_complete(messages, max_tokens=900):

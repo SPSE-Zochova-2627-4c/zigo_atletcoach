@@ -118,10 +118,10 @@ Nedela
                         <p class="mono text-[11px] text-on-surface-variant">{{ b.count }} tréningov · {{ b.athletes }} zverencov · vložené {{ b.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
                     </div>
                     <div class="flex items-center gap-3 flex-shrink-0">
-                        <a href="{{ url_for('planovanie.index', y=b.start.year, m=b.start.month) }}" class="eyebrow hover:text-on-surface transition-colors">kalendár →</a>
+                        <a href="{{ url_for('planovanie.index', y=b.start.year, m=b.start.month) }}" class="eyebrow hover:text-on-surface transition-colors">kalendár<span class="sr-only"> {{ b.start|plan_date }} – {{ b.end|plan_date }}</span> <span aria-hidden="true">→</span></a>
                         <form method="post" action="{{ url_for('planovanie.delete_batch', batch_id=b.batch_id) }}"
-                              onsubmit="return confirm('Zmazať celý vložený týždeň ({{ b.count }} tréningov)?')">
-                            <button type="submit" class="text-[11px] font-semibold uppercase tracking-[0.1em] border-b border-transparent hover:border-current pb-0.5 transition-colors" style="color:var(--danger)">zmazať</button>
+                              onsubmit="return confirm('Zmazať celý vložený týždeň {{ b.start|plan_date }} – {{ b.end|plan_date }} ({{ b.count }} tréningov) z kalendára zverencov?')">
+                            <button type="submit" class="text-[11px] font-semibold uppercase tracking-[0.1em] border-b border-transparent hover:border-current pb-0.5 transition-colors" style="color:var(--danger)">zmazať<span class="sr-only"> týždeň {{ b.start|plan_date }} – {{ b.end|plan_date }}</span></button>
                         </form>
                     </div>
                 </li>
