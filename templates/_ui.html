@@ -1,0 +1,43 @@
+{#- Spoločné stavebné kamene stránok (systém „Modrá dráha“, DESIGN.md).
+    Použitie: {% from "_ui.html" import page_head, oval, auth_photo %} -#}
+
+{#- Hlavička stránky: titulok, jedna veta kontextu, akcie vpravo.
+    {% call page_head('Plán tréningov', 'Samuel Benko, november 2026') %}<a class="btn btn-primary" …>…</a>{% endcall %} -#}
+{% macro page_head(title, sub=none) -%}
+<div class="page-head">
+    <div class="min-w-0">
+        <h1 class="page-title">{{ title }}</h1>
+        {% if sub %}<p class="page-sub">{{ sub }}</p>{% endif %}
+    </div>
+    {% if caller %}<div class="flex flex-wrap items-center gap-2">{{ caller() }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{#- Ovál 400 m: koľko z naplánovaného je hotové, nakreslené ako kus kola od štartu (cieľová čiara vpravo dole).
+    Bežci idú proti smeru hodinových ručičiek: domáca rovinka dole, potom zákruta hore. -#}
+{% macro oval(done, total, caption='splnené') -%}
+{% set pct = (100 * done / total) if total else 0 %}
+<svg class="oval" viewBox="0 0 200 112" role="img" aria-label="{{ caption|capitalize }}: {{ done }} z {{ total }}">
+    <path class="lane" d="M145 96 A40 40 0 0 0 145 16 L55 16 A40 40 0 0 0 55 96 Z" />
+    {% if pct > 0 %}
+    <path class="done" pathLength="100" stroke-dasharray="{{ '%.2f'|format(pct) }} 100" style="--pct: {{ '%.2f'|format(pct) }}"
+          d="M145 96 A40 40 0 0 0 145 16 L55 16 A40 40 0 0 0 55 96 Z" />
+    {% endif %}
+    <path class="start" d="M145 89 V103" />
+    <text x="100" y="58" text-anchor="middle" class="oval-num">{{ done }}<tspan class="oval-of">/{{ total }}</tspan></text>
+    <text x="100" y="75" text-anchor="middle" class="oval-cap">{{ caption }}</text>
+</svg>
+{%- endmacro %}
+
+
+{#- Fotka štadióna vedľa formulára pri prihlásení, registrácii a zmene hesla (na úzkej obrazovke sa skryje).
+    Len dekorácia, preto prázdny alt a aria-hidden. -#}
+{% macro auth_photo() -%}
+<figure class="auth-photo" aria-hidden="true">
+    <img class="kb" src="{{ url_for('static', filename='img/fotky/hayward-field-450.webp') }}"
+         srcset="{{ url_for('static', filename='img/fotky/hayward-field-450.webp') }} 450w,
+                 {{ url_for('static', filename='img/fotky/hayward-field-900.webp') }} 900w"
+         sizes="320px" width="900" height="1599" alt="" decoding="async" loading="lazy">
+    <figcaption>Hayward Field, Eugene</figcaption>
+</figure>
+{%- endmacro %}

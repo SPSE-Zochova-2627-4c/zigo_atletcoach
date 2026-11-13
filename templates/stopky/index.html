@@ -1,29 +1,15 @@
 {% extends "base.html" %}
-{% block title %}{{ title }} · AtletCoach{% endblock %}
-
-{% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/stopky.css') }}">
-{% endblock %}
+{% from "_ui.html" import page_head %}
+{% block title %}{{ title }} – AtletCoach{% endblock %}
 
 {% block content %}
-<main class="mt-10 pb-12 stopky" id="stopky"
+<main class="pb-4 stopky" id="stopky"
       data-logged-in="{{ '1' if current_user else '0' }}"
       data-other-discipline="{{ other_discipline }}">
 
-    <!-- ── Hlavička ── -->
-    <div class="flex items-end justify-between flex-wrap gap-5 mb-8">
-        <div>
-            <p class="eyebrow mb-2">{{ eyebrow }}</p>
-            <h1 class="page-title">{{ title }}</h1>
-        </div>
-        <p class="mono text-[11px] text-on-surface-variant max-w-[48ch] leading-relaxed">
-            Medzerník = štart / stop · L = medzičas · R = reset.
-            Pri zázname ← → = snímok, P = prehrať / pauza.
-            Čiaru v obraze potiahneš myšou alebo prstom.
-        </p>
-    </div>
+    {{ page_head(title, 'Kamera zastaví čas, keď bežec pretne čiaru v obraze. ' ~ ('Čas potom uložíš medzi výsledky.' if current_user else 'Funguje aj bez účtu, na uloženie času sa prihlás.')) }}
 
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-x-8 gap-y-8 items-start">
 
         <!-- ── Kamera + fotobunka ── -->
         <section class="lg:col-span-7 min-w-0" aria-labelledby="h-kamera">
@@ -35,178 +21,136 @@
 
                 {# Stav fotobunky: JS necháva viditeľný (čitateľný) len aktívny popisok, ostatné dostanú aria-hidden. #}
                 <div class="cam-status" role="status" aria-live="polite">
-                    <span class="eyebrow state-label" id="st-ready">Pripravené</span>
-                    <span class="eyebrow state-label" id="st-running" aria-hidden="true">Beží</span>
-                    <span class="eyebrow state-label" id="st-crossed" aria-hidden="true">Cieľ pretnutý</span>
+                    <span class="state-label" id="st-ready">Pripravené</span>
+                    <span class="state-label" id="st-running" aria-hidden="true">Beží</span>
+                    <span class="state-label" id="st-crossed" aria-hidden="true">Cieľ pretnutý</span>
                 </div>
 
                 <div class="cam-msg" id="cam-msg">
-                    <p class="font-headline font-bold text-lg text-on-surface mb-2">Kamera je vypnutá</p>
-                    <p class="text-[13px] text-on-surface-variant max-w-[40ch] mx-auto" id="cam-msg-text">
+                    <p class="section-title mb-2">Kamera je vypnutá</p>
+                    <p class="text-[14.5px] text-on-surface-variant max-w-[44ch]" id="cam-msg-text">
                         Zapni kameru alebo nahraj video zo záznamu a potiahni cieľovú čiaru na miesto, kde bežec končí.
-                        Stopky fungujú aj bez kamery – ručne.
+                        Stopky fungujú aj bez kamery, ručne.
                     </p>
                 </div>
             </div>
 
             <!-- Aktivita fotobunky -->
             <div class="mt-4">
-                <div class="flex items-baseline justify-between gap-4 mb-2">
-                    <p class="eyebrow">Aktivita fotobunky <span class="text-on-surface" id="activity-pct">0 %</span></p>
-                    <p class="eyebrow" id="cell-status">kamera vypnutá</p>
+                <div class="flex items-baseline justify-between gap-4 mb-2 text-[13.5px]">
+                    <p class="text-on-surface-variant">Aktivita fotobunky <span class="mono font-semibold text-on-surface" id="activity-pct">0 %</span></p>
+                    <p class="text-on-surface-variant" id="cell-status">kamera vypnutá</p>
                 </div>
                 <div class="activity" aria-hidden="true">
                     <div class="activity-fill" id="activity-fill"></div>
                     <div class="activity-mark" title="Prah zopnutia: 25 % bodov na čiare"></div>
                 </div>
-                <p class="mono text-[11px] text-on-surface-variant mt-2" id="precision">
+                <p class="text-[13px] text-on-surface-variant mt-2" id="precision">
                     Presnosť fotobunky: ±33 ms pri 30 fps kamere
                 </p>
             </div>
 
             <!-- Ovládanie kamery -->
-            <div class="mt-5 flex flex-wrap gap-2.5">
-                <button type="button" id="btn-cam"
-                        class="btn btn-secondary">
-                    Zapnúť kameru
+            <div class="mt-5 flex flex-wrap items-center gap-2">
+                <button type="button" id="btn-cam" class="btn btn-secondary">
+                    <span class="material-symbols-outlined" aria-hidden="true">videocam</span>Zapnúť kameru
                 </button>
-                <button type="button" id="btn-calib" disabled
-                        class="btn btn-secondary">
+                <button type="button" id="btn-calib" disabled class="btn btn-secondary">
                     Kalibrovať<span class="sr-only"> fotobunku – zapamätať jas na čiare</span>
                 </button>
                 <button type="button" id="btn-flip" disabled class="hidden btn btn-secondary">
                     Otočiť kameru
                 </button>
-                <button type="button" id="btn-sound" disabled
-                        class="btn btn-secondary">
+                <button type="button" id="btn-sound" disabled class="btn btn-secondary">
                     Štart na zvuk
                 </button>
-                <button type="button" id="btn-file"
-                        class="btn btn-secondary">
-                    Video zo záznamu<span class="sr-only"> – vybrať súbor zo zariadenia</span>
+                <button type="button" id="btn-file" class="btn btn-secondary">
+                    <span class="material-symbols-outlined" aria-hidden="true">upload_file</span>Video zo záznamu<span class="sr-only"> – vybrať súbor zo zariadenia</span>
                 </button>
                 {# Súbor vyberá tlačidlo vyššie (je dostupné z klávesnice); samotný input ostáva skrytý. #}
                 <input type="file" id="file-input" accept="video/*" class="hidden"
                        aria-label="Video zo záznamu – súbor zo zariadenia">
                 {% if saved_videos %}
-                <select id="saved-video" class="text-[11px] uppercase tracking-[0.1em]" aria-label="Uložené video z analýz">
+                <select id="saved-video" class="max-w-[280px] text-[14px]" aria-label="Uložené video z analýz">
                     <option value="">Uložené video z analýz…</option>
                     {% for v in saved_videos %}
-                    <option value="{{ v.url }}">{{ v.label }} · {{ v.kind }} · {{ v.created_at.strftime('%d.%m.%Y') }}</option>
+                    <option value="{{ v.url }}">{{ v.label }}, {{ v.kind }}, {{ v.created_at.strftime('%d. %m. %Y') }}</option>
                     {% endfor %}
                 </select>
                 {% endif %}
             </div>
 
             <!-- Prehrávanie záznamu – len pri videu zo súboru -->
-            <div class="mt-4 hidden border border-white/10 bg-surface-container p-4" id="file-controls">
-                <div class="flex items-baseline justify-between gap-4 mb-3">
-                    <p class="eyebrow truncate" id="file-name">záznam</p>
-                    <p class="mono text-[11px] text-on-surface whitespace-nowrap" id="file-time">00:00.00 / 00:00.00</p>
+            <div class="mt-4 hidden card p-4" id="file-controls">
+                <div class="flex items-baseline justify-between gap-4 mb-2">
+                    <p class="text-[13.5px] font-semibold truncate" id="file-name">záznam</p>
+                    <p class="mono text-[14px] whitespace-nowrap" id="file-time">00:00.00 / 00:00.00</p>
                 </div>
                 <input type="range" id="seek" min="0" max="1000" step="1" value="0" class="range" aria-label="Poloha v zázname">
                 <div class="mt-3 flex flex-wrap items-center gap-2">
-                    <button type="button" id="btn-prev" title="Snímok späť (←)"
-                            class="border border-white/15 hover:border-white/35 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">
-                        <span aria-hidden="true">− </span>snímok<span class="sr-only"> späť</span>
+                    <button type="button" id="btn-prev" title="Snímok späť (šípka doľava)" class="btn btn-secondary btn-sm">
+                        <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>Snímok<span class="sr-only"> späť</span>
                     </button>
-                    <button type="button" id="btn-play" title="Prehrať / pauza (P)"
-                            class="border border-white/15 hover:border-white/35 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors min-w-[7ch]">
+                    <button type="button" id="btn-play" title="Prehrať alebo pauza (P)" class="btn btn-secondary btn-sm min-w-[9ch]">
                         Prehrať
                     </button>
-                    <button type="button" id="btn-next" title="Snímok vpred (→)"
-                            class="border border-white/15 hover:border-white/35 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors">
-                        <span aria-hidden="true">+ </span>snímok<span class="sr-only"> vpred</span>
+                    <button type="button" id="btn-next" title="Snímok vpred (šípka doprava)" class="btn btn-secondary btn-sm">
+                        Snímok<span class="sr-only"> vpred</span><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
                     </button>
-                    <label for="speed" class="eyebrow ml-auto">Rýchlosť</label>
-                    <select id="speed" class="text-[11px]">
-                        <option value="0.25">0,25×</option>
-                        <option value="0.5">0,5×</option>
-                        <option value="1" selected>1×</option>
-                    </select>
+                    <span class="ml-auto flex items-center gap-2">
+                        <label for="speed" class="text-[13.5px] text-on-surface-variant">Rýchlosť</label>
+                        <select id="speed" class="text-[14px] py-1.5">
+                            <option value="0.25">0,25×</option>
+                            <option value="0.5">0,5×</option>
+                            <option value="1" selected>1×</option>
+                        </select>
+                    </span>
                 </div>
-                <p class="text-[11px] text-on-surface-variant mt-3 leading-relaxed">
-                    Nájdi snímok štartu (šípkami po jednom snímku), stlač <b class="text-on-surface">Štart</b> – ten snímok je čas 0 a video
-                    sa rozbehne. Čas ide z časovej stopy videa, takže pauza ani spomalenie ho nemenia; pri pretnutí čiary sa
-                    záznam zastaví na snímku cieľa.
+                <p class="text-[13px] text-on-surface-variant mt-3 max-w-[72ch]">
+                    Nájdi snímok štartu (šípkami po jednom snímku) a stlač <strong class="text-on-surface">Štart</strong>.
+                    Ten snímok je čas 0 a video sa rozbehne. Čas ide z časovej stopy videa, takže pauza ani spomalenie
+                    ho nemenia; pri pretnutí čiary sa záznam zastaví na snímku cieľa.
                 </p>
-            </div>
-
-            <!-- Nastavenia fotobunky -->
-            <div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-5">
-                <div>
-                    <div class="flex items-baseline justify-between mb-1.5">
-                        <label for="threshold" class="eyebrow">Citlivosť</label>
-                        <span class="mono text-[11px] text-on-surface" id="threshold-val">40</span>
-                    </div>
-                    <input type="range" id="threshold" min="10" max="120" step="5" value="40" class="range">
-                    <p class="text-[11px] text-on-surface-variant mt-1">Nižšie číslo = citlivejšie (prah zmeny jasu z 255).</p>
-                </div>
-                <div>
-                    <div class="flex items-baseline justify-between mb-1.5">
-                        <label for="guard" class="eyebrow">Ochranná doba</label>
-                        <span class="mono text-[11px] text-on-surface" id="guard-val">1,0 s</span>
-                    </div>
-                    <input type="range" id="guard" min="0" max="5" step="0.5" value="1" class="range">
-                    <p class="text-[11px] text-on-surface-variant mt-1">Po štarte fotobunka toľko sekúnd nereaguje – ruka štartéra ju nezopne.</p>
-                </div>
-                <div>
-                    <label for="cell-action" class="eyebrow block mb-1.5">Pri pretnutí</label>
-                    <select id="cell-action" class="w-full">
-                        <option value="stop">zastaviť čas</option>
-                        <option value="lap">zapísať medzičas</option>
-                    </select>
-                    <p class="text-[11px] text-on-surface-variant mt-1">Medzičas sa hodí pri opakovaných prebehoch.</p>
-                </div>
             </div>
         </section>
 
         <!-- ── Časomiera ── -->
-        <section class="lg:col-span-5 min-w-0" aria-labelledby="h-casomiera">
+        <section class="lg:col-span-5 lg:row-span-2 min-w-0" aria-labelledby="h-casomiera">
             <h2 id="h-casomiera" class="sr-only">Časomiera</h2>
-            <div class="bg-surface-container border border-white/10">
-                <div class="time-box px-5 pt-6 pb-4 border-b border-white/10">
-                    <p class="eyebrow mb-3" id="time-label" aria-live="polite">Čas</p>
-                    <p class="time font-headline font-extrabold leading-none text-on-surface" id="time" aria-live="off">00:00.00</p>
-                </div>
-
-                <div class="grid grid-cols-2 gap-px bg-white/10">
-                    <button type="button" id="btn-start"
-                            class="bg-primary py-5 text-[12px] font-semibold uppercase tracking-[0.12em]">
-                        Štart
-                    </button>
-                    <button type="button" id="btn-stop" disabled
-                            class="bg-surface-container hover:bg-surface-container-high py-5 text-[12px] font-semibold uppercase tracking-[0.12em] text-on-surface transition-colors">
-                        Stop
-                    </button>
-                    <button type="button" id="btn-lap" disabled
-                            class="bg-surface-container hover:bg-surface-container-high py-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-on-surface transition-colors">
-                        Medzičas
-                    </button>
-                    <button type="button" id="btn-reset" disabled
-                            class="bg-surface-container hover:bg-surface-container-high py-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-on-surface transition-colors">
-                        Reset
-                    </button>
-                </div>
-
-                <div class="px-5 py-4 border-t border-white/10">
-                    <div class="flex items-baseline justify-between mb-2">
-                        <h3 class="eyebrow" id="h-medzicasy">Medzičasy</h3>
-                        <p class="eyebrow" id="laps-count">0</p>
-                    </div>
-                    <ol class="mono text-[13px] laps" id="laps">
-                        <li class="text-on-surface-variant py-2" id="laps-empty">Zatiaľ žiadne. Počas behu stlač Medzičas alebo L.</li>
-                    </ol>
-                </div>
+            <div class="time-board">
+                <p class="time-label" id="time-label" aria-live="polite">Čas</p>
+                <p class="time" id="time" aria-live="off">00:00.00</p>
             </div>
+            <div class="time-buttons">
+                <button type="button" id="btn-start" class="btn btn-primary btn-lg">Štart</button>
+                <button type="button" id="btn-stop" disabled class="btn btn-secondary btn-lg">Stop</button>
+                <button type="button" id="btn-lap" disabled class="btn btn-secondary">Medzičas</button>
+                <button type="button" id="btn-reset" disabled class="btn btn-secondary">Reset</button>
+            </div>
+
+            <div class="card mt-4 px-5 py-4">
+                <div class="flex items-baseline justify-between mb-1">
+                    <h3 class="text-[15px] font-semibold" id="h-medzicasy">Medzičasy</h3>
+                    <p class="mono text-[14px] text-on-surface-variant" id="laps-count">0</p>
+                </div>
+                <ol class="mono text-[15px] laps" id="laps" aria-labelledby="h-medzicasy">
+                    <li class="text-on-surface-variant py-2" id="laps-empty">Zatiaľ žiadne. Počas behu stlač Medzičas alebo kláves L.</li>
+                </ol>
+            </div>
+
+            <p class="hidden md:block text-[13px] text-on-surface-variant mt-4 leading-relaxed">
+                Klávesy: <kbd>medzerník</kbd> štart a stop, <kbd>L</kbd> medzičas, <kbd>R</kbd> reset.
+                Pri zázname <kbd>←</kbd> <kbd>→</kbd> posun o snímok, <kbd>P</kbd> prehrať alebo pauza.
+                Čiaru v obraze potiahneš myšou alebo prstom.
+            </p>
 
             <!-- ── Uloženie výsledku ── -->
             {% if current_user %}
             <form method="POST" action="{{ url_for('stopky.save') }}"
-                  class="mt-4 card p-5 space-y-4 hidden" id="save-box">
+                  class="mt-5 card p-5 space-y-4 hidden" id="save-box">
                 <div class="flex items-baseline justify-between gap-4">
-                    <h3 class="eyebrow">Uložiť výsledok</h3>
-                    <p class="mono text-[13px] text-on-surface" id="save-summary">—</p>
+                    <h3 class="section-title">Uložiť čas</h3>
+                    <p class="mono text-[16px] font-semibold" id="save-summary">–</p>
                 </div>
                 <input type="hidden" name="result_s" id="result_s" value="">
                 <input type="hidden" name="laps" id="laps_field" value="">
@@ -232,7 +176,7 @@
                         <select id="athlete_id" name="athlete_id">
                             {% for a in athletes %}
                             <option value="{{ a.id }}" {% if a.id == current_user.id %}selected{% endif %}>
-                                {{ a.username }}{% if a.id == current_user.id %} (ja){% elif a.full_name %} – {{ a.full_name }}{% endif %}
+                                {{ a.display_name }}{% if a.id == current_user.id %} (ja){% endif %}
                             </option>
                             {% endfor %}
                         </select>
@@ -243,83 +187,102 @@
                     <label for="note">Poznámka</label>
                     <textarea id="note" name="note" rows="2" maxlength="500" placeholder="dráha, vietor, tréning…"></textarea>
                 </div>
-                <button type="submit" class="w-full btn btn-primary">
-                    Uložiť výsledok
-                </button>
-                <p class="text-[11px] text-on-surface-variant">
+                <button type="submit" class="w-full btn btn-primary">Uložiť čas</button>
+                <p class="text-[13px] text-on-surface-variant">
                     Uloží sa s dnešným dátumom ako výsledok zo stopiek; medzičasy a spôsob zastavenia idú do poznámky.
                 </p>
             </form>
             {% else %}
-            <p class="mt-4 text-[13px] text-on-surface-variant hidden" id="save-box">
-                <a href="{{ url_for('auth.login', next=url_for('stopky.page')) }}"
-                   class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">Prihlás sa</a>,
-                aby si výsledok uložil. Stopky fungujú aj bez účtu.
+            <p class="mt-5 note text-[14px] hidden" id="save-box">
+                <a href="{{ url_for('auth.login', next=url_for('stopky.page')) }}" class="link">Prihlás sa</a>,
+                aby si čas uložil. Stopky fungujú aj bez účtu.
             </p>
             {% endif %}
+        </section>
+
+        <!-- ── Nastavenia fotobunky: na mobile až pod časomierou, na desktope pod kamerou ── -->
+        <section class="lg:col-span-7 min-w-0" aria-label="Nastavenia fotobunky">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-8 gap-y-5">
+                <div>
+                    <div class="flex items-baseline justify-between mb-1">
+                        <label for="threshold" class="text-[13px] font-semibold text-on-surface-variant">Citlivosť</label>
+                        <span class="mono text-[14px] font-semibold" id="threshold-val">40</span>
+                    </div>
+                    <input type="range" id="threshold" min="10" max="120" step="5" value="40" class="range">
+                    <p class="text-[13px] text-on-surface-variant mt-1">Nižšie číslo je citlivejšie (prah zmeny jasu z 255).</p>
+                </div>
+                <div>
+                    <div class="flex items-baseline justify-between mb-1">
+                        <label for="guard" class="text-[13px] font-semibold text-on-surface-variant">Ochranná doba</label>
+                        <span class="mono text-[14px] font-semibold" id="guard-val">1,0 s</span>
+                    </div>
+                    <input type="range" id="guard" min="0" max="5" step="0.5" value="1" class="range">
+                    <p class="text-[13px] text-on-surface-variant mt-1">Po štarte fotobunka toľko sekúnd nereaguje, aby ju nezopla ruka štartéra.</p>
+                </div>
+                <div>
+                    <label for="cell-action" class="block text-[13px] font-semibold text-on-surface-variant mb-1.5">Pri pretnutí</label>
+                    <select id="cell-action" class="w-full">
+                        <option value="stop">zastaviť čas</option>
+                        <option value="lap">zapísať medzičas</option>
+                    </select>
+                    <p class="text-[13px] text-on-surface-variant mt-1">Medzičas sa hodí pri opakovaných prebehoch.</p>
+                </div>
+            </div>
         </section>
     </div>
 
     <!-- ── Posledné merania ── -->
     {% if current_user %}
-    <section class="mt-12" aria-labelledby="h-posledne">
-        <div class="rule"><h2 class="eyebrow" id="h-posledne">Posledné merania zo stopiek</h2></div>
+    <section class="mt-14" aria-labelledby="h-posledne">
+        <div class="rule"><h2 id="h-posledne">Posledné merania zo stopiek</h2></div>
         {% if recent %}
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto relative">
         <table class="w-full">
             <thead>
-                <tr class="border-b border-white/10">
-                    <th scope="col" class="py-2.5 text-left">Dátum</th>
-                    {% if not current_user.is_athlete %}<th scope="col" class="py-2.5 text-left">Zverenec</th>{% endif %}
-                    <th scope="col" class="py-2.5 text-left">Disciplína</th>
-                    <th scope="col" class="py-2.5 text-right">Čas</th>
-                    <th scope="col" class="py-2.5 text-left pl-6">Poznámka</th>
+                <tr>
+                    <th scope="col" class="text-left">Dátum</th>
+                    {% if not current_user.is_athlete %}<th scope="col" class="text-left">Zverenec</th>{% endif %}
+                    <th scope="col" class="text-left">Disciplína</th>
+                    <th scope="col" class="text-right">Čas</th>
+                    <th scope="col" class="text-left">Poznámka</th>
                 </tr>
             </thead>
-            <tbody class="mono text-[13px]">
+            <tbody>
                 {% for r in recent %}
-                <tr class="border-b border-white/5 align-top">
-                    <td class="py-3 text-on-surface-variant whitespace-nowrap">{{ r.date.strftime('%d.%m.%Y') }}</td>
+                <tr class="align-top">
+                    <td class="py-3 mono text-on-surface-variant whitespace-nowrap">{{ r.date.strftime('%d. %m. %Y') }}</td>
                     {% if not current_user.is_athlete %}
-                    <td class="py-3 text-on-surface whitespace-nowrap">{{ r.athlete.username if r.athlete else '—' }}</td>
+                    <td class="py-3 whitespace-nowrap">{{ r.athlete.display_name if r.athlete else '–' }}</td>
                     {% endif %}
                     <td class="py-3 text-on-surface-variant whitespace-nowrap">{{ r.discipline }}</td>
-                    <td class="py-3 text-right text-on-surface whitespace-nowrap">{{ r.result_text }}</td>
-                    <td class="py-3 pl-6 text-on-surface-variant text-[11px] leading-relaxed whitespace-pre-line">{{ r.note or '—' }}</td>
+                    <td class="py-3 text-right mono font-semibold whitespace-nowrap">{{ r.result_text }}</td>
+                    <td class="py-3 text-on-surface-variant text-[13px] leading-relaxed whitespace-pre-line">{{ r.note or '–' }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
         </div>
         {% else %}
-        <p class="text-on-surface-variant py-6">Zatiaľ žiadne uložené merania. Odmeraj čas a ulož ho k disciplíne.</p>
+        <p class="text-on-surface-variant">Zatiaľ žiadne uložené merania. Odmeraj čas a ulož ho k disciplíne.</p>
         {% endif %}
     </section>
     {% endif %}
 
     <!-- ── Ako to funguje ── -->
-    <section class="mt-12" aria-labelledby="h-ako">
-        <div class="rule"><h2 class="eyebrow" id="h-ako">Ako fotobunka funguje</h2></div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {% set steps = [
-                ('01', 'Postav kameru alebo nahraj záznam',
-                 'Telefón alebo notebook postav kolmo na dráhu, stabilne, s pokojným pozadím za cieľom. Zapni kameru a potiahni čiaru presne na cieľ – môže byť aj šikmá. Alebo nahraj video zo záznamu: čas sa potom meria z časovej stopy videa.'),
-                ('02', 'Kalibruj',
-                 'Pri prázdnom cieli stlač Kalibrovať. Fotobunka si zapamätá jas ~64 bodov na čiare a pomaly ho dolaďuje, kým sa nič nehýbe.'),
-                ('03', 'Štart',
-                 'Po štarte je fotobunka počas ochrannej doby nečinná. Keď sa naraz zmení aspoň štvrtina bodov na čiare v dvoch snímkach po sebe, čas sa zastaví.'),
-            ] %}
-            {% for num, heading, text in steps %}
-            <div class="card px-5 py-5">
-                <p class="mono text-[11px] text-on-surface-variant mb-4">{{ num }}</p>
-                <h3 class="font-headline font-bold text-on-surface mb-2">{{ heading }}</h3>
-                <p class="text-[13px] text-on-surface-variant leading-relaxed">{{ text }}</p>
-            </div>
-            {% endfor %}
-        </div>
-        <p class="text-[12px] text-on-surface-variant mt-4 max-w-[80ch] leading-relaxed">
+    <section class="mt-14" aria-labelledby="h-ako">
+        <div class="rule"><h2 id="h-ako">Ako fotobunka funguje</h2></div>
+        <ol class="steps">
+            <li><strong>Postav kameru alebo nahraj záznam.</strong> Telefón alebo notebook postav kolmo na dráhu, stabilne,
+                s pokojným pozadím za cieľom. Zapni kameru a potiahni čiaru presne na cieľ, môže byť aj šikmá. Alebo nahraj
+                video zo záznamu, čas sa potom meria z časovej stopy videa.</li>
+            <li><strong>Kalibruj.</strong> Pri prázdnom cieli stlač Kalibrovať. Fotobunka si zapamätá jas asi 64 bodov
+                na čiare a pomaly ho dolaďuje, kým sa nič nehýbe.</li>
+            <li><strong>Štartuj.</strong> Po štarte je fotobunka počas ochrannej doby nečinná. Keď sa naraz zmení
+                aspoň štvrtina bodov na čiare v dvoch snímkach po sebe, čas sa zastaví.</li>
+        </ol>
+        <p class="text-[13.5px] text-on-surface-variant mt-4 max-w-[80ch] leading-relaxed">
             Presnosť je daná snímkovou frekvenciou kamery (pri 30 fps ±33 ms) a oneskorením kamery v prehliadači, ktoré sa neodpočítava.
-            Pri zázname oneskorenie odpadá – presnosť je ±1 snímok videa a štart je taký presný, ako presne nájdeš snímok štartu.
+            Pri zázname oneskorenie odpadá: presnosť je ±1 snímok videa a štart je taký presný, ako presne nájdeš snímok štartu.
             Na oficiálne výsledky to nestačí, na tréningové merania a porovnanie medzi sebou áno.
             Kamera funguje len cez zabezpečené spojenie (https alebo localhost); bez nej ostávajú ručné stopky a video zo záznamu.
         </p>

@@ -1,0 +1,82 @@
+/* Stránky: Zverenci, výsledky, účty, administrácia, prihlásenie. Len to, čo sa nedá rozumne zapísať
+   utilitami Tailwindu v šablóne. Spoločné prvky (poznámka, odkaz späť, textové tlačidlá) sú v components.css. */
+
+/* --------------------------------------------------------------------------
+   Prihlásenie, registrácia, zmena hesla: formulár vľavo, vpravo fotka štadióna Hayward Field
+   (pomaly sa približuje ako na úvodnej stránke). Na užšej obrazovke len formulár.
+   -------------------------------------------------------------------------- */
+.auth-grid { display: grid; grid-template-columns: minmax(0, 460px); gap: 48px; align-items: start; }
+.auth-form { padding: 24px; }
+.auth-photo { display: none; }
+@media (min-width: 1100px) {
+    .auth-grid { grid-template-columns: minmax(0, 460px) minmax(240px, 320px); }
+    .auth-photo {
+        position: sticky; top: 34px; display: block; margin: 0;
+        height: 480px; overflow: hidden; isolation: isolate;
+        border-radius: 24px; background: rgb(var(--c-navy)); box-shadow: var(--shadow-2);
+    }
+    .auth-photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; display: block; }
+    .auth-photo::after {
+        content: ''; position: absolute; inset: 0; pointer-events: none;
+        background: linear-gradient(0deg, rgb(var(--c-navy) / 0.75) 0%, rgb(var(--c-navy) / 0) 40%),
+                    linear-gradient(200deg, rgb(var(--c-track) / 0.25), transparent 50%);
+    }
+    .auth-photo figcaption {
+        position: absolute; z-index: 1; left: 16px; bottom: 16px;
+        padding: 5px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: #fff;
+        background: rgb(255 255 255 / 0.14); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    }
+}
+
+/* Výber roly pri registrácii a v administrácii */
+.role-choice {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 14px; border-radius: var(--radius);
+    background: rgb(var(--c-surface)); border: 1px solid rgb(var(--c-line-strong));
+    cursor: pointer; transition: border-color .15s ease, box-shadow .15s ease;
+}
+.role-choice:hover { border-color: rgb(var(--c-text)); }
+.role-choice:has(input:checked) { border-color: rgb(var(--c-track)); box-shadow: inset 0 0 0 1px rgb(var(--c-track)); }
+.role-choice input { margin-top: 3px; flex-shrink: 0; }
+.role-choice strong { display: block; font-stretch: var(--w-heading); font-size: 17px; font-weight: 720; line-height: 1.25; color: rgb(var(--c-text)); }
+.role-choice small { display: block; margin-top: 1px; font-size: 13px; line-height: 1.35; color: rgb(var(--c-muted)); }
+
+/* Popis pod poľom formulára */
+
+/* --------------------------------------------------------------------------
+   Osobné rekordy ako tabuľa: disciplína a čas veľkým úzkym písmom
+   -------------------------------------------------------------------------- */
+table.w-full.pb-board tbody th { padding-top: 14px; padding-bottom: 14px; }
+.pb-board .pb-disc { font-stretch: var(--w-heading); font-size: 19px; font-weight: 720; line-height: 1.2; color: rgb(var(--c-text)); white-space: nowrap; }
+.pb-board .pb-time {
+    font-stretch: var(--w-display); font-weight: 740; font-size: 32px; line-height: 1;
+    font-variant-numeric: tabular-nums; color: rgb(var(--c-text)); white-space: nowrap;
+}
+.pb-board .pb-meta { font-size: 14px; color: rgb(var(--c-muted)); }
+.pb-board .pb-meta strong { font-weight: 560; color: rgb(var(--c-text-soft)); }
+
+/* --------------------------------------------------------------------------
+   Domov zverenca: ovál týždňa + štyri čísla v jednej tabuli
+   -------------------------------------------------------------------------- */
+.home-board { grid-template-columns: minmax(220px, 1.3fr) repeat(4, minmax(140px, 1fr)); }
+@media (max-width: 1279px) {
+    .home-board { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .home-board > .dash-oval { grid-column: 1 / -1; }
+    .home-board > .dash-oval .oval { max-width: 260px; }
+}
+@media (max-width: 720px) { .home-board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.home-board .kpi-value.is-empty { color: rgb(var(--c-muted)); }
+
+/* Dni v týždni zverenca – skratka dňa ako v štartovej listine */
+.day-tag { display: inline-block; min-width: 26px; font-weight: 650; color: rgb(var(--c-text)); }
+
+/* Bunky tabule, ktoré sú zároveň filtrom (Používatelia podľa roly) */
+.kpi-strip > a.kpi { text-decoration: none; transition: background-color .15s ease; }
+.kpi-strip > a.kpi:hover { background: rgb(var(--c-surface-2)); }
+.kpi-strip > a.kpi[aria-current="true"] { box-shadow: inset 0 -3px 0 rgb(var(--c-track)); }
+
+/* Kompaktná tabuľa (tri merania vedľa seba aj na mobile) */
+.kpi-strip.compact { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.kpi-strip.compact .kpi { padding: 14px 16px 16px; }
+.kpi-strip.compact .kpi-value { font-size: 36px; }
+@media (max-width: 480px) { .kpi-strip.compact .kpi-value { font-size: 28px; } .kpi-strip.compact .kpi-suffix { font-size: 12.5px; } }

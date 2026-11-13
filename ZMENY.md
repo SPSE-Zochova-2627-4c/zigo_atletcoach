@@ -1,3 +1,61 @@
+# Zmeny „Modrá dráha – nové farby, pohyb a fotky“ (november 2026)
+
+- **Nové farby „Modrá dráha“**: elektrická modrá `#1F4BFF` s tyrkysovým prechodom namiesto tehlovočerveného
+  tartanu, tmavomodré bočné menu so svietiacou aktívnou položkou, oranžová iba pre PB a víťaza. Zaoblené karty
+  (16 px), tlačidlá ako pilulky so žiarou, jemné modrasté tiene, pomaly sa vlniaca modrá žiara za obsahom.
+  Nové ikony appky (biely ovál dráhy na modro-tyrkysovom prechode), modrá farba v manifeste a grafoch.
+- **Pohyb**: plynulé prechody medzi stránkami (View Transitions – menu stojí, titulok sa presunie, obsah sa
+  vymení), prepnutie tmavého režimu prelínaním, bloky stránky postupne vychádzajú a pri scrollovaní sa vysúvajú,
+  čísla na tabuli sa napočítajú, ovál a pásy týždňa sa nakreslia, tlačidlá majú lesk a vlnu po kliknutí,
+  hlásenia vyskočia. Všetko rešpektuje „obmedziť pohyb“ v systéme.
+- **Úvodná stránka nanovo**: delený hero s fotkami autora z MS do 20 rokov v Eugene 2026 (prelínanie,
+  pomalé približovanie, paralaxa, ukazovateľ snímok), **animovaný bežec** (`static/js/bezec.js` – kostra ako
+  z analýzy videa beží 4× spomalene, ukazuje kontakt so zemou / letovú fázu a uhol v kolene), fotofiniš
+  v modrej, prehľad funkcií s ukážkami (týždeň plánu, graf s PB, kroky medzi prekážkami, HRV, AI chat),
+  tabuľka „Kto čo môže používať“ (na mobile karty), koláž fotiek s paralaxou a výzva na konci.
+- **Prihlásenie, registrácia, zmena hesla**: vedľa formulára fotka štadióna Hayward Field (makro `auth_photo`).
+- **Fotky**: 4 vybrané z 5 poslaných, zmenšené do WebP v dvoch veľkostiach (`srcset`), bez EXIF a polohy.
+- Oprava: horný pás na mobile pri appke pridanej na plochu iPhonu s výrezom bol stlačený pod stavový riadok,
+  teraz sa o výšku výrezu predĺži.
+- `DESIGN.md` prepísaný na „Modrá dráha“ vrátane tabuľky pohybu; README a ikony zodpovedajú novému vzhľadu.
+
+# Zmeny „Dráha – vlastný vzhľad a upratanie kódu“ (november 2026)
+
+- **Nový vizuálny jazyk „Dráha“** (`DESIGN.md`, formát DESIGN.md podľa awesome-claude-design): bočné menu ako
+  tehlovočervený tartan s bielymi čiarami dráh, obsah ako výsledková listina (biely papier na sivom betóne, tabuľky
+  s hrubou čiarou pod hlavičkou, časy vpravo s tabulárnymi číslicami, značka PB), písmo Archivo (úzke na titulky
+  a čísla, normálne na text) namiesto Inter + IBM Plex Mono. Úvodná stránka s fotofinišom (čiara cieľovej kamery
+  prebehne cez 8 dráh), prehľad trénera s oválom 400 m (splnenie týždňa) a týždňom každého zverenca, osobný
+  prehľad zverenca „Môj týždeň“. Prihlásenie a registrácia so štartovými čiarami na 400 m. Preč sú verzálkové
+  popisky nad titulkami, „01 ·“ číslovanie, šípky „→“, ikonky v zaoblených štvorčekoch, tiene pod kartami,
+  odpočítavanie čísel a postupné objavovanie kariet. Nové ikony appky (ovál dráhy s cieľovou čiarou).
+- **Všetky stránky** prerobené na spoločné komponenty: hlavička stránky (`_ui.html` → `page_head`), tabuľa čísel
+  (`.kpi-strip`), poznámka (`.note`), tabuľky, tlačidlá, štítky. Kalendár plánu ako jedna mriežka so stavmi
+  (□ / ✓ / !), stopky ako časomiera, AI chat so správami trénera na papieri, právne stránky ako čitateľný dokument
+  s obsahom. Opravené: pole „Hlavná disciplína“ v profile zahodilo uloženú hodnotu mimo zoznamu; ikony, ktoré
+  vo fonte chýbali (zobrazovali sa ako slovo); skrytý text pre čítačky rozširoval stránku na mobile; prázdny
+  zoznam medzičasov ostal viditeľný; premenná `role` v menu prepisovala filter na stránke Používatelia.
+- **CSS sa zostavuje vopred**: Tailwind už nebeží ako skript v prehliadači pri každom načítaní (varovanie
+  „should not be used in production“ v konzole je preč). Zdroj je v `static/css/src/` (tokeny, rám, komponenty,
+  stránky), `npm run css` z neho spraví jeden `static/css/app.css`. Inline `<style>` a `<script>` z `base.html`
+  sú v súboroch (`app.css`, `static/js/app.js`, `static/js/chart-defaults.js`). Zmazané nepoužívané súbory
+  (`style.css`, `main.js`, `planovanie.css`, `stopky.css` – ich pravidlá sú v zdroji CSS).
+- **`app.py` rozdelený na blueprinty** (2 300 → 300 riadkov): `analyza.py` (video a prekážky jedným postupom
+  namiesto dvoch skopírovaných, chránené médiá, AI komentár), `dennik.py` (tréningy, HRV, import WHOOP,
+  pripravenosť), `ai_trener.py` (chat, profil, jediná funkcia na volanie Groq), `strava.py` (OAuth, obnova tokenu
+  na jednom mieste, aktivity, osobáky, heatmapa). Endpointy majú mená s prefixom modulu (`analyza.video_page`,
+  `dennik.trainings`, `strava.activities`…), adresy URL ostali rovnaké.
+- **Opravy v kóde**: import WHOOP čítal „65,2“ ako 652 a kódovanie cp1250 sa nikdy neskúsilo; dátum merania
+  a tréningu sa ukladal podľa UTC (zápis po polnoci padol na včerajšok); zastarané `datetime.utcnow()`
+  nahradené `models.utcnow()`; chyby Stravy a Groq sa už neposielajú používateľovi ako surový text výnimky;
+  `/api/readiness` bez meraní vracia prázdny stav namiesto chyby 404; AI bez kľúča vracia 503 so zrozumiteľnou
+  správou; profil kontroluje rozsah veku a výšky; grafy trénera sa otvoria na prvom zverencovi; odstránené
+  nepoužívané importy a konštanty (pyflakes bez nálezu).
+- **Testy v repozitári**: `test_app.py` (71 testov, pytest) – vykreslenie každej stránky pre každú rolu,
+  prístupové práva, súhlas a rozsahy HRV, pripravenosť, import WHOOP, AI a Strava bez kľúčov, celý postup
+  analýzy videa aj prekážok s náhradou za MediaPipe. `test_stopky_zaznam.mjs` si poradí aj s OpenCV bez
+  kodeku H.264 (prekóduje cez ffmpeg).
+
 # Zmeny „nový dizajn a príprava na spustenie“ (október 2026)
 
 - **Dizajn**: neutrálny vzhľad so svetlým a tmavým režimom (prepínač v hornej lište, uložené v prehliadači) –

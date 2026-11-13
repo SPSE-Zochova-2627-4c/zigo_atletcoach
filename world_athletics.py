@@ -24,7 +24,7 @@ from datetime import date
 import requests
 from flask import Blueprint, render_template, redirect, url_for, flash, request, g
 
-from models import db, User, RaceResult
+from models import db, RaceResult
 from auth import roles_required, require_visible_athlete
 
 bp = Blueprint('wa', __name__, url_prefix='/wa')

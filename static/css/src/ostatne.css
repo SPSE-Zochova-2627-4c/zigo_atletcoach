@@ -1,0 +1,142 @@
+/* Stránky: AI tréner, Strava, právne stránky. Len to, čo sa nedá rozumne zapísať utilitami Tailwindu v šablóne. */
+
+/* --------------------------------------------------------------------------
+   AI tréner – tabuľa pripravenosti
+   -------------------------------------------------------------------------- */
+.ready-board { grid-template-columns: minmax(300px, 2.2fr) repeat(3, minmax(140px, 1fr)); }
+.ready-main { padding: 18px 20px 20px; }
+@media (max-width: 1000px) {
+    .ready-board { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .ready-board .ready-main { grid-column: 1 / -1; }
+}
+@media (max-width: 560px) {
+    .ready-board .kpi:not(.ready-main) { padding: 12px 12px 14px; }
+    .ready-board .kpi:not(.ready-main) .kpi-value { font-size: 30px; }
+}
+
+/* Stupnica pásiem: 0–40 oddych, 40–60 ľahký, 60–80 stredný, 80–100 naplno */
+.ready-scale { margin-top: 18px; max-width: 560px; }
+.ready-track { position: relative; height: 12px; background: rgb(var(--c-line)); }
+.ready-track i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: rgb(var(--c-muted)); transition: width .4s ease; }
+.ready-track span { position: absolute; top: 0; bottom: 0; width: 2px; background: rgb(var(--c-surface)); z-index: 1; }
+.ready-track span:nth-child(1) { left: 40%; }
+.ready-track span:nth-child(2) { left: 60%; }
+.ready-track span:nth-child(3) { left: 80%; }
+.ready-track b { display: none; position: absolute; top: -5px; bottom: -5px; width: 3px; margin-left: -1px; background: rgb(var(--c-text)); z-index: 2; }
+.ready.has-data .ready-track b { display: block; }
+.ready-zones { display: grid; grid-template-columns: 40fr 20fr 20fr 20fr; margin-top: 6px; font-size: 12.5px; color: rgb(var(--c-muted)); }
+.ready-zones span { padding-left: 4px; }
+.ready-zones span:first-child { padding-left: 0; }
+.ready-zones span.on { color: rgb(var(--c-text)); font-weight: 650; }
+/* bez meraní: len vysvetlenie a odkaz na zápis, žiadne prázdne čísla */
+.ready.is-empty .ready-scale, .ready.is-empty .ready-score, .ready.is-empty .ready-stat, .ready.is-empty .ready-hrv { display: none; }
+.ready.is-empty .ready-board { grid-template-columns: 1fr; }
+.ready.is-empty .ready-tip { display: none; }
+
+.ready-list > div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid rgb(var(--c-line)); }
+.ready-list dt { font-size: 14px; color: rgb(var(--c-muted)); }
+.ready-list dd { font-size: 15px; font-weight: 620; }
+/* pomer dnešného HRV k priemeru: zvislá čiara v strede = presne priemer */
+.ready-ratio { position: relative; overflow: visible; margin-top: 16px; }
+.ready-ratio::after { content: ''; position: absolute; left: 50%; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: rgb(var(--c-text)); }
+
+/* Profil, ktorý AI dostane ku každej otázke */
+.profile-strip {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 20px;
+    padding: 12px 16px;
+    background: rgb(var(--c-surface)); border: 1px solid rgb(var(--c-line)); border-radius: var(--radius);
+}
+.profile-strip.hidden { display: none; }
+
+/* --------------------------------------------------------------------------
+   AI tréner – chat: tréner píše na papier s tartanovou čiarou, tvoje správy sú sivé bloky vpravo
+   -------------------------------------------------------------------------- */
+.chat-card { display: flex; flex-direction: column; height: min(680px, 82vh); overflow: hidden; }
+.chat-head {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap;
+    padding: 16px 20px; border-bottom: 1px solid rgb(var(--c-line));
+}
+.chat-log { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; padding: 20px; }
+.chat-msg { max-width: min(68ch, 92%); }
+.chat-msg-coach { align-self: flex-start; }
+.chat-msg-user { align-self: flex-end; }
+.chat-body { font-size: 15px; line-height: 1.6; color: rgb(var(--c-text)); overflow-wrap: anywhere; }
+.chat-msg-coach .chat-body { border-left: 3px solid rgb(var(--c-track)); padding: 2px 0 2px 14px; }
+.chat-msg-user .chat-body { background: rgb(var(--c-bg)); padding: 10px 14px; border-radius: var(--radius); }
+.chat-body strong { font-weight: 650; }
+.chat-meta { margin-top: 5px; font-size: 12.5px; color: rgb(var(--c-muted)); }
+.chat-msg-coach .chat-meta { padding-left: 17px; }
+.chat-msg-user .chat-meta { text-align: right; }
+.chat-typing { color: rgb(var(--c-muted)); }
+:root[data-theme="dark"] .chat-msg-coach .chat-body { border-left-color: var(--accent-text); }
+.chat-msg.chat-msg-error .chat-body { border-left-color: rgb(var(--c-danger)); color: rgb(var(--c-danger)); }
+#chat-suggestions { padding-left: 17px; }
+.chat-compose { padding: 14px 20px 16px; border-top: 1px solid rgb(var(--c-line)); }
+@media (max-width: 640px) {
+    .chat-log { padding: 16px 14px; }
+    .chat-head, .chat-compose { padding-left: 14px; padding-right: 14px; }
+    #send-label { display: none; }
+}
+
+/* --------------------------------------------------------------------------
+   Strava: logo „Powered by Strava“ – oranžové na svetlom, biele na tmavom (súbory sa nemenia)
+   -------------------------------------------------------------------------- */
+.strava-logo-dark { display: none; }
+:root[data-theme="dark"] .strava-logo-light { display: none; }
+:root[data-theme="dark"] .strava-logo-dark { display: inline-block; }
+.strava-source { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; margin-top: 14px; font-size: 13.5px; color: rgb(var(--c-muted)); }
+
+/* Heatmapa (Leaflet) */
+.map-frame { position: relative; height: clamp(380px, 64vh, 660px); overflow: hidden; padding: 0; }
+.map-frame #map { width: 100%; height: 100%; }
+.map-frame .leaflet-container { background: #1d1f21; font-family: var(--font); }
+.map-frame .leaflet-control-attribution { font-size: 11px; }
+.map-frame .leaflet-control-attribution a { color: var(--accent-text); }
+.map-overlay {
+    position: absolute; inset: 0; z-index: 1001;   /* nad ovládaním Leafletu (z-index 1000) */
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    padding: 24px; background: rgb(var(--c-surface));
+}
+.map-overlay.hidden { display: none; }
+.map-progress { width: 220px; height: 6px; margin-top: 18px; background: rgb(var(--c-line)); overflow: hidden; }
+.map-progress > div { height: 100%; width: 5%; background: rgb(var(--c-track)); transition: width .4s ease; }
+.map-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 10px; border-radius: 8px;
+    background: rgb(var(--c-surface)); color: rgb(var(--c-text));
+    border: 1px solid rgb(var(--c-line-strong));
+    font-size: 13px; font-weight: 560;
+}
+button.map-chip { cursor: pointer; }
+button.map-chip:hover { border-color: rgb(var(--c-text)); }
+.map-chip .material-symbols-outlined { font-size: 17px; }
+.heat-legend { width: 64px; height: 8px; background: linear-gradient(90deg, #7f0000, #cc2200, #ff5500, #ff9900, #ffee00); }
+
+/* --------------------------------------------------------------------------
+   Právne stránky – dlhý text na čítanie
+   -------------------------------------------------------------------------- */
+.doc { max-width: 72ch; }
+.doc-lead { margin-top: 2px; font-size: 17px; line-height: 1.6; color: rgb(var(--c-text-soft)); }
+.doc-toc { margin-top: 24px; padding: 14px 0 16px; border-top: 1px solid rgb(var(--c-line-strong)); border-bottom: 1px solid rgb(var(--c-line-strong)); }
+.doc .doc-toc p { font-size: 13px; font-weight: 600; color: rgb(var(--c-muted)); margin-bottom: 6px; }
+.doc-toc ol { list-style: decimal; padding-left: 1.4em; columns: 2; column-gap: 32px; font-size: 15px; }
+.doc .doc-toc li { padding: 2px 0; margin: 0; break-inside: avoid; font-size: 15px; line-height: 1.5; }
+.doc .doc-toc li::marker { color: rgb(var(--c-muted)); font-variant-numeric: tabular-nums; }
+.doc .doc-toc a:not(.btn) { color: rgb(var(--c-text)); text-decoration: none; }
+.doc .doc-toc a:not(.btn):hover { color: rgb(var(--c-track)); text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 640px) { .doc-toc ol { columns: 1; } }
+
+.doc section { padding-top: 44px; scroll-margin-top: 16px; }
+.doc .rule { margin-bottom: 14px; }
+.doc .rule h2 { font-size: 22px; }
+.doc p, .doc li { font-size: 16px; line-height: 1.68; color: rgb(var(--c-text-soft)); }
+.doc p + p, .doc p + ul, .doc ul + p, .doc .overflow-x-auto + p, .doc p + .overflow-x-auto { margin-top: 12px; }
+.doc ul { list-style: disc; padding-left: 1.25em; }
+.doc li + li { margin-top: 8px; }
+.doc li::marker { color: rgb(var(--c-track)); }
+.doc strong { color: rgb(var(--c-text)); font-weight: 620; }
+.doc a:not(.btn) { color: rgb(var(--c-text)); text-decoration: underline; text-decoration-color: rgb(var(--c-track)); text-underline-offset: 3px; }
+.doc a:not(.btn):hover { color: rgb(var(--c-track)); text-decoration-thickness: 2px; }
+.doc table td, .doc table th { font-size: 14.5px; line-height: 1.5; vertical-align: top; }
+.doc table tbody td:first-child { color: rgb(var(--c-text)); }
+.doc .doc-updated { margin-top: 40px; font-size: 14px; color: rgb(var(--c-muted)); }

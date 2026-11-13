@@ -1,42 +1,41 @@
 {% extends "base.html" %}
-{% block title %}Profil atléta · AtletCoach{% endblock %}
+{% from "_ui.html" import page_head %}
+{% block title %}Profil pre AI trénera – AtletCoach{% endblock %}
 
 {% block content %}
-<main class="mt-6 pb-12 max-w-xl mx-auto">
-    <div class="mb-8">
-        <p class="eyebrow mb-2">AI tréner</p>
-        <h1 class="page-title">Profil atléta</h1>
-        <p class="text-sm text-on-surface-variant mt-2 leading-relaxed">
-            Všetky polia sú nepovinné. Výška sa používa na mierku pri analýze videa, ostatné len ako kontext
-            pre AI chat – odošlú sa službe Groq (USA) až keď v chate klikneš na Odoslať.
-            <a href="{{ url_for('pravne.ochrana_udajov') }}#tretie-strany" class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">Viac o tretích stranách</a>
-        </p>
-    </div>
+<main class="pb-4 max-w-xl">
+    {{ page_head('Profil pre AI trénera', 'Všetky polia sú nepovinné. Výška slúži ako mierka pri analýze videa, ostatné údaje sú kontext pre AI chat.') }}
 
-    <form method="POST" action="{{ url_for('profile') }}" class="card p-6 space-y-5">
+    <form method="POST" action="{{ url_for('ai.profile') }}" class="card p-6 space-y-5">
 
         <div>
             <label for="profile-name">Meno alebo prezývka</label>
             <input type="text" id="profile-name" name="name" value="{{ p.name or '' if p else '' }}" placeholder="napr. Tomáš" maxlength="100" autocomplete="nickname">
         </div>
 
-        <div>
-            <label for="profile-age">Vek</label>
-            <input type="number" id="profile-age" name="age" value="{{ p.age or '' if p else '' }}" placeholder="napr. 17" min="10" max="80" inputmode="numeric">
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="profile-age">Vek</label>
+                <input type="number" id="profile-age" name="age" value="{{ p.age or '' if p else '' }}" placeholder="napr. 17" min="10" max="80" inputmode="numeric">
+            </div>
+            <div>
+                <label for="profile-height">Výška (cm)</label>
+                <input type="number" id="profile-height" name="height_cm" value="{{ p.height_cm|round|int if p and p.height_cm else '' }}"
+                       placeholder="napr. 182" min="120" max="230" step="1" inputmode="numeric" aria-describedby="profile-height-hint">
+            </div>
         </div>
-
-        <div>
-            <label for="profile-height">Výška (cm)</label>
-            <input type="number" id="profile-height" name="height_cm" value="{{ p.height_cm|round|int if p and p.height_cm else '' }}"
-                   placeholder="napr. 182" min="120" max="230" step="1" inputmode="numeric" aria-describedby="profile-height-hint">
-            <p id="profile-height-hint" class="text-xs text-on-surface-variant mt-1.5">Z výšky sa pri analýze videa počíta mierka, a teda rýchlosť a dĺžka kroku. Dá sa zadať aj priamo pri nahrávaní videa.</p>
-        </div>
+        <p id="profile-height-hint" class="text-[13px] text-on-surface-variant -mt-2">
+            Z výšky sa pri analýze videa počíta mierka, a teda rýchlosť a dĺžka kroku. Dá sa zadať aj priamo pri nahrávaní videa.
+        </p>
 
         <div>
             <label for="profile-sport">Hlavná disciplína</label>
             <select id="profile-sport" name="sport">
-                <option value="">— vyber —</option>
-                {% for opt in ['400m šprint', '200m šprint', '100m šprint', '800m beh', '1500m beh', '5km beh', '10km beh', 'Polmaratón', 'Maratón', 'Plávanie', 'Cyklistika', 'Triatlon'] %}
+                {% set options = ['400m šprint', '200m šprint', '100m šprint', '800m beh', '1500m beh', '5km beh', '10km beh', 'Polmaratón', 'Maratón', 'Plávanie', 'Cyklistika', 'Triatlon'] %}
+                <option value="">Vyber disciplínu</option>
+                {# uložená hodnota mimo zoznamu (napr. zo staršej verzie) sa nesmie pri uložení stratiť #}
+                {% if p and p.sport and p.sport not in options %}<option value="{{ p.sport }}" selected>{{ p.sport }}</option>{% endif %}
+                {% for opt in options %}
                 <option value="{{ opt }}" {% if p and p.sport == opt %}selected{% endif %}>{{ opt }}</option>
                 {% endfor %}
             </select>
@@ -47,13 +46,14 @@
             <input type="text" id="profile-goal" name="goal" value="{{ p.goal or '' if p else '' }}" placeholder="napr. pod 50 s na 400 m do konca sezóny" maxlength="200">
         </div>
 
-        <div class="flex flex-wrap gap-3 pt-2">
-            <button type="submit" class="btn btn-primary flex-1">
-                Uložiť profil
-            </button>
-            <a href="{{ url_for('ai_portal') }}" class="btn btn-secondary">
-                Späť na AI tréner
-            </a>
+        <p class="text-[13px] text-on-surface-variant">
+            Profil sa službe Groq (USA) odošle až vtedy, keď v chate odošleš správu.
+            <a href="{{ url_for('pravne.ochrana_udajov') }}#tretie-strany" class="link">Viac o tretích stranách</a>
+        </p>
+
+        <div class="flex flex-wrap gap-2 pt-1">
+            <button type="submit" class="btn btn-primary">Uložiť profil</button>
+            <a href="{{ url_for('ai.portal') }}" class="btn btn-secondary">Späť na AI trénera</a>
         </div>
     </form>
 </main>

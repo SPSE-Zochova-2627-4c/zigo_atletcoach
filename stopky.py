@@ -125,7 +125,7 @@ def _selectable_athletes():
 @bp.route('/', strict_slashes=False)
 def page():
     return render_template('stopky/index.html',
-                           eyebrow='Časomiera', title='Stopky s fotobunkou',
+                           title='Stopky s fotobunkou',
                            disciplines=DISCIPLINES, other_discipline=OTHER_DISCIPLINE,
                            athletes=_selectable_athletes(),
                            saved_videos=_saved_videos(),

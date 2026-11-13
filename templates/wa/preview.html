@@ -1,94 +1,80 @@
 {% extends "base.html" %}
-{% block title %}Náhľad importu · {{ athlete.display_name }} · AtletCoach{% endblock %}
+{% from "_ui.html" import page_head %}
+{% from "trener/_vysledky.html" import plural %}
+{% block title %}Náhľad importu – {{ athlete.display_name }} – AtletCoach{% endblock %}
+
+{% set existing = profile.pbs|length - new_count %}
 
 {% block content %}
-<main class="mt-10 pb-12">
-    <div class="mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
-        <div>
-            <p class="eyebrow mb-2">World Athletics · náhľad importu</p>
-            <h1 class="page-title">{{ athlete.display_name }}</h1>
-            <p class="text-[13px] text-on-surface-variant mt-3 leading-relaxed max-w-[60ch]">
-                Skontroluj, či ide o správneho atléta. Importujú sa len bežecké disciplíny s platným časom;
-                riadky označené „už evidované“ sa preskočia, aby nevznikli duplicity.
-            </p>
-        </div>
-        <a href="{{ url_for('wa.search_page', athlete_id=athlete.id) }}"
-           class="btn btn-secondary self-start lg:self-auto">
-            <span aria-hidden="true">←</span> Späť na hľadanie
-        </a>
-    </div>
+<main class="pb-4">
 
-    {# ── Profil na WA ── #}
-    <section class="mb-10">
-        <div class="rule"><p class="eyebrow">Profil na World Athletics</p></div>
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div class="card px-5 py-5">
-                <p class="eyebrow mb-3">Meno</p>
-                <p class="font-headline font-bold text-[20px] leading-tight text-on-surface">{{ profile.name }}</p>
-                <a href="{{ profile.profile_url }}" target="_blank" rel="noopener noreferrer"
-                   class="inline-block mt-2 mono text-[10px] text-on-surface-variant hover:text-on-surface border-b border-white/25 transition-colors">ID {{ profile.wa_id }} · otvoriť na WA<span class="sr-only"> (otvorí sa v novom okne)</span> <span aria-hidden="true">→</span></a>
-            </div>
-            <div class="card px-5 py-5">
-                <p class="eyebrow mb-3">Krajina</p>
-                <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">{{ profile.country }}</p>
-                {% if profile.country_full %}<p class="mono text-[11px] text-on-surface-variant mt-2">{{ profile.country_full }}</p>{% endif %}
-            </div>
-            <div class="card px-5 py-5">
-                <p class="eyebrow mb-3">Narodený</p>
-                <p class="font-headline font-bold text-[20px] leading-tight text-on-surface mono">{{ profile.birth_date_text }}</p>
-            </div>
-            <div class="card px-5 py-5">
-                <p class="eyebrow mb-3">Na import</p>
-                <p class="font-headline font-extrabold text-[34px] leading-none" style="color:var(--volt)">{{ new_count }}</p>
-                <p class="mono text-[11px] text-on-surface-variant mt-2">
-                    nových · {{ profile.pbs|length - new_count }} už evidovaných · {{ profile.skipped|length }} preskočených
+    <a href="{{ url_for('wa.search_page', athlete_id=athlete.id) }}" class="back-link"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>Späť na hľadanie</a>
+    {{ page_head('Náhľad importu',
+                 'Skontroluj, či profil ' ~ profile.name ~ ' patrí zverencovi ' ~ athlete.display_name ~ '. Importujú sa len behy s platným časom; už zapísané rekordy sa preskočia.') }}
+
+    <section aria-labelledby="h-profil">
+        <h2 id="h-profil" class="sr-only">Profil na World Athletics</h2>
+        <div class="kpi-strip grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="kpi">
+                <p class="kpi-label">Atlét na World Athletics</p>
+                <p class="section-title">{{ profile.name }}</p>
+                <p class="kpi-hint">
+                    <a href="{{ profile.profile_url }}" target="_blank" rel="noopener noreferrer" class="link">Otvoriť profil (ID {{ profile.wa_id }})<span class="sr-only">, otvorí sa v novom okne</span></a>
                 </p>
+            </div>
+            <div class="kpi">
+                <p class="kpi-label">Krajina</p>
+                <p class="kpi-value">{{ profile.country }}</p>
+                {% if profile.country_full %}<p class="kpi-hint">{{ profile.country_full }}</p>{% endif %}
+            </div>
+            <div class="kpi">
+                <p class="kpi-label">Narodený</p>
+                <p class="section-title mono">{{ profile.birth_date_text }}</p>
+            </div>
+            <div class="kpi accent">
+                <p class="kpi-label">Nové rekordy na import</p>
+                <p class="kpi-value">{{ new_count }}</p>
+                <p class="kpi-hint">{{ plural(existing, 'už zapísaný', 'už zapísané', 'už zapísaných') }}, {{ plural(profile.skipped|length, 'preskočený', 'preskočené', 'preskočených') }}</p>
             </div>
         </div>
     </section>
 
-    {# ── Rekordy ── #}
-    <section class="mb-10">
+    <section class="mt-12" aria-labelledby="h-rekordy">
         <div class="rule">
-            <p class="eyebrow">Osobné rekordy – bežecké disciplíny</p>
-            <p class="eyebrow">{{ profile.pbs|length }} riadkov</p>
+            <h2 id="h-rekordy">Osobné rekordy v behoch</h2>
+            <span>{{ plural(profile.pbs|length, 'riadok', 'riadky', 'riadkov') }}</span>
         </div>
 
         {% if profile.pbs %}
         <div class="overflow-x-auto">
-        <table class="w-full">
+        <table class="w-full min-w-[720px]">
             <thead>
-                <tr class="border-b border-white/10">
-                    <th scope="col" class="py-2.5 text-left">Disciplína</th>
-                    <th scope="col" class="py-2.5 text-right">Výkon</th>
-                    <th scope="col" class="py-2.5 text-left pl-6">Dátum</th>
-                    <th scope="col" class="py-2.5 text-left">Miesto</th>
-                    <th scope="col" class="py-2.5 text-right">Vietor</th>
-                    <th scope="col" class="py-2.5 text-right">Stav</th>
+                <tr>
+                    <th scope="col" class="text-left">Disciplína</th>
+                    <th scope="col" class="text-right">Výkon</th>
+                    <th scope="col" class="text-left">Dátum</th>
+                    <th scope="col" class="text-left">Miesto</th>
+                    <th scope="col" class="text-right">Vietor</th>
+                    <th scope="col" class="text-right">Stav</th>
                 </tr>
             </thead>
-            <tbody class="text-[13px]">
+            <tbody>
                 {% for r in profile.pbs %}
-                <tr class="border-b border-white/5 {{ 'text-on-surface-variant' if r.exists else '' }}">
+                <tr class="{{ 'text-on-surface-variant' if r.exists }}">
                     <td class="py-3 pr-4">
-                        <span class="mono {{ 'text-on-surface-variant' if r.exists else 'text-on-surface' }}">{{ r.discipline }}</span>
-                        {% if r.records %}<span class="eyebrow ml-2"><span class="sr-only">rekordy: </span>{{ r.records|join(', ') }}</span>{% endif %}
-                        <span class="block text-[11px] text-on-surface-variant">{{ r.discipline_wa }}</span>
+                        <span class="font-semibold {{ 'text-on-surface-variant' if r.exists }}">{{ r.discipline }}</span>
+                        {% if r.records %}<span class="chip ml-1.5"><span class="sr-only">rekordy: </span>{{ r.records|join(', ') }}</span>{% endif %}
+                        <span class="block text-[13px] text-on-surface-variant">{{ r.discipline_wa }}</span>
                     </td>
-                    <td class="py-3 mono text-right whitespace-nowrap {{ 'text-on-surface-variant' if r.exists else 'text-on-surface' }}">
-                        {{ r.mark_str }}
-                    </td>
-                    <td class="py-3 pl-6 mono text-on-surface-variant whitespace-nowrap">{{ r.date.strftime('%d. %m. %Y') }}</td>
-                    <td class="py-3 pr-4 text-on-surface-variant">{{ r.venue or '—' }}</td>
+                    <td class="py-3 text-right whitespace-nowrap"><span class="mono font-semibold {{ 'text-on-surface-variant' if r.exists }}">{{ r.mark_str }}</span></td>
+                    <td class="py-3 mono text-on-surface-variant whitespace-nowrap">{{ r.date.strftime('%d. %m. %Y') }}</td>
+                    <td class="py-3 pr-4 text-on-surface-variant">{{ r.venue or '–' }}</td>
                     <td class="py-3 mono text-right text-on-surface-variant whitespace-nowrap">
-                        {% if r.wind is not none %}{{ '%+.1f'|format(r.wind) }}{% else %}—{% endif %}
+                        {% if r.wind is not none %}{{ '%+.1f'|format(r.wind) }}{% else %}–{% endif %}
                     </td>
                     <td class="py-3 text-right whitespace-nowrap">
-                        {% if r.exists %}
-                        <span class="eyebrow">už evidované</span>
-                        {% else %}
-                        <span class="eyebrow" style="color:var(--volt)">nové</span>
-                        {% endif %}
+                        {% if r.exists %}<span class="text-[14px]">už zapísané</span>
+                        {% else %}<span class="chip ok">nové</span>{% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -96,60 +82,56 @@
         </table>
         </div>
         {% else %}
-        <p class="text-on-surface-variant py-4 text-[13px]">
-            World Athletics pri tomto atlétovi neeviduje žiadny bežecký rekord s platným časom.
-        </p>
+        <p class="text-on-surface-variant">World Athletics pri tomto atlétovi neeviduje žiadny bežecký rekord s platným časom.</p>
         {% endif %}
 
         {% if profile.skipped %}
-        <details class="mt-6 border border-white/10">
-            <summary class="cursor-pointer px-5 py-3 eyebrow hover:text-on-surface transition-colors">
-                Preskočené riadky ({{ profile.skipped|length }}) – skoky, vrhy, štafety, nelegálny vietor
+        <details class="mt-6 card">
+            <summary class="cursor-pointer px-5 py-3 text-[14px] font-semibold hover:text-primary">
+                Preskočené riadky ({{ profile.skipped|length }}): skoky, vrhy, štafety, nelegálny vietor
             </summary>
-            <table class="w-full border-t border-white/10">
+            <div class="overflow-x-auto border-t border-line">
+            <table class="w-full min-w-[520px] border-0 rounded-none">
                 <thead>
-                    <tr class="border-b border-white/10">
-                        <th scope="col" class="py-2.5 px-5 text-left">Disciplína</th>
-                        <th scope="col" class="py-2.5 px-5 text-right">Výkon</th>
-                        <th scope="col" class="py-2.5 px-5 text-left">Dôvod preskočenia</th>
+                    <tr>
+                        <th scope="col" class="text-left">Disciplína</th>
+                        <th scope="col" class="text-right">Výkon</th>
+                        <th scope="col" class="text-left">Prečo sa preskočí</th>
                     </tr>
                 </thead>
-                <tbody class="text-[13px]">
+                <tbody>
                     {% for s in profile.skipped %}
-                    <tr class="border-b border-white/5">
-                        <td class="py-2.5 px-5 text-on-surface-variant">{{ s.discipline or '—' }}</td>
-                        <td class="py-2.5 px-5 mono text-right text-on-surface-variant whitespace-nowrap">{{ s.mark_str or '—' }}</td>
-                        <td class="py-2.5 px-5 text-on-surface-variant">{{ s.reason }}</td>
+                    <tr>
+                        <td class="py-2.5 text-on-surface-variant">{{ s.discipline or '–' }}</td>
+                        <td class="py-2.5 mono text-right text-on-surface-variant whitespace-nowrap">{{ s.mark_str or '–' }}</td>
+                        <td class="py-2.5 text-on-surface-variant">{{ s.reason }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
         </details>
         {% endif %}
     </section>
 
-    {# ── Potvrdenie ── #}
-    <section class="card p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+    <section class="mt-12 card p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5" aria-labelledby="h-potvrdit">
         <div>
-            <p class="font-headline font-bold text-on-surface">
-                {% if new_count %}Importovať {{ new_count }} {% if new_count == 1 %}nový rekord{% elif new_count < 5 %}nové rekordy{% else %}nových rekordov{% endif %}{% else %}Všetky rekordy sú už evidované{% endif %}
-            </p>
-            <p class="text-[13px] text-on-surface-variant mt-1">
-                Uloží sa zdroj „world_athletics“, miesto pretekov ako súťaž a pôvodný zápis výkonu do poznámky.
-                Zverencovi sa zároveň priradí World Athletics ID {{ profile.wa_id }}.
+            <h2 id="h-potvrdit" class="section-title">
+                {% if new_count %}Importovať {{ new_count }} {% if new_count == 1 %}nový rekord{% elif new_count < 5 %}nové rekordy{% else %}nových rekordov{% endif %}{% else %}Všetky rekordy už sú zapísané{% endif %}
+            </h2>
+            <p class="text-[14px] text-on-surface-variant mt-1 max-w-[72ch]">
+                Ku každému sa uloží zdroj World Athletics, miesto pretekov a pôvodný zápis výkonu do poznámky.
+                Zverenec {{ athlete.display_name }} dostane World Athletics ID {{ profile.wa_id }}.
             </p>
         </div>
         <div class="flex flex-wrap gap-2.5 flex-shrink-0">
             <form method="POST" action="{{ url_for('wa.import_athlete', athlete_id=athlete.id) }}">
                 <input type="hidden" name="wa_id" value="{{ profile.wa_id }}">
                 <button type="submit" class="btn btn-primary">
-                    {% if new_count %}Potvrdiť import{% else %}Priradiť profil{% endif %}
+                    {% if new_count %}Importovať rekordy{% else %}Priradiť profil{% endif %}
                 </button>
             </form>
-            <a href="{{ url_for('trener.athlete_detail', athlete_id=athlete.id) }}"
-               class="btn btn-secondary">
-                Zrušiť
-            </a>
+            <a href="{{ url_for('trener.athlete_detail', athlete_id=athlete.id) }}" class="btn btn-secondary">Zrušiť</a>
         </div>
     </section>
 </main>

@@ -1,29 +1,31 @@
 {% extends "base.html" %}
-{% block title %}Tréningový denník · AtletCoach{% endblock %}
+{% from "_ui.html" import page_head %}
+{% block title %}Tréningový denník – AtletCoach{% endblock %}
 
 {% block content %}
-<main class="mt-6 pb-12">
-    <div class="mb-8">
-        <p class="eyebrow mb-2">Denník aktivít</p>
-        <h1 class="page-title">Tréningový denník</h1>
-    </div>
+<main class="pb-4">
 
-    <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
-        <!-- Formulár -->
-        <section class="md:col-span-5 card rounded-3xl p-6 lg:p-8" aria-labelledby="h-form">
-            <div class="flex items-center gap-3 mb-6">
-                <div class="w-10 h-10 rounded-2xl bg-primary-container flex items-center justify-center">
-                    <span class="material-symbols-outlined text-primary text-xl" aria-hidden="true">directions_run</span>
-                </div>
-                <div>
-                    <h2 id="h-form" class="font-headline font-bold text-on-surface">Pridať nový tréning</h2>
-                    <p class="text-xs text-on-surface-variant">Tréningy s rovnakým názvom sa zobrazia v jednej skupine</p>
-                </div>
-            </div>
+    {% call page_head('Tréningový denník', 'Zapíš, čo si odbehol: vzdialenosť, výsledný čas aj časy úsekov. Tréningy s rovnakým názvom sa zoskupia.') %}
+        {# Denník sa so Stravou nesynchronizuje – odkaz vedie na prehľad aktivít, resp. na pripojenie (oficiálne tlačidlo Stravy, nezmenené). #}
+        {% if session.get('strava_access_token') %}
+        <a href="{{ url_for('strava.activities') }}" class="btn btn-secondary">Aktivity zo Stravy</a>
+        {% else %}
+        <a href="{{ url_for('strava.login') }}" class="inline-flex">
+            <img src="{{ url_for('static', filename='strava/btn_strava_connect_with_orange.svg') }}" alt="Connect with Strava" lang="en" width="198" height="40">
+        </a>
+        {% endif %}
+    {% endcall %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-x-10 gap-y-10">
+
+        {# ── Formulár ── #}
+        <section class="card p-5 sm:p-6 self-start" aria-labelledby="h-form">
+            <h2 id="h-form" class="section-title">Pridať tréning</h2>
+            <p class="text-[14px] text-on-surface-variant mt-1 mb-5">Ak dáš rovnaký názov ako minule, tréningy sa v histórii zobrazia spolu.</p>
 
             <form method="POST" class="space-y-5">
                 <div>
-                    <label for="training_type">Názov / typ tréningu</label>
+                    <label for="training_type">Názov tréningu</label>
                     <input type="text" id="training_type" name="training_type" placeholder="napr. „3x300m“, „10 km tempo“" required autocomplete="off">
                 </div>
 
@@ -33,174 +35,135 @@
                 </div>
 
                 <fieldset>
-                    <legend>Výsledný čas (min : s : stotiny)</legend>
+                    <legend>Výsledný čas</legend>
                     <div class="grid grid-cols-3 gap-2">
                         <div>
-                            <label for="dur_min" class="text-[10px] text-on-surface-variant font-bold uppercase block mb-1">Minúty</label>
-                            <input type="number" id="dur_min" name="dur_min" placeholder="0" min="0" inputmode="numeric" class="w-full text-center">
+                            <label for="dur_min" class="block text-[13px] text-on-surface-variant mb-1">minúty</label>
+                            <input type="number" id="dur_min" name="dur_min" placeholder="0" min="0" inputmode="numeric" class="w-full text-center mono">
                         </div>
                         <div>
-                            <label for="dur_sec" class="text-[10px] text-on-surface-variant font-bold uppercase block mb-1">Sekundy</label>
-                            <input type="number" id="dur_sec" name="dur_sec" placeholder="00" min="0" max="59" inputmode="numeric" class="w-full text-center">
+                            <label for="dur_sec" class="block text-[13px] text-on-surface-variant mb-1">sekundy</label>
+                            <input type="number" id="dur_sec" name="dur_sec" placeholder="00" min="0" max="59" inputmode="numeric" class="w-full text-center mono">
                         </div>
                         <div>
-                            <label for="dur_hun" class="text-[10px] text-on-surface-variant font-bold uppercase block mb-1">Stotiny</label>
-                            <input type="number" id="dur_hun" name="dur_hun" placeholder="00" min="0" max="99" inputmode="numeric" class="w-full text-center">
+                            <label for="dur_hun" class="block text-[13px] text-on-surface-variant mb-1">stotiny</label>
+                            <input type="number" id="dur_hun" name="dur_hun" placeholder="00" min="0" max="99" inputmode="numeric" class="w-full text-center mono">
                         </div>
                     </div>
                 </fieldset>
 
-                <div class="bg-surface-container-highest rounded-2xl p-4">
+                <div class="border border-line bg-surface-container-high p-4">
                     {# Skutočný checkbox s rolou prepínača: ovláda sa klávesnicou, stav číta čítačka, vizuál kreslia vedľajšie prvky. #}
-                    <label for="is_interval" class="flex items-center gap-3 cursor-pointer mb-0 normal-case text-on-surface text-sm font-bold tracking-normal">
+                    <label for="is_interval" class="flex items-center gap-3 cursor-pointer text-[15px] font-semibold text-on-surface">
                         <span class="relative inline-flex flex-shrink-0">
                             <input type="checkbox" id="is_interval" role="switch" aria-controls="intervals_section" class="sr-only peer">
-                            <span class="block w-10 h-5 rounded-full bg-[color:var(--border-strong)] peer-checked:bg-primary peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-[color:var(--accent)] transition-colors" aria-hidden="true"></span>
-                            <span class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5 shadow" aria-hidden="true"></span>
+                            <span class="switch-track" aria-hidden="true"></span>
+                            <span class="switch-knob" aria-hidden="true"></span>
                         </span>
-                        Intervalový tréning — pridať časy úsekov
+                        Intervalový tréning, pridať časy úsekov
                     </label>
                     <div id="intervals_section" class="hidden mt-4 space-y-3">
                         <div>
                             <label for="interval_count">Počet úsekov</label>
                             <input type="number" id="interval_count" class="w-28" min="1" max="30" inputmode="numeric" placeholder="napr. 5">
                         </div>
-                        <div id="interval_inputs" class="grid grid-cols-2 gap-2"></div>
+                        <div id="interval_inputs" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
                     </div>
                 </div>
 
                 <div>
                     <label for="notes">Poznámky</label>
-                    <textarea id="notes" name="notes" rows="3" placeholder="Pocity, tréningový plán, podmienky…"></textarea>
+                    <textarea id="notes" name="notes" rows="3" placeholder="pocity, podmienky, čo nevyšlo…"></textarea>
                 </div>
 
                 <button type="submit" class="w-full btn btn-primary">
-                    <span class="material-symbols-outlined text-base" aria-hidden="true">add</span>
-                    Pridať do denníka
+                    <span class="material-symbols-outlined" aria-hidden="true">add</span>Pridať do denníka
                 </button>
             </form>
         </section>
 
-        <!-- Pravý stĺpec: kalendár + história -->
-        <div class="md:col-span-7 flex flex-col gap-4">
+        {# ── Pravý stĺpec: kalendár + história ── #}
+        <div class="min-w-0 flex flex-col gap-10">
 
-            <!-- Kalendár -->
-            <section class="card rounded-3xl p-6" aria-labelledby="h-cal">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 rounded-2xl bg-secondary-container flex items-center justify-center">
-                        <span class="material-symbols-outlined text-secondary text-xl" aria-hidden="true">calendar_month</span>
+            <section aria-labelledby="h-cal">
+                <div class="rule">
+                    <h2 id="h-cal">Kalendár</h2>
+                    <span id="cal-month" aria-live="polite"></span>
+                </div>
+                <div class="card p-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <button type="button" id="cal-prev" class="sq-btn" aria-label="Predchádzajúci mesiac">
+                            <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+                        </button>
+                        <p class="text-[13.5px] text-on-surface-variant">Deň s tréningom je podfarbený, klikni naň.</p>
+                        <button type="button" id="cal-next" class="sq-btn" aria-label="Nasledujúci mesiac">
+                            <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+                        </button>
                     </div>
-                    <div>
-                        <h2 id="h-cal" class="font-headline font-bold text-on-surface">Kalendár tréningov</h2>
-                        <p class="text-xs text-on-surface-variant">Prehľad záťaže podľa dní</p>
+
+                    <div class="mini-cal mb-1" aria-hidden="true">
+                        {% for d in ['Po','Ut','St','Št','Pi','So','Ne'] %}
+                        <div class="text-center text-[13px] font-semibold text-on-surface-variant py-1">{{ d }}</div>
+                        {% endfor %}
                     </div>
+
+                    {# Mriežku dní vykreslí skript: dni s tréningom sú tlačidlá #}
+                    <div id="cal-grid" class="mini-cal"></div>
+
+                    {# Vybraný deň #}
+                    <div id="cal-tooltip" class="hidden mt-3 px-3 py-2.5 border-l-4 border-track bg-surface-container-high text-[14px] text-on-surface-variant leading-relaxed" role="status" aria-live="polite"></div>
                 </div>
-
-                <!-- Výber mesiaca -->
-                <div class="flex items-center justify-between mb-4">
-                    <button type="button" id="cal-prev" class="icon-btn" aria-label="Predchádzajúci mesiac">
-                        <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
-                    </button>
-                    <span id="cal-month" class="font-headline font-bold text-on-surface text-sm uppercase tracking-wider" aria-live="polite"></span>
-                    <button type="button" id="cal-next" class="icon-btn" aria-label="Nasledujúci mesiac">
-                        <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
-                    </button>
-                </div>
-
-                <!-- Dni v týždni -->
-                <div class="grid grid-cols-7 mb-1">
-                    {% for d, full in [('Po','pondelok'),('Ut','utorok'),('St','streda'),('Št','štvrtok'),('Pi','piatok'),('So','sobota'),('Ne','nedeľa')] %}
-                    <div class="text-center text-[10px] font-bold text-on-surface-variant py-1"><abbr title="{{ full }}" class="no-underline">{{ d }}</abbr></div>
-                    {% endfor %}
-                </div>
-
-                <!-- Mriežku dní vykreslí skript: dni s tréningom sú tlačidlá -->
-                <div id="cal-grid" class="grid grid-cols-7 gap-1"></div>
-
-                <!-- Vybraný deň -->
-                <div id="cal-tooltip" class="hidden mt-3 p-3 bg-surface-container-low border border-[color:var(--border)] rounded-2xl text-xs text-on-surface-variant leading-relaxed" role="status" aria-live="polite"></div>
             </section>
 
-            <!-- História -->
-            <section class="card rounded-3xl p-6 lg:p-8 overflow-y-auto" style="max-height: 55vh;" aria-labelledby="h-hist" tabindex="0">
-                <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-2xl bg-secondary-container flex items-center justify-center">
-                            <span class="material-symbols-outlined text-secondary text-xl" aria-hidden="true">format_list_bulleted</span>
-                        </div>
-                        <div>
-                            <h2 id="h-hist" class="font-headline font-bold text-on-surface">História a skupiny</h2>
-                            <p class="text-xs text-on-surface-variant">Zoskupené podľa názvu tréningu</p>
-                        </div>
-                    </div>
-                    {# Denník sa so Stravou nesynchronizuje – odkaz vedie na prehľad aktivít, resp. na pripojenie (oficiálne tlačidlo Stravy, nezmenené). #}
-                    {% if session.get('strava_access_token') %}
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">Aktivity zo Stravy</a>
-                    {% else %}
-                    <a href="{{ url_for('strava_login') }}" class="inline-flex rounded-md">
-                        <img src="{{ url_for('static', filename='strava/btn_strava_connect_with_orange.svg') }}" alt="Connect with Strava" lang="en" width="198" height="40">
-                    </a>
-                    {% endif %}
-                </div>
+            <section aria-labelledby="h-hist">
+                <div class="rule"><h2 id="h-hist">História</h2><span>podľa názvu tréningu</span></div>
 
                 {% for t_type, trainings in grouped_trainings.items() %}
                 <div class="mb-8">
-                    <div class="flex items-center gap-2 mb-3">
-                        <span class="material-symbols-outlined text-primary text-base" aria-hidden="true">sprint</span>
-                        <h3 class="font-headline font-bold text-primary text-sm uppercase tracking-wider">{{ t_type }}</h3>
-                        <div class="flex-1 h-px bg-[color:var(--border)]" aria-hidden="true"></div>
-                        <span class="chip">{{ trainings|length }}×</span>
+                    <div class="flex items-baseline justify-between gap-3 mb-1">
+                        <h3 class="text-[18px] text-on-surface">{{ t_type }}</h3>
+                        <span class="text-[13.5px] text-on-surface-variant">{{ trainings|length }}×</span>
                     </div>
-                    <div class="space-y-2">
+                    <div class="card divide-y divide-line">
                         {% for t in trainings %}
-                        <article class="train-entry bg-surface-container-low hover:bg-surface-bright rounded-2xl p-4 border-l-2 border-[color:var(--accent-border)] hover:border-primary transition-colors" data-date="{{ t.date.strftime('%Y-%m-%d') }}">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-xs text-on-surface-variant font-bold">{{ t.date.strftime('%d. %m. %Y') }}</span>
-                                <div class="flex items-center gap-3 text-right">
+                        <article class="train-entry px-4 py-3" data-date="{{ t.date.strftime('%Y-%m-%d') }}">
+                            <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+                                <span class="mono text-[14px] text-on-surface-variant">{{ t.date.strftime('%d. %m. %Y') }}</span>
+                                <span class="flex items-baseline gap-5 text-right">
                                     {% if t.distance_km %}
-                                    <div>
-                                        <span class="text-[10px] text-on-surface-variant font-bold uppercase block">Vzdialenosť</span>
-                                        <span class="font-headline font-bold text-on-surface text-sm">{{ t.distance_km }} <span class="text-xs text-on-surface-variant font-normal">km</span></span>
-                                    </div>
+                                    <span><span class="sr-only">Vzdialenosť </span><span class="mono text-[16px] font-semibold">{{ t.distance_km }}</span> <span class="text-[13px] text-on-surface-variant">km</span></span>
                                     {% endif %}
                                     {% if t.duration_min or t.duration_sec is not none %}
-                                    <div>
-                                        <span class="text-[10px] text-on-surface-variant font-bold uppercase block">Čas</span>
-                                        <span class="font-headline font-bold text-primary text-sm">
-                                            {% if t.duration_min %}{{ t.duration_min|int }}:{% if t.duration_sec is not none %}{{ '{:05.2f}'.format(t.duration_sec) }}{% else %}00.00{% endif %}
-                                            {% elif t.duration_sec is not none %}{{ '{:0.2f}'.format(t.duration_sec) }} s{% endif %}
-                                        </span>
-                                    </div>
+                                    <span><span class="sr-only">Čas </span><span class="mono text-[16px] font-semibold">
+                                        {%- if t.duration_min %}{{ t.duration_min|int }}:{% if t.duration_sec is not none %}{{ '{:05.2f}'.format(t.duration_sec) }}{% else %}00.00{% endif %}
+                                        {%- elif t.duration_sec is not none %}{{ '{:0.2f}'.format(t.duration_sec) }}{% endif -%}
+                                    </span>{% if not t.duration_min %} <span class="text-[13px] text-on-surface-variant">s</span>{% endif %}</span>
                                     {% endif %}
-                                </div>
+                                </span>
                             </div>
                             {% if t.intervals_data %}
-                            <ol class="flex flex-wrap gap-1.5 mt-2 list-none p-0 m-0" aria-label="Časy úsekov">
+                            <ol class="splits mt-2" aria-label="Časy úsekov v sekundách">
                                 {% for time in t.intervals_data.split(',') %}
-                                <li class="bg-primary/10 border border-[color:var(--border)] px-2.5 py-1 rounded-lg text-xs font-bold">
-                                    <span class="text-on-surface-variant mr-1">{{ loop.index }}.</span>
-                                    <span class="text-primary">{{ time }}</span> <span class="text-on-surface-variant font-normal">s</span>
-                                </li>
+                                <li><span class="n">{{ loop.index }}.</span>{{ time }}</li>
                                 {% endfor %}
                             </ol>
                             {% endif %}
                             {% if t.notes %}
-                            <p class="text-xs text-on-surface-variant mt-2 leading-relaxed">{{ t.notes }}</p>
+                            <p class="text-[14px] text-on-surface-variant mt-1.5 leading-relaxed">{{ t.notes }}</p>
                             {% endif %}
                         </article>
                         {% endfor %}
                     </div>
                 </div>
                 {% else %}
-                <div class="flex flex-col items-center justify-center py-20 text-center">
-                    <span class="material-symbols-outlined text-on-surface-variant text-6xl mb-4 opacity-20" aria-hidden="true">directions_run</span>
-                    <p class="text-on-surface-variant font-bold">Zatiaľ žiadne tréningy</p>
-                    <p class="text-xs text-on-surface-variant mt-1">Pridaj prvý tréning pomocou formulára</p>
+                <div class="card empty-note">
+                    <p class="font-semibold text-on-surface">Zatiaľ žiadne tréningy</p>
+                    <p class="text-[14px] text-on-surface-variant mt-1">Pridaj prvý tréning vo formulári. Zápis vznikne aj vtedy, keď v pláne označíš tréning ako splnený.</p>
                 </div>
                 {% endfor %}
             </section>
 
-        </div><!-- koniec pravého stĺpca -->
+        </div>
     </div>
 </main>
 {% endblock %}
@@ -246,9 +209,7 @@
 
             // Dni s tréningom sú tlačidlá (ovládateľné klávesnicou), prázdne dni len políčka.
             const cell = document.createElement(hasTrain ? 'button' : 'div');
-            cell.className = 'flex flex-col items-center justify-center rounded-xl py-1.5 select-none transition-colors w-full'
-                + (hasTrain ? ' bg-primary/15 hover:bg-primary/25 cursor-pointer' : '')
-                + (isToday ? ' ring-1 ring-primary' : '');
+            cell.className = 'mini-cal-day' + (isToday ? ' is-today' : '');
             if (hasTrain) {
                 cell.type = 'button';
                 cell.setAttribute('aria-label', `${d}. ${calMonth + 1}. ${calYear} – ${sessions.length} ${plural(sessions.length)}: ${sessions.join(', ')}`);
@@ -257,18 +218,13 @@
             if (isToday) cell.setAttribute('aria-current', 'date');
 
             const num = document.createElement('span');
-            num.className = 'text-xs font-bold leading-none ' + (isToday ? 'text-primary' : hasTrain ? 'text-on-surface' : 'text-on-surface-variant');
             num.textContent = d;
             cell.appendChild(num);
 
             const dots = document.createElement('span');
-            dots.className = 'flex gap-0.5 mt-1 h-1.5';
+            dots.className = 'dots';
             dots.setAttribute('aria-hidden', 'true');
-            sessions.slice(0, 3).forEach(() => {
-                const dot = document.createElement('span');
-                dot.className = 'block w-1.5 h-1.5 rounded-full bg-primary';
-                dots.appendChild(dot);
-            });
+            sessions.slice(0, 3).forEach(() => dots.appendChild(document.createElement('span')));
             cell.appendChild(dots);
 
             grid.appendChild(cell);
@@ -281,7 +237,7 @@
         const [y, m, d] = dateStr.split('-');
         tooltip.textContent = '';
         const label = document.createElement('span');
-        label.className = 'font-bold text-on-surface';
+        label.className = 'font-semibold text-on-surface';
         label.textContent = `${parseInt(d, 10)}. ${parseInt(m, 10)}. ${y}:`;
         tooltip.appendChild(label);
         tooltip.appendChild(document.createTextNode(' ' + sessions.join(', ')));
@@ -318,11 +274,10 @@
         container.textContent = '';
         for (let i = 1; i <= count; i++) {
             const wrap = document.createElement('div');
-            wrap.className = 'bg-surface-container rounded-xl p-3';
 
             const label = document.createElement('label');
             label.htmlFor = `interval_${i}`;
-            label.textContent = `Úsek ${i} (s)`;
+            label.textContent = `${i}. úsek (s)`;
 
             const input = document.createElement('input');
             input.type = 'number';
@@ -333,6 +288,7 @@
             input.placeholder = 'napr. 39.50';
             input.inputMode = 'decimal';
             input.required = true;
+            input.className = 'w-full mono';
 
             wrap.appendChild(label);
             wrap.appendChild(input);

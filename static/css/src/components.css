@@ -1,0 +1,323 @@
+/* Spoločné komponenty „Modrá dráha“: typografia, panely, tabuľa čísel, štítky, tlačidlá, tabuľky, hlásenia, päta.
+   Pohyb (objavenie, prechody, napočítanie čísel) je v motion.css a static/js/app.js. */
+
+/* --------------------------------------------------------------------------
+   4. Typografia
+   -------------------------------------------------------------------------- */
+.font-headline { font-family: var(--font); font-stretch: var(--w-display); }
+.mono { font-family: var(--font); font-stretch: var(--w-data); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.font-data { font-variant-numeric: tabular-nums; }
+
+.page-head {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    flex-wrap: wrap; gap: 16px 24px;
+    margin-bottom: 30px;
+}
+.page-title {
+    font-stretch: var(--w-display); font-weight: 800;
+    font-size: 44px; line-height: 1.0; letter-spacing: -0.005em;
+    color: rgb(var(--c-text));
+    view-transition-name: page-title;   /* titulok sa pri prechode na inú stránku plynulo vymení */
+}
+.page-sub { margin-top: 8px; font-size: 15px; color: rgb(var(--c-muted)); max-width: 68ch; }
+.page-sub strong { color: rgb(var(--c-text)); font-weight: 600; }
+@media (max-width: 640px) { .page-title { font-size: 36px; } }
+/* Text s farebným prechodom (modrá → tyrkys) – na kľúčové slová a čísla, nie na celé odseky */
+.text-grad { background: var(--grad-deep); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+.section-title { font-stretch: var(--w-heading); font-size: 21px; font-weight: 720; line-height: 1.2; color: rgb(var(--c-text)); }
+
+/* Kedysi verzálkový „eyebrow“ – teraz obyčajný tichý popis */
+.eyebrow {
+    font-size: 13px; font-weight: 560; line-height: 1.4;
+    color: rgb(var(--c-muted));
+    text-transform: none; letter-spacing: 0;
+}
+
+/* Nadpis sekcie: tenká čiara a pod začiatkom nadpisu krátky farebný pruh */
+.rule {
+    position: relative;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    margin: 0 0 16px; padding-bottom: 9px;
+    border-bottom: 1px solid rgb(var(--c-line));
+}
+.rule::after {
+    content: ''; position: absolute; left: 0; bottom: -2px; width: 56px; height: 3px; border-radius: 3px;
+    background: var(--grad);
+}
+.rule > .eyebrow:first-child, .rule > h2, .rule > h3 {
+    font-stretch: var(--w-heading); font-size: 19px; font-weight: 720; line-height: 1.2;
+    color: rgb(var(--c-text));
+}
+.rule .eyebrow + .eyebrow, .rule > a, .rule > span { font-size: 13.5px; font-weight: 560; color: rgb(var(--c-muted)); }
+.rule > a:hover { color: rgb(var(--c-track)); }
+
+.link { color: rgb(var(--c-track)); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.link:hover { text-decoration-thickness: 2px; }
+:root[data-theme="dark"] .link, :root[data-theme="dark"] .text-primary { color: var(--accent-text); }
+
+/* --------------------------------------------------------------------------
+   5. Panely a tabuľa čísel
+   -------------------------------------------------------------------------- */
+.card {
+    background: rgb(var(--c-surface));
+    border: 1px solid rgb(var(--c-line));
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-1);
+}
+.card-pad { padding: 18px 20px; }
+/* Kliknuteľné karty sa pri prejdení myšou nadvihnú a zažiaria */
+a.card, .lift { text-decoration: none; transition: transform .3s var(--ease), box-shadow .3s var(--ease), border-color .3s ease; }
+a.card:hover, .lift:hover { transform: translateY(-3px); box-shadow: var(--shadow-2); border-color: rgb(var(--c-track) / 0.35); }
+
+/* Tabuľa čísel: jeden rám, bunky oddelené čiarami ako na časomiere. Čiaru kreslí obrys každej bunky do 1 px
+   medzery (obrys sa kreslí navrchu, susedia ho neprekryjú; vonkajší okraj skryje rám), takže aj neúplný posledný
+   riadok má pod bunkami čiaru a prázdne miesto ostane biele. */
+.kpi-strip {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px;
+    background: rgb(var(--c-surface));
+    border: 1px solid rgb(var(--c-line)); border-radius: var(--radius); overflow: hidden;
+    box-shadow: var(--shadow-1);
+}
+.kpi { position: relative; padding: 18px 20px 20px; background: rgb(var(--c-surface)); transition: background-color .25s ease; }
+.kpi-strip > .kpi:hover { background: rgb(var(--c-surface-2)); }
+.kpi-strip > .kpi { outline: 1px solid rgb(var(--c-line)); }
+.kpi:not(.kpi-strip > .kpi) { border: 1px solid rgb(var(--c-line)); border-radius: var(--radius); }
+/* pevný počet stĺpcov (2 na mobile) a menšie čísla, keď je buniek veľa */
+.kpi-strip.cols-3, .kpi-strip.cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 768px) {
+    .kpi-strip.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .kpi-strip.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.kpi-strip.small .kpi-value { font-size: 36px; }
+.kpi-strip.small .kpi-value .kpi-suffix { font-size: 14px; }
+/* nespoľahlivá alebo neúplná hodnota: tlmené číslo na šrafovanom podklade */
+.kpi.muted .kpi-value { color: rgb(var(--c-muted)); }
+.kpi.muted { background: repeating-linear-gradient(135deg, rgb(var(--c-surface)) 0 8px, rgb(var(--c-surface-2)) 8px 9px); }
+.kpi-label { font-size: 13px; font-weight: 560; color: rgb(var(--c-muted)); margin-bottom: 10px; }
+.kpi-value {
+    display: flex; align-items: baseline; gap: 6px;
+    font-stretch: var(--w-display); font-weight: 760; font-size: 46px; line-height: 0.95;
+    font-variant-numeric: tabular-nums; color: rgb(var(--c-text));
+}
+.kpi-suffix { font-stretch: 100%; font-size: 14px; font-weight: 500; color: rgb(var(--c-muted)); }
+.kpi-hint { font-size: 13px; color: rgb(var(--c-muted)); margin-top: 8px; }
+.kpi.good .kpi-value { color: rgb(var(--c-infield)); }
+.kpi.warn .kpi-value { color: rgb(var(--c-warn)); }
+.kpi.bad .kpi-value { color: rgb(var(--c-danger)); }
+.kpi.accent .kpi-value { background: var(--grad-deep); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.score-num {
+    display: inline-block;
+    font-stretch: var(--w-display); font-weight: 760; font-size: 64px; line-height: 0.9;
+    font-variant-numeric: tabular-nums; color: rgb(var(--c-text));
+}
+
+.tiny-bar { margin-top: 12px; height: 6px; border-radius: 99px; background: rgb(var(--c-line) / 0.8); overflow: hidden; }
+.tiny-bar > span { display: block; height: 100%; border-radius: 99px; background: var(--grad); }
+.tiny-bar.good > span { background: rgb(var(--c-infield)); }
+.tiny-bar.warn > span { background: rgb(var(--c-warn)); }
+.tiny-bar.bad > span { background: rgb(var(--c-danger)); }
+.seg-bar { display: flex; gap: 2px; height: 8px; border-radius: 99px; overflow: hidden; background: rgb(var(--c-line) / 0.8); }
+.seg-bar > span { display: block; height: 100%; }
+.seg-bar .ok { background: rgb(var(--c-infield)); }
+.seg-bar .warn { background: rgb(var(--c-warn)); }
+.seg-bar .bad { background: rgb(var(--c-danger)); }
+.seg-bar .acc { background: var(--grad); }
+
+/* --------------------------------------------------------------------------
+   6. Štítky a značky výkonu
+   -------------------------------------------------------------------------- */
+.chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 2px 10px; border-radius: 999px;
+    font-size: 12.5px; font-weight: 600; line-height: 1.55; white-space: nowrap;
+    text-transform: none; letter-spacing: 0;
+    background: rgb(var(--c-track) / 0.07); color: rgb(var(--c-text-soft));
+}
+.chip .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.chip.ok { background: rgb(var(--c-infield) / 0.12); color: rgb(var(--c-infield)); }
+.chip.warn { background: rgb(var(--c-warn) / 0.13); color: rgb(var(--c-warn)); }
+.chip.bad { background: rgb(var(--c-danger) / 0.1); color: rgb(var(--c-danger)); }
+.chip.accent { background: rgb(var(--c-track) / 0.1); color: var(--accent-text); }
+.chip.info { background: rgb(var(--c-info) / 0.12); color: rgb(var(--c-info)); }
+.chip.mono { font-stretch: var(--w-data); }
+.pb {
+    display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px;
+    font-size: 11px; font-weight: 800; line-height: 1.6; letter-spacing: 0.03em;
+    color: rgb(10 26 51); background: var(--grad-hot); vertical-align: 1px;
+    box-shadow: 0 3px 10px rgb(var(--c-hot) / 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   7. Tlačidlá
+   -------------------------------------------------------------------------- */
+.btn {
+    position: relative; overflow: hidden; isolation: isolate;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 42px; padding: 9px 20px; border-radius: 999px;
+    font-family: var(--font); font-size: 14.5px; font-weight: 650; line-height: 1.2;
+    text-transform: none; letter-spacing: 0; text-decoration: none; white-space: nowrap;
+    border: 1px solid transparent; cursor: pointer;
+    transition: transform .25s var(--ease), box-shadow .25s var(--ease), background-position .5s var(--ease),
+                background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+.btn .material-symbols-outlined { font-size: 19px; transition: transform .3s var(--ease-spring); }
+.btn:hover .material-symbols-outlined { transform: translateX(2px) scale(1.08); }
+.btn:active { transform: scale(0.97); }
+/* Hlavné tlačidlo: modro-tyrkysový prechod, ktorý sa pri prejdení myšou posunie, a lesk prebehne cez tlačidlo */
+.btn-primary, button.bg-primary, a.bg-primary {
+    background: linear-gradient(105deg, rgb(var(--c-track-deep)), rgb(var(--c-track)) 45%, rgb(var(--c-cyan)) 100%) 0 0 / 200% 100%;
+    color: #fff; border-color: transparent;
+    box-shadow: var(--shadow-glow);
+}
+.btn-primary:hover, button.bg-primary:hover, a.bg-primary:hover {
+    background-position: 60% 0; color: #fff; transform: translateY(-2px);
+    box-shadow: 0 14px 32px rgb(var(--c-track) / 0.42);
+}
+.btn-primary::after {
+    content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background: linear-gradient(115deg, transparent 30%, rgb(255 255 255 / 0.35) 50%, transparent 70%);
+    transform: translateX(-120%);
+}
+.btn-primary:hover::after { transform: translateX(120%); transition: transform .8s var(--ease); }
+.btn-secondary { background: rgb(var(--c-surface)); color: rgb(var(--c-text)); border-color: rgb(var(--c-line-strong)); box-shadow: var(--shadow-1); }
+.btn-secondary:hover { border-color: rgb(var(--c-track) / 0.6); color: var(--accent-text); transform: translateY(-2px); box-shadow: var(--shadow-2); }
+.btn-ghost { background: transparent; color: rgb(var(--c-text-soft)); }
+.btn-ghost:hover { background: rgb(var(--c-track) / 0.08); color: var(--accent-text); }
+.btn-danger { background: rgb(var(--c-surface)); color: rgb(var(--c-danger)); border-color: rgb(var(--c-danger) / 0.45); }
+.btn-danger:hover { background: rgb(var(--c-danger) / 0.08); border-color: rgb(var(--c-danger)); }
+.btn-sm { min-height: 34px; padding: 6px 14px; font-size: 13.5px; }
+.btn-lg { min-height: 52px; padding: 13px 26px; font-size: 16px; }
+.btn:disabled, .btn[aria-disabled="true"], button.bg-primary:disabled {
+    background: rgb(var(--c-surface-2)); color: rgb(var(--c-muted)); border-color: rgb(var(--c-line));
+    box-shadow: none; transform: none;
+}
+/* Vlna po kliknutí (static/js/app.js pridá <span class="ripple">) */
+.btn .ripple {
+    position: absolute; z-index: -1; border-radius: 50%; pointer-events: none;
+    width: 12px; height: 12px; margin: -6px 0 0 -6px;
+    background: rgb(255 255 255 / 0.45); animation: ripple .6s var(--ease) forwards;
+}
+.btn-secondary .ripple, .btn-ghost .ripple, .btn-danger .ripple { background: rgb(var(--c-track) / 0.2); }
+@keyframes ripple { to { transform: scale(30); opacity: 0; } }
+
+/* --------------------------------------------------------------------------
+   8. Tabuľky = výsledková listina
+   -------------------------------------------------------------------------- */
+table.w-full {
+    border-collapse: separate; border-spacing: 0;
+    background: rgb(var(--c-surface));
+    border: 1px solid rgb(var(--c-line)); border-radius: var(--radius);
+    overflow: hidden; box-shadow: var(--shadow-1);
+}
+table.w-full thead th {
+    padding: 11px 14px;
+    font-size: 13px; font-weight: 650; line-height: 1.3;
+    text-transform: none; letter-spacing: 0;
+    color: rgb(var(--c-muted));
+    background: rgb(var(--c-surface-2));
+    border-bottom: 1px solid rgb(var(--c-line));
+    white-space: nowrap;
+}
+table.w-full td, table.w-full tbody th { padding-left: 14px; padding-right: 14px; border-color: rgb(var(--c-line)); }
+table.w-full tbody tr + tr > td, table.w-full tbody tr + tr > th { border-top: 1px solid rgb(var(--c-line)); }
+table.w-full tbody td, table.w-full tbody th { border-bottom-width: 0; }
+table.w-full tbody tr { transition: background-color .2s ease; }
+table.w-full tbody tr:hover { background: rgb(var(--c-track) / 0.045); }
+table.w-full td.mono, table.w-full td .mono { font-size: 15px; }
+
+/* --------------------------------------------------------------------------
+   9. Hlásenia, päta, cookie lišta, prístupnosť
+   -------------------------------------------------------------------------- */
+.flash-wrap { display: flex; flex-direction: column; gap: 8px; margin-bottom: 22px; }
+.flash-msg {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px;
+    background: rgb(var(--c-surface));
+    border: 1px solid rgb(var(--c-line)); border-left: 4px solid rgb(var(--c-muted));
+    border-radius: 14px; box-shadow: var(--shadow-2);
+    font-size: 15px;
+    animation: flash-in .5s var(--ease-spring) both;
+}
+@keyframes flash-in { from { opacity: 0; transform: translateY(-10px) scale(.98); } }
+.flash-msg[data-category="success"] { border-left-color: rgb(var(--c-infield)); }
+.flash-msg[data-category="danger"], .flash-msg[data-category="error"] { border-left-color: rgb(var(--c-danger)); }
+.flash-msg[data-category="warning"] { border-left-color: rgb(var(--c-warn)); }
+.flash-msg[data-category="info"], .flash-msg[data-category="message"] { border-left-color: rgb(var(--c-info)); }
+.flash-close { display: inline-grid; place-items: center; width: 32px; height: 32px; margin: -6px -6px -6px 0; border-radius: 50%; color: rgb(var(--c-muted)); }
+.flash-close:hover { background: rgb(var(--c-text) / 0.06); color: rgb(var(--c-text)); }
+
+.site-footer {
+    margin-top: 56px; padding-top: 16px;
+    border-top: 1px solid rgb(var(--c-line-strong));
+    display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 32px;
+    font-size: 13.5px; color: rgb(var(--c-muted));
+}
+.site-footer nav { display: flex; flex-wrap: wrap; gap: 6px 20px; }
+.site-footer a { color: rgb(var(--c-text-soft)); text-decoration: none; }
+.site-footer a:hover { color: rgb(var(--c-track)); text-decoration: underline; text-underline-offset: 3px; }
+
+#cookie-lista {
+    position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 60;
+    max-width: 980px; margin: 0 auto; border-radius: 18px;
+    background: rgb(var(--c-navy) / 0.94); color: #fff;
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-pop);
+    animation: flash-in .6s var(--ease-spring) both;
+}
+#cookie-lista a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+#cookie-lista .btn { background: #fff; color: rgb(10 26 51); }
+
+.skip-link {
+    position: absolute; left: 12px; top: -80px; z-index: 100;
+    padding: 10px 14px; border-radius: var(--radius);
+    background: rgb(var(--c-text)); color: rgb(var(--c-surface));
+    font-size: 14px; font-weight: 650;
+}
+.skip-link:focus { top: 12px; }
+
+/* Vodorovne posúvateľné tabuľky: .sr-only (position: absolute) vo vnútri inak rozšíri celú stránku na mobile */
+.overflow-x-auto { position: relative; }
+
+/* Poznámka s farebným okrajom vľavo: upozornenie pri formulári, chyba analýzy, žiadosť trénera */
+.note {
+    padding: 14px 16px;
+    background: rgb(var(--c-surface));
+    border: 1px solid rgb(var(--c-line)); border-left: 4px solid rgb(var(--c-muted));
+    border-radius: 14px;
+}
+.note.ok   { border-left-color: rgb(var(--c-infield)); }
+.note.warn { border-left-color: rgb(var(--c-warn)); }
+.note.bad  { border-left-color: rgb(var(--c-danger)); }
+.note.info { border-left-color: rgb(var(--c-info)); }
+.note-title { font-stretch: var(--w-heading); font-size: 19px; font-weight: 720; line-height: 1.25; color: rgb(var(--c-text)); }
+.note p { font-size: 14.5px; color: rgb(var(--c-text-soft)); max-width: 68ch; }
+.note p + p, .note-title + p { margin-top: 4px; }
+
+/* Odkaz späť nad titulkom stránky */
+.back-link {
+    display: inline-flex; align-items: center; gap: 2px;
+    margin: -4px 0 12px -6px; padding: 4px 12px 4px 4px; border-radius: 999px;
+    font-size: 14px; font-weight: 560; color: rgb(var(--c-muted)); text-decoration: none;
+}
+.back-link:hover { color: var(--accent-text); background: rgb(var(--c-track) / 0.07); }
+.back-link .material-symbols-outlined { transition: transform .3s var(--ease-spring); }
+.back-link:hover .material-symbols-outlined { transform: translateX(-3px); }
+.back-link .material-symbols-outlined { font-size: 20px; }
+
+/* Textové tlačidlá v riadkoch tabuliek (Otvoriť, Upraviť, Odpojiť, Zmazať) */
+.row-actions { display: inline-flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 4px 16px; }
+.link-btn {
+    display: inline-flex; align-items: center; min-height: 30px; padding: 0;
+    background: none; border: 0; cursor: pointer;
+    font-family: var(--font); font-size: 14px; font-weight: 560; line-height: 1.2;
+    color: rgb(var(--c-text-soft));
+    text-decoration: underline; text-decoration-color: rgb(var(--c-line-strong));
+    text-underline-offset: 4px; text-decoration-thickness: 1px;
+}
+.link-btn:hover { color: var(--accent-text); text-decoration-color: currentColor; }
+.link-btn.danger:hover { color: rgb(var(--c-danger)); }
+.link-btn.is-off { color: rgb(var(--c-muted)); text-decoration: none; cursor: default; }
+
+/* Nápoveda pod poľom formulára */
+.field-hint { margin-top: 6px; font-size: 13px; line-height: 1.4; color: rgb(var(--c-muted)); }

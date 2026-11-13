@@ -23,7 +23,7 @@ from sqlalchemy import func, or_
 
 from models import (db, User, RaceResult, PlannedTraining, BiometricLog, TrainingLog,
                     StravaToken, ChatMessage, UserProfile, VideoAnalysis, HurdleAnalysis,
-                    ROLES, ROLE_LABELS)
+                    ROLES)
 from auth import roles_required, USERNAME_RE, PASSWORD_MIN
 
 bp = Blueprint('admin_panel', __name__, url_prefix='/admin')

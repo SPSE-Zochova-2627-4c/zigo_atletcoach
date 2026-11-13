@@ -1,39 +1,42 @@
 {% extends "base.html" %}
-{% block title %}Prihlásenie · AtletCoach{% endblock %}
+{% from "_ui.html" import page_head, auth_photo %}
+{% block title %}Prihlásenie – AtletCoach{% endblock %}
 
 {% block content %}
-<main class="mt-10 pb-12 max-w-[440px] mx-auto">
-    <div class="mb-8">
-        <p class="eyebrow mb-2">Účet</p>
-        <h1 class="page-title">Prihlásenie</h1>
+<main class="pb-4">
+    {{ page_head('Prihlásenie', 'Použi meno a heslo z registrácie, alebo tie, ktoré ti dal tréner.') }}
+
+    <div class="auth-grid">
+        <div>
+
+            {% if show_admin_hint %}
+            <div class="note warn mb-6" role="note">
+                <p class="note-title">Prvé spustenie appky</p>
+                <p>Prihlás sa účtom <strong class="mono">admin</strong> s heslom <strong class="mono">admin</strong>.
+                   Hneď potom si heslo zmeníš.</p>
+            </div>
+            {% endif %}
+
+            <form method="POST" class="card auth-form space-y-5">
+                <div>
+                    <label for="username">Používateľské meno</label>
+                    <input type="text" id="username" name="username" value="{{ username }}"
+                           autocomplete="username" autocapitalize="off" spellcheck="false" required autofocus>
+                </div>
+                <div>
+                    <label for="password">Heslo</label>
+                    <input type="password" id="password" name="password" autocomplete="current-password" required>
+                </div>
+                <button type="submit" class="w-full btn btn-primary btn-lg">Prihlásiť sa</button>
+                <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+            </form>
+
+            <p class="mt-5 text-[15px] text-on-surface-variant">
+                Nemáš účet? <a href="{{ url_for('auth.register') }}" class="link">Vytvoriť účet</a>
+            </p>
+        </div>
+
+        {{ auth_photo() }}
     </div>
-
-    {% if show_admin_hint %}
-    <p class="mono text-[11px] text-on-surface-variant mb-6 pl-3 border-l-2 border-[#c98500] leading-relaxed">
-        Prvé spustenie: účet <span class="text-on-surface">admin</span>, heslo <span class="text-on-surface">admin</span>.
-        Po prihlásení si heslo hneď zmeníš.
-    </p>
-    {% endif %}
-
-    <form method="POST" class="card p-6 space-y-5">
-        <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
-        <div>
-            <label for="username">Používateľské meno</label>
-            <input type="text" id="username" name="username" value="{{ username }}"
-                   autocomplete="username" autocapitalize="off" spellcheck="false" required autofocus>
-        </div>
-        <div>
-            <label for="password">Heslo</label>
-            <input type="password" id="password" name="password" autocomplete="current-password" required>
-        </div>
-        <button type="submit" class="w-full btn btn-primary">
-            Prihlásiť sa
-        </button>
-    </form>
-
-    <p class="mt-5 text-[13px] text-on-surface-variant">
-        Nemáš účet?
-        <a href="{{ url_for('auth.register') }}" class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">Registrácia <span aria-hidden="true">→</span></a>
-    </p>
 </main>
 {% endblock %}

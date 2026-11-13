@@ -18,9 +18,6 @@ from auth import login_required, require_visible_athlete, visible_athletes
 
 bp = Blueprint('grafy', __name__, url_prefix='/grafy')
 
-# Farby sérií – jediné validované na tmavom podklade (spec 1.3).
-LIME, BLUE, MAGENTA = '#879c26', '#3987e5', '#d55181'
-
 # Bežné poradie disciplín v ponuke; neznáme (voľný text) idú abecedne za ne.
 DISCIPLINE_ORDER = ('60m', '100m', '200m', '300m', '400m', '600m', '800m', '1000m', '1500m',
                     '3000m', '5000m', '10000m', '60mH', '100mH', '110mH', '300mH', '400mH')
@@ -62,8 +59,14 @@ def _discipline_key(name):
 
 
 def _target_athlete():
-    """Zverenec z ?athlete_id= (tréner/admin), inak prihlásený. Cudzí → 403."""
+    """
+    Zverenec z ?athlete_id= (tréner/admin), cudzí → 403. Bez výberu: zverenec vidí seba,
+    tréner prvého zverenca (sám tréningy nezapisuje, jeho vlastné grafy by boli prázdne).
+    """
     athlete_id = request.args.get('athlete_id', type=int)
+    if athlete_id is None and (g.user.is_coach or g.user.is_admin):
+        others = [a for a in visible_athletes(g.user) if a.id != g.user.id]
+        return others[0] if others else g.user
     if athlete_id is None or athlete_id == g.user.id:
         return g.user
     return require_visible_athlete(athlete_id)
@@ -157,7 +160,7 @@ def volume_series(athlete, weeks=VOLUME_WEEKS):
     logs = TrainingLog.query.filter(TrainingLog.user_id == athlete.id,
                                     TrainingLog.date >= mondays[0]).all()
     for t in logs:
-        # Stĺpec je Date, ale default je utcnow – čerstvo vložený riadok môže niesť datetime.
+        # Stĺpec je Date; staršie verzie appky mohli do neho uložiť datetime (default bol utcnow).
         d = t.date.date() if isinstance(t.date, datetime) else t.date
         m = _week_start(d)
         if m in km:
@@ -340,7 +343,7 @@ def index():
     distance = request.args.get('distance')
     data = {m: _metric(m, athlete, discipline, exercise, distance) for m in METRICS}
     return render_template('grafy/index.html',
-                           eyebrow='Výkonnosť', title='Grafy',
+                           title='Grafy',
                            athlete=athlete, athletes=athletes,
                            discipline=discipline, disciplines=disciplines,
                            data=data)

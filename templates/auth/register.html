@@ -1,79 +1,74 @@
 {% extends "base.html" %}
-{% block title %}Registrácia · AtletCoach{% endblock %}
+{% from "_ui.html" import page_head, auth_photo %}
+{% block title %}Registrácia – AtletCoach{% endblock %}
 
 {% block content %}
-<main class="mt-10 pb-12 max-w-[440px] mx-auto">
-    <div class="mb-8">
-        <p class="eyebrow mb-2">Účet</p>
-        <h1 class="page-title">Registrácia</h1>
-        <p class="text-[13px] text-on-surface-variant mt-3 leading-relaxed">
-            Zverenec vidí len svoje údaje a tréner ho pridá podľa používateľského mena.
-            Tréner spravuje zverencov, ich výsledky a plán tréningov.
-        </p>
-    </div>
+<main class="pb-4">
+    {{ page_head('Registrácia', 'Zverenec vidí len svoje údaje. Tréner spravuje zverencov, ich výsledky a plán tréningov.') }}
 
-    <form method="POST" class="card p-6 space-y-5">
+    <div class="auth-grid">
         <div>
-            <label for="username">Používateľské meno</label>
-            <input type="text" id="username" name="username" value="{{ form.username }}" placeholder="napr. jan.novak"
-                   autocomplete="username" autocapitalize="off" spellcheck="false" minlength="3" maxlength="32" required autofocus
-                   aria-describedby="username-hint">
-            <p id="username-hint" class="mono text-[10px] text-on-surface-variant mt-1.5">3–32 znakov: a–z, 0–9, bodka, pomlčka, podčiarkovník</p>
-        </div>
-        <div>
-            <label for="full_name">Meno a priezvisko</label>
-            <input type="text" id="full_name" name="full_name" value="{{ form.full_name }}" placeholder="nepovinné" maxlength="120" autocomplete="name"
-                   aria-describedby="full-name-hint">
-            <p id="full-name-hint" class="text-[12px] text-on-surface-variant mt-1.5">Nepovinné. Zobrazí sa trénerovi, ktorý ťa má medzi zverencami, a administrátorovi.</p>
-        </div>
 
-        <fieldset class="m-0 p-0 border-0 min-w-0">
-            <legend class="eyebrow mb-2">Rola</legend>
-            <div class="grid grid-cols-2 gap-3">
-                {% for value, label, sub in [('zverenec', 'Zverenec', 'atlét, zapisuje si tréningy'), ('trener', 'Tréner', 'spravuje zverencov a plán')] %}
-                <label class="bg-surface-container-low px-4 py-3.5 cursor-pointer flex items-start gap-3 hover:bg-surface-container-high transition-colors">
-                    <input type="radio" name="role" value="{{ value }}" class="mt-1" {% if form.role == value %}checked{% endif %}>
+            <form method="POST" class="card auth-form space-y-5">
+                <fieldset>
+                    <legend>Kto si</legend>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {% for value, label, sub in [('zverenec', 'Zverenec', 'atlét, zapisuje si tréningy a časy'), ('trener', 'Tréner', 'vedie zverencov a plánuje tréningy')] %}
+                        <label class="role-choice">
+                            <input type="radio" name="role" value="{{ value }}" {% if form.role == value %}checked{% endif %}>
+                            <span><strong>{{ label }}</strong><small>{{ sub }}</small></span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+
+                <div>
+                    <label for="username">Používateľské meno</label>
+                    <input type="text" id="username" name="username" value="{{ form.username }}" placeholder="napr. jan.novak"
+                           autocomplete="username" autocapitalize="off" spellcheck="false" minlength="3" maxlength="32" required autofocus
+                           aria-describedby="username-hint">
+                    <p id="username-hint" class="field-hint">3 až 32 znakov: malé písmená bez diakritiky, číslice, bodka, pomlčka, podčiarkovník. Podľa neho ťa nájde tréner.</p>
+                </div>
+                <div>
+                    <label for="full_name">Meno a priezvisko <span class="font-normal text-on-surface-variant">(nepovinné)</span></label>
+                    <input type="text" id="full_name" name="full_name" value="{{ form.full_name }}" maxlength="120" autocomplete="name"
+                           aria-describedby="full-name-hint">
+                    <p id="full-name-hint" class="field-hint">Uvidí ho tvoj tréner a administrátor.</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label for="password">Heslo</label>
+                        <input type="password" id="password" name="password" autocomplete="new-password" minlength="6" required
+                               aria-describedby="password-hint">
+                    </div>
+                    <div>
+                        <label for="password2">Heslo znova</label>
+                        <input type="password" id="password2" name="password2" autocomplete="new-password" minlength="6" required>
+                    </div>
+                    <p id="password-hint" class="field-hint mt-0 sm:col-span-2">Aspoň 6 znakov.</p>
+                </div>
+
+                <label class="flex items-start gap-3 text-[14px] text-on-surface-variant cursor-pointer">
+                    <input type="checkbox" name="terms" value="1" required class="mt-1" {% if form.terms %}checked{% endif %}>
                     <span>
-                        <span class="block font-headline font-bold text-on-surface">{{ label }}</span>
-                        <span class="block text-[12px] text-on-surface-variant">{{ sub }}</span>
+                        Prečítal som si
+                        <a href="{{ url_for('pravne.podmienky') }}" target="_blank" rel="noopener" class="link">Podmienky používania<span class="sr-only"> (otvorí sa v novom okne)</span></a>
+                        a
+                        <a href="{{ url_for('pravne.ochrana_udajov') }}" target="_blank" rel="noopener" class="link">Ochranu osobných údajov<span class="sr-only"> (otvorí sa v novom okne)</span></a>
+                        a súhlasím s nimi. Mám aspoň 16 rokov, alebo s účtom súhlasí môj rodič.
                     </span>
                 </label>
-                {% endfor %}
-            </div>
-        </fieldset>
 
-        <div class="grid grid-cols-2 gap-3">
-            <div>
-                <label for="password">Heslo</label>
-                <input type="password" id="password" name="password" autocomplete="new-password" minlength="6" required>
-            </div>
-            <div>
-                <label for="password2">Heslo znova</label>
-                <input type="password" id="password2" name="password2" autocomplete="new-password" minlength="6" required>
-            </div>
+                <button type="submit" class="w-full btn btn-primary btn-lg">Vytvoriť účet</button>
+            </form>
+
+            <p class="mt-5 text-[15px] text-on-surface-variant">
+                Už máš účet? <a href="{{ url_for('auth.login') }}" class="link">Prihlásiť sa</a>
+            </p>
         </div>
 
-        <label class="flex items-start gap-3 text-[13px] text-on-surface-variant cursor-pointer">
-            <input type="checkbox" name="terms" value="1" required class="mt-1" {% if form.terms %}checked{% endif %}>
-            <span>
-                Prečítal som si
-                <a href="{{ url_for('pravne.podmienky') }}" target="_blank" rel="noopener"
-                   class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">Podmienky používania<span class="sr-only"> (otvorí sa v novom okne)</span></a>
-                a
-                <a href="{{ url_for('pravne.ochrana_udajov') }}" target="_blank" rel="noopener"
-                   class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">Ochranu osobných údajov<span class="sr-only"> (otvorí sa v novom okne)</span></a>
-                a súhlasím s nimi. Mám aspoň 16 rokov, alebo s účtom súhlasí môj rodič.
-            </span>
-        </label>
-
-        <button type="submit" class="w-full btn btn-primary">
-            Vytvoriť účet
-        </button>
-    </form>
-
-    <p class="mt-5 text-[13px] text-on-surface-variant">
-        Už máš účet?
-        <a href="{{ url_for('auth.login') }}" class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">Prihlásenie <span aria-hidden="true">→</span></a>
-    </p>
+        {{ auth_photo() }}
+    </div>
 </main>
 {% endblock %}

@@ -18,3 +18,4 @@ static/uploads/
 *.webm
 test_*.py
 test_*.mjs
+node_modules/

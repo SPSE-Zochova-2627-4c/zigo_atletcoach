@@ -1,105 +1,283 @@
 {% extends "base.html" %}
-{% block title %}AtletCoach{% endblock %}
+{% block title %}AtletCoach – stopky, analýza videa a plán tréningov pre bežcov{% endblock %}
+
+{#- Úvodná stránka pre neprihláseného.
+    Poradie: fotky z pretekov (hero) → bežec z analýzy videa → stopky ako cieľová kamera → funkcie → kto čo vidí
+    → autor → ako začať. Pohyb: fotky sa prelínajú a približujú, bežec beží (static/js/bezec.js), fotofiniš sa
+    prehrá raz pri zobrazení. Pri obmedzenom pohybe sa všetko ukáže v pokoji. -#}
+
+{% set t0, span = 10.78, 0.32 %}
+{% set lanes = [(1, 11.02), (2, 10.91), (3, 10.84), (4, 10.86), (5, 10.95), (6, 10.89), (7, 11.06), (8, 10.98)] %}
+{% set best = lanes|map(attribute=1)|min %}
+
+{% macro foto(name, small, big, alt, sizes, cls='', w=1600, h=1067, eager=false, style='') -%}
+    <img class="{{ cls }}" src="{{ url_for('static', filename='img/fotky/' ~ name ~ '-' ~ small ~ '.webp') }}"
+         srcset="{{ url_for('static', filename='img/fotky/' ~ name ~ '-' ~ small ~ '.webp') }} {{ small }}w,
+                 {{ url_for('static', filename='img/fotky/' ~ name ~ '-' ~ big ~ '.webp') }} {{ big }}w"
+         sizes="{{ sizes }}" width="{{ w }}" height="{{ h }}" alt="{{ alt }}" decoding="async"
+         {% if eager %}fetchpriority="high"{% else %}loading="lazy"{% endif %}{% if style %} style="{{ style }}"{% endif %}>
+{%- endmacro %}
 
 {% block content %}
-<main class="pb-8">
+<main class="landing pb-4">
 
-    <!-- ── Úvod ── -->
-    <section class="card card-hero" style="padding: 34px 36px">
-        <div class="grid grid-cols-1 lg:grid-cols-[1.35fr_1fr] gap-10 items-center">
-            <div>
-                <p class="eyebrow" style="color:var(--accent)">Analýza bežeckej techniky z videa</p>
-                <h1 class="font-headline font-bold text-[38px] sm:text-[50px] leading-[1.02] tracking-[-0.03em] text-on-surface mt-3">
-                    Tréner a jeho bežci<br><span style="color:var(--accent-text)">na jednom mieste</span>
-                </h1>
-                <p class="text-on-surface-variant text-[15px] leading-relaxed mt-5 max-w-[52ch]">
-                    Appka z videa vyčíta čas kontaktu so zemou, kadenciu a asymetriu, pri prekážkach odmeria
-                    medzičasy a kroky. Tréner plánuje tréningy, eviduje výsledky z pretekov a sleduje vývoj
-                    výkonnosti v grafoch. Zverenec vidí len svoje údaje.
-                </p>
-                <div class="flex flex-wrap gap-2.5 mt-7">
-                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">Prihlásiť sa</a>
-                    <a href="{{ url_for('auth.register') }}" class="btn btn-secondary btn-lg">Registrovať</a>
-                    <a href="{{ url_for('stopky.page') }}" class="btn btn-ghost btn-lg">
-                        <span class="material-symbols-outlined" aria-hidden="true">timer</span>Vyskúšať stopky
-                    </a>
-                </div>
+    {# ── Hero: text vľavo, fotky z MS do 20 rokov vpravo ── #}
+    <section class="hero-photo" aria-labelledby="hero-title" data-slideshow>
+        <div class="hero-copy">
+            <h1 id="hero-title" class="hero-title">Stopky, video a plán tréningov pre bežcov</h1>
+            <p class="hero-lead">
+                Kamera telefónu odmeria čas cez virtuálnu fotobunku. Z videa appka vyčíta kontakt so zemou,
+                frekvenciu a kroky medzi prekážkami. Tréner v nej plánuje tréningy a vidí výsledky svojich zverencov.
+            </p>
+            <div class="hero-actions">
+                <a href="{{ url_for('stopky.page') }}" class="btn btn-primary btn-lg">
+                    <span class="material-symbols-outlined" aria-hidden="true">timer</span>Spustiť stopky
+                </a>
+                <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-lg">Prihlásiť sa</a>
             </div>
+            <p class="hero-alt">Nemáš účet? <a href="{{ url_for('auth.register') }}">Vytvoriť účet</a></p>
+        </div>
+        <div class="hero-media">
+            <div class="hero-slides" data-parallax="0.22">
+                {{ foto('beh-oregon26', 800, 1600, 'Tomáš Žigo v slovenskom drese počas behu na štadióne Hayward Field',
+                        '(max-width: 900px) 100vw, 46vw', 'slide on kb', eager=true, style='--pos: 8% 30%; --pos-m: 30% 30%') }}
+                {{ foto('ciel-oregon26', 800, 1600, 'Tomáš Žigo po dobehu s francúzskym bežcom, vedľa nich kameraman',
+                        '(max-width: 900px) 100vw, 46vw', 'slide kb', style='--pos: 14% 30%; --pos-m: 34% 30%; --kb-origin: 30% 40%') }}
+            </div>
+            <div class="hero-dots" data-dots aria-hidden="true"><span class="on"></span><span></span></div>
+            <p class="hero-credit">Na fotkách autor appky Tomáš Žigo na majstrovstvách sveta do 20 rokov, Eugene 2026</p>
+        </div>
+    </section>
 
-            {# Ukážka, ako vyzerá výsledok analýzy – čísla sú ilustračné, nie namerané. #}
-            <div class="card p-5" aria-label="Ukážka výsledku analýzy videa (ilustračné hodnoty)" role="group">
-                <div class="flex items-baseline justify-between gap-3 mb-4">
-                    <p class="eyebrow" style="color:var(--accent)">Ukážka merania</p>
-                    <span class="chip ok"><span class="dot" aria-hidden="true"></span>technika ok</span>
+    {# ── Analýza videa: animovaná kostra bežca ── #}
+    <section class="runner-panel" data-bezec aria-labelledby="video-title">
+        <div class="runner-copy">
+            <h2 id="video-title">Čo appka vyčíta z videa behu</h2>
+            <p>
+                Nahráš video z boku dráhy. Appka nájde kĺby bežca, rozozná kontakt so zemou a letovú fázu,
+                zmeria uhol v kolene a spočíta frekvenciu krokov.
+            </p>
+            <div class="runner-hud">
+                <div><small>Fáza kroku</small><b data-hud="faza">letová fáza</b></div>
+                <div><small>Uhol v kolene</small><b data-hud="koleno">95°</b></div>
+                <div><small>Kontakt so zemou</small><b data-hud="kontakt">97 ms</b></div>
+                <div><small>Frekvencia</small><b><span data-hud="kadencia">273</span> <small>krokov/min</small></b></div>
+            </div>
+            <a href="{{ url_for('analyza.video_page') }}" class="btn btn-secondary">
+                <span class="material-symbols-outlined" aria-hidden="true">videocam</span>Analyzovať video
+            </a>
+        </div>
+        <div class="runner-stage">
+            <canvas aria-hidden="true"></canvas>
+            <span class="runner-badge">jeden krok šprintéra, spomalené 4×</span>
+        </div>
+    </section>
+
+    {# ── Stopky: fotofiniš ── #}
+    <section aria-labelledby="stopky-title">
+        <div class="sec-head">
+            <h2 id="stopky-title">Stopky ako cieľová kamera</h2>
+            <p>
+                Telefón alebo notebook sleduje čiaru v obraze kamery. Keď ju bežec pretne, čas sa zastaví.
+                Štartuješ tlačidlom alebo na zvuk a stopky fungujú aj bez účtu.
+            </p>
+        </div>
+        <figure>
+            <div class="finish" data-finish role="img"
+                 aria-label="Ukážka cieľovej kamery, dobeh 100 metrov: {% for no, t in lanes|sort(attribute=1) %}dráha {{ no }} {{ '%.2f'|format(t)|replace('.', ',') }} s{{ ', ' if not loop.last else '' }}{% endfor %}.">
+                <div class="finish-ruler" aria-hidden="true">
+                    <span></span>
+                    <span class="ticks">
+                        {% for t in [10.80, 10.85, 10.90, 10.95, 11.00, 11.05] %}
+                        <span class="tick" style="left: {{ '%.2f'|format((t - t0) / span * 100) }}%">{{ '%.2f'|format(t)|replace('.', ',') }}</span>
+                        {% endfor %}
+                    </span>
                 </div>
-                <div class="flex items-baseline gap-3">
-                    <span class="score-num">112</span>
-                    <span class="text-on-surface-variant text-[15px]">ms kontakt so zemou</span>
+                {% for no, t in lanes %}
+                {% set x = (t - t0) / span %}
+                <div class="finish-lane" aria-hidden="true">
+                    <span class="no">{{ no }}</span>
+                    <span class="run">
+                        <span class="finish-mark{{ ' first' if t == best }}{{ ' flip' if x > 0.78 }}"
+                              style="left: {{ '%.2f'|format(x * 100) }}%; --d: {{ '%.2f'|format(0.25 + 1.7 * x) }}s">
+                            <span>{{ '%.2f'|format(t)|replace('.', ',') }}</span>
+                        </span>
+                    </span>
                 </div>
-                <div class="seg-bar mt-4" aria-hidden="true">
-                    <span class="ok" style="width:58%"></span><span class="ok" style="width:22%"></span><span class="warn" style="width:14%"></span><span class="acc" style="width:6%"></span>
-                </div>
-                <p class="mono text-[11px] text-on-surface-variant mt-2">6 krokov ok · 1 sledovať · 0 riešiť</p>
-                <div class="grid grid-cols-3 gap-2 mt-5">
-                    {% for label, value, unit in [('Kadencia', '4,6', 'kr/s'), ('Letová fáza', '118', 'ms'), ('Asymetria', '2,1', '%')] %}
-                    <div class="kpi" style="padding:10px 12px">
-                        <p class="kpi-label">{{ label }}</p>
-                        <p class="kpi-value" style="font-size:20px">{{ value }}<span class="kpi-suffix">{{ unit }}</span></p>
+                {% endfor %}
+                <div class="finish-scan-track" aria-hidden="true"><span class="finish-scan"></span></div>
+            </div>
+            <figcaption class="mt-3 text-[14px] text-muted max-w-[68ch]">
+                Ukážka: dobeh 100 m v ôsmich dráhach, časy sú ilustračné. Víťaz má oranžový štítok.
+            </figcaption>
+        </figure>
+        <a href="{{ url_for('stopky.page') }}" class="btn btn-primary mt-6">
+            <span class="material-symbols-outlined" aria-hidden="true">timer</span>Spustiť stopky
+        </a>
+    </section>
+
+    {# ── Funkcie: každá karta má malú ukážku toho, čo appka zobrazí ── #}
+    <section aria-labelledby="funkcie-title">
+        <div class="sec-head">
+            <h2 id="funkcie-title">Tréner plánuje, zverenci zapisujú</h2>
+            <p>Plán, splnené tréningy, výsledky z pretekov a regenerácia celej skupiny na jednom mieste.</p>
+        </div>
+        <div class="bento">
+            <article class="card tile wide">
+                <h3>Plán tréningov</h3>
+                <p>Týždenný plán napíšeš ako text, rovnako ako ho posielaš do skupiny. Appka ho rozdelí na dni a zverencov, zverenec odškrtne splnené.</p>
+                <div class="demo demo-plan" aria-hidden="true">
+                    <blockquote>Ut 6 × 200 m, pauza 3 min<br>St voľný beh 40 min<br>Št štarty z blokov 5 × 30 m</blockquote>
+                    <div class="demo-week">
+                        <span class="ok" style="--n: 0">Po</span><span class="ok" style="--n: 1">Ut</span><span class="now">St</span>
+                        <span>Št</span><span>Pi</span><span>So</span><span>Ne</span>
                     </div>
+                </div>
+            </article>
+            <article class="card tile wide">
+                <h3>Výsledky a grafy</h3>
+                <p>Časy z pretekov a osobné rekordy: zapíšeš ich ručne, uložíš zo stopiek alebo naimportuješ zo stránky World Athletics.</p>
+                <div class="demo" aria-hidden="true">
+                    <div class="demo-spark-wrap">
+                        <svg class="demo-spark" viewBox="0 0 520 86" preserveAspectRatio="none" focusable="false">
+                            <path class="area" d="M10,66 C22,65 57,60 80,60 C103,60 126,69 149,68 C172,67 195,54 218,52 C241,50 265,58 288,56 C311,54 334,42 357,40 C380,38 402,46 426,43 C450,40 490,24 503,20 L503,86 L10,86 Z"/>
+                            <path class="curve" pathLength="1" d="M10,66 C22,65 57,60 80,60 C103,60 126,69 149,68 C172,67 195,54 218,52 C241,50 265,58 288,56 C311,54 334,42 357,40 C380,38 402,46 426,43 C450,40 490,24 503,20"/>
+                        </svg>
+                        <span class="pb-dot"></span>
+                    </div>
+                    <div class="demo-axis"><span>apríl</span><span>osobný rekord v septembri</span></div>
+                </div>
+            </article>
+            <article class="card tile">
+                <h3>Prekážky</h3>
+                <p>Z videa behu cez prekážky appka zmeria medzičasy z dopadu na dopad a spočíta kroky medzi prekážkami.</p>
+                <div class="demo" aria-hidden="true">
+                    <div class="demo-steps"><span>8</span><span>3</span><span>3</span><span>3</span><span class="hi">4</span><span>3</span></div>
+                    <p class="demo-cap">Kroky k 1. prekážke a medzi ďalšími. Oranžová: bežec stratil rytmus.</p>
+                </div>
+            </article>
+            <article class="card tile">
+                <h3>Regenerácia</h3>
+                <p>Zverenec si zapisuje HRV a pokojový tep. Appka z nich odhadne, či je pripravený na náročný tréning.</p>
+                <div class="demo" aria-hidden="true">
+                    <div class="demo-bars">
+                        {% for h in [58, 64, 52, 70, 66, 74, 86] %}<span class="{{ 'today' if loop.last }}" style="--h: {{ h }}%; --n: {{ loop.index0 }}"></span>{% endfor %}
+                    </div>
+                    <p class="demo-cap">HRV za posledných 7 dní, vpravo dnes</p>
+                </div>
+            </article>
+            <article class="card tile">
+                <h3>AI tréner</h3>
+                <p>Chat s jazykovým modelom, ktorý pozná tvoje tréningy, výsledky a regeneráciu.</p>
+                <div class="demo demo-chat" aria-hidden="true">
+                    <span class="q">Zvládnem zajtra rýchlosť?</span>
+                    <span class="a">HRV máš tri dni pod priemerom. Zajtra radšej voľný beh, rýchlosť presuň na štvrtok.</span>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    {# ── Kto čo vidí ── #}
+    <section aria-labelledby="pristup-title">
+        <div class="sec-head">
+            <h2 id="pristup-title">Kto čo môže používať</h2>
+            <p>Zverenec vidí len svoje údaje. Tréner vidí zverenca až potom, čo to zverenec potvrdí. Administrátor spravuje účty.</p>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full access-table text-[15px]">
+                <thead>
+                    <tr>
+                        <th class="text-left">Časť</th>
+                        <th class="text-left">Bez účtu</th>
+                        <th class="text-left">Zverenec</th>
+                        <th class="text-left">Tréner</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set rows = [
+                        ('Stopky s fotobunkou', 'áno, bez ukladania', 'uloží si čas', 'uloží čas zverencovi'),
+                        ('Analýza videa', '–', 'svoje videá', 'videá zverencov'),
+                        ('Prekážky', '–', 'svoje videá', 'videá zverencov'),
+                        ('Plán tréningov', '–', 'svoj plán', 'plánuje pre všetkých'),
+                        ('Výsledky a grafy', '–', 'svoje', 'všetkých zverencov'),
+                    ] %}
+                    {% for name, guest, athlete, coach in rows %}
+                    <tr>
+                        <th scope="row" class="py-3 text-left align-top text-[16px] font-bold whitespace-nowrap">{{ name }}</th>
+                        <td data-label="Bez účtu" class="py-3 align-top {{ 'text-muted' if guest == '–' }}">{{ guest }}</td>
+                        <td data-label="Zverenec" class="py-3 align-top">{{ athlete }}</td>
+                        <td data-label="Tréner" class="py-3 align-top">{{ coach }}</td>
+                    </tr>
                     {% endfor %}
-                </div>
-                <p class="text-[11px] text-on-surface-variant mt-4">Ilustračné hodnoty. Skutočná presnosť závisí od záberu a snímkovej frekvencie videa.</p>
-            </div>
+                </tbody>
+            </table>
         </div>
     </section>
 
-    <!-- ── Čo appka robí ── -->
-    <section class="pt-12">
-        <div class="rule"><h2 class="eyebrow">01 · Čo appka robí</h2></div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {% set blocks = [
-                ('videocam', 'Technika z videa',
-                 'Natoč sa spomalene z boku. Softvér rozpozná postavu bežca, sleduje chodidlá voči zemi a pre každý krok vyčíta kontakt so zemou, letovú fázu, frekvenciu, dĺžku kroku a uhly v kĺboch.'),
-                ('stairs', 'Prekážky',
-                 'Z bežného videa prekážkového behu odmeria medzičasy medzi prekážkami a spočíta kroky medzi nimi. Pri 400 m, 110 m a 100 m vyjde aj rýchlosť medzi prekážkami.'),
-                ('group', 'Tréner a zverenci',
-                 'Tréner spravuje zverencov, ich výsledky z pretekov a osobné rekordy (aj z World Athletics), v kalendári plánuje tréningy a v grafoch sleduje vývoj výkonnosti.'),
-                ('timer', 'Stopky s fotobunkou',
-                 'Stopky s kamerou telefónu alebo notebooku: virtuálna fotobunka zastaví čas v okamihu, keď bežec pretne čiaru v obraze. Fungujú aj bez prihlásenia.'),
-            ] %}
-            {% for icon, title, text in blocks %}
-            <div class="card p-5">
-                <span class="inline-grid place-items-center w-9 h-9 rounded-lg mb-4" style="background:var(--accent-soft);color:var(--accent-text)">
-                    <span class="material-symbols-outlined" aria-hidden="true">{{ icon }}</span>
-                </span>
-                <h3 class="section-title mb-2">{{ title }}</h3>
-                <p class="text-[13px] text-on-surface-variant leading-relaxed">{{ text }}</p>
-            </div>
-            {% endfor %}
+    {# ── Autor: dve fotky z Eugene, každá sa pri scrollovaní posúva inou rýchlosťou ── #}
+    <section class="about" aria-labelledby="autor-title">
+        <div class="collage">
+            <figure class="big" data-parallax="0.07">
+                {{ foto('tim-hayward-field', 450, 900, 'Štyria atléti na dráhe štadióna Hayward Field',
+                        '(max-width: 900px) 56vw, 300px', w=900, h=1599) }}
+                <figcaption>Hayward Field, Eugene</figcaption>
+            </figure>
+            <figure class="small" data-parallax="-0.08">
+                {{ foto('hayward-field', 450, 900, 'Veža štadióna Hayward Field a ihrisko v ostrom slnku',
+                        '(max-width: 900px) 44vw, 240px', w=900, h=1599) }}
+            </figure>
+        </div>
+        <div class="about-copy">
+            <h2 id="autor-title">Appku robí bežec</h2>
+            <p>
+                AtletCoach je maturitný projekt Tomáša Žiga zo SPŠE Bratislava, Zochova 9. Tomáš behá za Slovensko,
+                fotky na tejto stránke sú z majstrovstiev sveta do 20 rokov v Eugene 2026.
+            </p>
+            <p>Appka je bezplatná, bez reklám a bez sledovania. Údaje zverenca vidí len on a jeho tréner.</p>
         </div>
     </section>
 
-    <!-- ── Úrovne prístupu ── -->
-    <section class="pt-12">
-        <div class="rule"><h2 class="eyebrow">02 · Štyri úrovne prístupu</h2></div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {% set levels = [
-                ('Neprihlásený', 'Stopky s fotobunkou bez ukladania.'),
-                ('Zverenec', 'Vlastné prihlásenie, zápis tréningov, analýza videa, plán od trénera, výsledky a grafy – len svoje údaje.'),
-                ('Tréner', 'Zverenci, výsledky z pretekov a osobné rekordy, plánovanie tréningov v kalendári, analýzy videí zverencov.'),
-                ('Administrátor', 'Správa používateľských účtov a rolí.'),
-            ] %}
-            {% for title, text in levels %}
-            <div class="card p-5 flex items-start gap-4">
-                <span class="chip mono" aria-hidden="true">{{ '%02d'|format(loop.index) }}</span>
-                <div>
-                    <h3 class="font-headline font-semibold text-on-surface">{{ title }}</h3>
-                    <p class="text-[13px] text-on-surface-variant mt-1">{{ text }}</p>
-                </div>
-            </div>
-            {% endfor %}
+    {# ── Ako začať: naozajstný postup, preto čísla ── #}
+    <section aria-labelledby="ako-zacat">
+        <div class="sec-head"><h2 id="ako-zacat">Ako začať ako tréner</h2></div>
+        <ol class="steps">
+            <li><strong>Vytvor si účet</strong> a pri registrácii vyber rolu tréner.</li>
+            <li><strong>Pridaj zverencov.</strong> Vytvoríš im účty sám, alebo pridáš existujúci účet podľa mena a zverenec to potvrdí.</li>
+            <li><strong>Napíš týždenný plán</strong> ako text, rovnako ako ho posielaš do skupiny. Appka ho rozdelí na dni a zverencov.</li>
+            <li><strong>Sleduj splnenie a časy.</strong> Zverenci odškrtávajú tréningy a zapisujú výkony, ty ich vidíš v prehľade.</li>
+        </ol>
+    </section>
+
+    <section class="cta-band" aria-labelledby="cta-title">
+        <div>
+            <h2 id="cta-title">Stopky fungujú hneď, účet si urobíš neskôr</h2>
+            <p>Plán tréningov, analýza videa a výsledky sú po prihlásení. Registrácia je zadarmo.</p>
+        </div>
+        <div class="flex flex-wrap gap-2.5">
+            <a href="{{ url_for('stopky.page') }}" class="btn btn-lg">
+                <span class="material-symbols-outlined" aria-hidden="true">timer</span>Spustiť stopky
+            </a>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-lg alt">Vytvoriť účet</a>
         </div>
     </section>
 
 </main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/bezec.js') }}?v={{ asset_version }}"></script>
+<script>
+    // Fotofiniš sa prehrá raz, keď je na obrazovke (pri obmedzenom pohybe sa ukáže rovno výsledok).
+    (function () {
+        const board = document.querySelector('[data-finish]');
+        if (!board || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        board.classList.add('ready');
+        const play = () => board.classList.add('play');
+        if (!('IntersectionObserver' in window)) return play();
+        const io = new IntersectionObserver((entries) => {
+            if (entries.some((e) => e.isIntersecting)) { play(); io.disconnect(); }
+        }, { threshold: 0.4 });
+        io.observe(board);
+    })();
+</script>
 {% endblock %}

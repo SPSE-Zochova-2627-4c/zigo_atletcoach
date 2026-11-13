@@ -17,3 +17,5 @@ models/
 
 # Claude Code nastavenia
 .claude/
+node_modules/
+.pytest_cache/

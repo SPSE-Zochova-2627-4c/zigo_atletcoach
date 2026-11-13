@@ -1,0 +1,186 @@
+/* Stránky: Video, Prekážky, Stopky. Len to, čo sa nedá rozumne zapísať utilitami Tailwindu v šablóne. */
+
+/* --------------------------------------------------------------------------
+   Hlásenia na stránke (presnosť merania, upozornenia, chyby) – biely pruh s farebným okrajom
+   vľavo, rovnako ako hlásenia v ráme appky. Stav nesie aj nadpis, nie iba farba.
+   -------------------------------------------------------------------------- */
+.t-bad    { color: rgb(var(--c-danger)); }
+.t-warn   { color: rgb(var(--c-warn)); }
+.t-ok     { color: rgb(var(--c-infield)); }
+.t-accent { color: var(--accent-text); }
+
+/* Ľavá / pravá noha – rovnaké farby ako v grafe (séria 3 a 2) */
+.chip.side-l { background: rgb(var(--c-infield) / 0.12); color: rgb(var(--c-infield)); }
+.chip.side-r { background: rgb(var(--c-info) / 0.12); color: rgb(var(--c-info)); }
+
+/* --------------------------------------------------------------------------
+   Nahrávanie videa
+   -------------------------------------------------------------------------- */
+.dropzone {
+    padding: 22px 16px;
+    text-align: center; cursor: pointer;
+    border: 1px dashed rgb(var(--c-line-strong));
+    border-radius: var(--radius);
+    background: rgb(var(--c-surface-2));
+    transition: border-color .15s ease, background-color .15s ease;
+}
+.dropzone:hover, .dropzone.drag { border-color: rgb(var(--c-track)); background: rgb(var(--c-track) / 0.05); }
+/* Skrytý <input type="file"> má fokus z klávesnice – zvýrazní sa celá plocha */
+.dropzone:focus-within { border-color: rgb(var(--c-track)); box-shadow: 0 0 0 3px rgb(var(--c-track) / 0.22); }
+.dropzone label { display: block; margin: 0; font-size: 15px; font-weight: 620; color: rgb(var(--c-text)); cursor: pointer; }
+
+.progress { height: 6px; background: rgb(var(--c-line)); overflow: hidden; }
+.progress > div { height: 100%; background: rgb(var(--c-track)); transition: width .3s ease; }
+
+/* Rady k natáčaniu – riadky oddelené čiarou */
+.howto > li { padding: 10px 0; border-bottom: 1px solid rgb(var(--c-line)); font-size: 14.5px; color: rgb(var(--c-text-soft)); }
+.howto > li:first-child { padding-top: 0; }
+.howto > li strong { color: rgb(var(--c-text)); font-weight: 650; }
+
+/* --------------------------------------------------------------------------
+   História meraní
+   -------------------------------------------------------------------------- */
+.history-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid rgb(var(--c-line));
+}
+.history-open { min-width: 0; flex: 1; text-align: left; border-radius: 6px; }
+.history-title { display: block; font-size: 15px; font-weight: 620; color: rgb(var(--c-text)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.history-meta { display: block; font-size: 13px; color: rgb(var(--c-muted)); }
+.history-open:hover .history-title { color: var(--accent-text); text-decoration: underline; text-underline-offset: 3px; }
+.history-side { flex-shrink: 0; text-align: right; }
+.history-value { font-stretch: var(--w-data); font-weight: 650; font-size: 16px; font-variant-numeric: tabular-nums; }
+.delete-btn { font-size: 13px; color: rgb(var(--c-muted)); text-decoration: underline; text-underline-offset: 2px; }
+.delete-btn:hover { color: rgb(var(--c-danger)); }
+
+/* --------------------------------------------------------------------------
+   Výsledky: tabuľa čísel, ktorá znesie neúplný posledný riadok (okraje na bunkách, nie medzera)
+   -------------------------------------------------------------------------- */
+
+/* Nájdené pravidlá techniky: biela karta s farebným okrajom a štítkom stavu */
+.finding {
+    padding: 14px 16px;
+    background: rgb(var(--c-surface));
+    border: 1px solid rgb(var(--c-line)); border-left: 4px solid rgb(var(--c-line-strong));
+    border-radius: var(--radius);
+}
+.finding.bad  { border-left-color: rgb(var(--c-danger)); }
+.finding.warn { border-left-color: rgb(var(--c-warn)); }
+.finding.ok   { border-left-color: rgb(var(--c-infield)); }
+.finding-value { font-stretch: var(--w-display); font-weight: 720; font-size: 26px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+
+/* Ľavá vs. pravá noha – vodorovné pruhy */
+.leg-bar { height: 10px; background: rgb(var(--c-line)); }
+.leg-bar > div { height: 100%; }
+
+/* Snímky s kostrou */
+.keyframe { display: block; overflow: hidden; background: rgb(var(--c-surface)); border: 1px solid rgb(var(--c-line)); border-radius: var(--radius); text-decoration: none; }
+.keyframe:hover { border-color: rgb(var(--c-text)); }
+.keyframe img { display: block; width: 100%; background: #000; }
+
+/* --------------------------------------------------------------------------
+   Stopky s fotobunkou (predtým static/css/stopky.css)
+   -------------------------------------------------------------------------- */
+.cam-wrap {
+    position: relative;
+    background: rgb(var(--c-surface));
+    border: 1px solid rgb(var(--c-line));
+    border-radius: var(--radius);
+    aspect-ratio: 16 / 9;          /* JS prepíše podľa skutočného pomeru kamery */
+    overflow: hidden;
+    max-height: 72vh;
+}
+.cam-wrap video { position: absolute; inset: 0; width: 100%; height: 100%; display: block; background: #000; }
+.cam-wrap canvas {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    touch-action: none;            /* ťahanie čiary prstom nemá rolovať stránku */
+    cursor: crosshair; user-select: none; -webkit-user-select: none;
+}
+.cam-wrap.cam-off canvas { cursor: default; }
+
+/* Stavy fotobunky v rohu obrazu – ležia nad videom, preto vlastné svetlé farby na tmavom podklade */
+.cam-status { position: absolute; top: 10px; left: 10px; z-index: 2; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
+.state-label {
+    padding: 3px 8px; border-radius: 6px;
+    font-size: 12.5px; font-weight: 620; line-height: 1.4;
+    color: #CDD1CD; background: rgb(20 23 25 / 0.74);
+}
+.state-label.on { color: #fff; background: rgb(20 23 25 / 0.92); }
+.state-label.on.volt { color: #fff; background: rgb(var(--c-track)); }
+
+.cam-msg {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; padding: 44px 24px 24px;   /* miesto pre stavové popisky hore */
+    background: rgb(var(--c-surface));
+}
+.cam-wrap.cam-on .cam-msg { display: none; }
+
+/* Aktivita fotobunky: podiel bodov na čiare, ktoré sa práve zmenili; ryska = prah zopnutia 25 % */
+.activity { position: relative; height: 8px; background: rgb(var(--c-line)); }
+.activity-fill { height: 100%; width: 0; background: rgb(var(--c-muted)); transition: width 60ms linear; }
+.activity-fill.hot { background: rgb(var(--c-track)); }
+.activity-mark { position: absolute; left: 25%; top: -4px; width: 2px; height: 16px; background: rgb(var(--c-text)); }
+
+/* Posuvníky – tenká dráha a hranatý tartanový jazdec */
+.stopky input[type="range"].range {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 26px; margin: 0; padding: 0;
+    background: transparent; border: none; cursor: pointer;
+}
+.stopky input[type="range"].range:focus { box-shadow: none; }
+.stopky input[type="range"].range:focus-visible { outline: 2px solid rgb(var(--c-track)); outline-offset: 2px; }
+.stopky input[type="range"].range::-webkit-slider-runnable-track { height: 3px; background: rgb(var(--c-line-strong)); }
+.stopky input[type="range"].range::-moz-range-track { height: 3px; background: rgb(var(--c-line-strong)); }
+.stopky input[type="range"].range::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 14px; height: 18px; margin-top: -7.5px; border-radius: 6px; border: none;
+    background: rgb(var(--c-track));
+}
+.stopky input[type="range"].range::-moz-range-thumb { width: 14px; height: 18px; border-radius: 6px; border: none; background: rgb(var(--c-track)); }
+
+/* Časomiera: tmavá tabuľa ako na štadióne; kým čas beží, tabuľa je tartanová */
+.time-board {
+    background: rgb(28 32 36); color: #fff;
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 18px 20px 14px;
+    container-type: inline-size;
+    transition: background-color .2s ease;
+}
+:root[data-theme="dark"] .time-board { background: rgb(10 12 13); box-shadow: inset 0 0 0 1px rgb(var(--c-line-strong)); }
+.time-board:has(.time.running) { background: rgb(var(--c-track)); }
+.time-board .time-label { font-size: 14px; font-weight: 600; color: rgb(255 255 255 / 0.78); }
+.time {
+    margin-top: 6px;
+    font-stretch: 68%; font-weight: 760; line-height: 0.95;
+    font-size: 72px;
+    font-size: clamp(60px, 27cqw, 128px);   /* 8 znakov úzkeho Archiva sa zmestí aj na 375 px telefón */
+    font-variant-numeric: tabular-nums; letter-spacing: 0;
+    white-space: nowrap; color: #fff;
+}
+.time-buttons {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px;
+    background: rgb(var(--c-surface));
+    border: 1px solid rgb(var(--c-line)); border-top: 0;
+}
+.time-buttons .btn { width: 100%; }
+
+.laps { max-height: 220px; overflow-y: auto; }
+.laps li { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid rgb(var(--c-line)); }
+.laps li:last-child { border-bottom: none; }
+.laps li.hidden { display: none; }   /* .laps li má vyššiu špecificitu než utilita .hidden */
+.laps .lap-idx { color: rgb(var(--c-muted)); width: 2.5ch; }
+.laps .lap-split { color: rgb(var(--c-text)); font-weight: 620; }
+.laps .lap-total { color: rgb(var(--c-muted)); }
+
+/* Tlačidlo „Štart na zvuk“ počas čakania na tlesknutie */
+.stopky button.listening { border-color: rgb(var(--c-track)); color: var(--accent-text); }
+
+/* Klávesové skratky */
+kbd {
+    display: inline-block; min-width: 1.6em; padding: 0 5px; margin: 0 1px;
+    border: 1px solid rgb(var(--c-line-strong)); border-bottom-width: 2px; border-radius: 8px;
+    background: rgb(var(--c-surface));
+    font-family: var(--font); font-size: 12.5px; font-weight: 620; line-height: 1.5; text-align: center;
+    color: rgb(var(--c-text));
+}

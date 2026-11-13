@@ -1,213 +1,182 @@
 {% extends "base.html" %}
-{% block title %}Prehľad systému · AtletCoach{% endblock %}
+{% from "_ui.html" import page_head %}
+{% block title %}Stav systému – AtletCoach{% endblock %}
 
 {% set ROLE_PLURAL = {'zverenec': 'Zverenci', 'trener': 'Tréneri', 'admin': 'Administrátori'} %}
 
+{% macro state(ok, yes, no, warn_only=false) -%}
+<span class="chip {{ 'ok' if ok else ('warn' if warn_only else 'bad') }}">{{ yes if ok else no }}</span>
+{%- endmacro %}
+
 {% block content %}
-<main class="mt-10 pb-12">
+<main class="pb-4">
 
-    <!-- ── Hlavička ── -->
-    <div class="flex items-end justify-between flex-wrap gap-5 mb-9">
-        <div>
-            <p class="eyebrow mb-2">Administrátor · stav aplikácie</p>
-            <h1 class="page-title">Prehľad systému</h1>
-        </div>
-        <div class="flex flex-wrap items-center gap-2.5">
-            <a href="{{ url_for('admin_panel.users') }}"
-               class="btn btn-primary">Používatelia</a>
-            <p class="mono text-[11px] text-on-surface-variant">{{ now.strftime('%d.%m.%Y %H:%M') }}</p>
-        </div>
-    </div>
+    {% call page_head('Stav systému', 'Účty, údaje, úložisko a nastavenie servera k ' ~ now|den_mesiac ~ ' ' ~ now.year ~ ', ' ~ now.strftime('%H:%M') ~ '.') %}
+        <a href="{{ url_for('admin_panel.users') }}" class="btn btn-primary">Používatelia</a>
+    {% endcall %}
 
-    <!-- ── Účty ── -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div class="card px-5 py-5">
-            <p class="eyebrow mb-3">Účty spolu</p>
-            <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">{{ totals.users }}</p>
-            {% if totals.must_change %}
-            <p class="mono text-[11px] text-on-surface-variant mt-2">{{ totals.must_change }} čaká na zmenu hesla</p>
-            {% endif %}
-        </div>
-        {% for r in ROLE_ORDER %}
-        <div class="card px-5 py-5">
-            <p class="eyebrow mb-3">{{ ROLE_PLURAL.get(r, ROLE_LABELS[r]) }}</p>
-            <p class="font-headline font-extrabold text-[34px] leading-none {{ 'text-on-surface' if r != 'admin' else '' }}"
-               {% if r == 'admin' %}style="color:var(--volt)"{% endif %}>{{ role_counts.get(r, 0) }}</p>
-            {% if r == 'zverenec' and totals.pending_links %}
-            <p class="mono text-[11px] mt-2" style="color:var(--warn-text)">{{ totals.pending_links }} nepotvrdených trénerov</p>
-            {% endif %}
-        </div>
-        {% endfor %}
-    </div>
-
-    <!-- ── Dáta ── -->
-    <section class="mt-11">
-        <div class="rule"><p class="eyebrow">Údaje v databáze</p></div>
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-            {% for label, value, sub in [
-                ('Tréningy', totals.trainings, none),
-                ('Výsledky', totals.results, none),
-                ('Plán', totals.planned, totals.planned_done ~ ' splnených' if totals.planned else none),
-                ('Videá', totals.videos, none),
-                ('Prekážky', totals.hurdles, none),
-                ('Biometrika', totals.biometrics, none),
-                ('AI správy', totals.chat, none),
-            ] %}
-            <div class="bg-surface-container px-5 py-5">
-                <p class="eyebrow mb-3">{{ label }}</p>
-                <p class="font-headline font-extrabold text-[28px] leading-none text-on-surface">{{ value }}</p>
-                {% if sub %}<p class="mono text-[11px] text-on-surface-variant mt-2">{{ sub }}</p>{% endif %}
+    <section aria-labelledby="h-ucty">
+        <h2 id="h-ucty" class="sr-only">Účty</h2>
+        <div class="kpi-strip grid-cols-2 lg:grid-cols-4">
+            <div class="kpi">
+                <p class="kpi-label">Účty spolu</p>
+                <p class="kpi-value">{{ totals.users }}</p>
+                {% if totals.must_change %}<p class="kpi-hint">{{ totals.must_change }} ešte mení dočasné heslo</p>{% endif %}
+            </div>
+            {% for r in ROLE_ORDER %}
+            <div class="kpi">
+                <p class="kpi-label">{{ ROLE_PLURAL.get(r, ROLE_LABELS[r]) }}</p>
+                <p class="kpi-value">{{ role_counts.get(r, 0) }}</p>
+                {% if r == 'zverenec' and totals.pending_links %}
+                <p class="kpi-hint text-warn">{{ totals.pending_links }} nepotvrdilo trénera</p>
+                {% endif %}
             </div>
             {% endfor %}
         </div>
     </section>
 
-    <section class="mt-11 grid grid-cols-1 lg:grid-cols-2 gap-x-14 gap-y-11">
+    <section class="mt-12" aria-labelledby="h-data">
+        <div class="rule"><h2 id="h-data">Údaje v databáze</h2></div>
+        <div class="kpi-strip grid-cols-2 sm:grid-cols-4 xl:grid-cols-7">
+            {% for label, value, sub in [
+                ('Tréningy', totals.trainings, none),
+                ('Výsledky', totals.results, none),
+                ('Plánované', totals.planned, (totals.planned_done ~ ' splnených') if totals.planned else none),
+                ('Videá', totals.videos, none),
+                ('Prekážky', totals.hurdles, none),
+                ('Biometrika', totals.biometrics, none),
+                ('Správy AI', totals.chat, none),
+            ] %}
+            <div class="kpi">
+                <p class="kpi-label">{{ label }}</p>
+                <p class="kpi-value">{{ value }}</p>
+                {% if sub %}<p class="kpi-hint">{{ sub }}</p>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </section>
 
-        <!-- ── Posledné registrácie ── -->
-        <div>
+    <div class="mt-12 grid grid-cols-1 xl:grid-cols-2 gap-x-10 gap-y-12">
+
+        <section aria-labelledby="h-nove">
             <div class="rule">
-                <p class="eyebrow">Posledné registrácie</p>
-                <a href="{{ url_for('admin_panel.users') }}" class="eyebrow hover:text-on-surface transition-colors">Všetci<span class="sr-only"> používatelia</span> <span aria-hidden="true">→</span></a>
+                <h2 id="h-nove">Posledné registrácie</h2>
+                <a href="{{ url_for('admin_panel.users') }}">Všetci používatelia</a>
             </div>
             <table class="w-full">
                 <thead>
-                    <tr class="border-b border-white/10">
-                        <th scope="col" class="py-2.5 text-left">Používateľ</th>
-                        <th scope="col" class="py-2.5 text-left">Rola</th>
-                        <th scope="col" class="py-2.5 text-right">Vytvorený</th>
+                    <tr>
+                        <th scope="col" class="text-left">Používateľ</th>
+                        <th scope="col" class="text-left">Rola</th>
+                        <th scope="col" class="text-right">Vytvorený</th>
                     </tr>
                 </thead>
-                <tbody class="text-[13px]">
+                <tbody>
                     {% for u in last_users %}
-                    <tr class="border-b border-white/5">
+                    <tr>
                         <td class="py-3">
-                            <a href="{{ url_for('admin_panel.edit_user', user_id=u.id) }}"
-                               class="mono text-on-surface hover:text-[color:var(--volt)] transition-colors">{{ u.username }}</a>
-                            {% if u.full_name %}<span class="text-on-surface-variant ml-2">{{ u.full_name }}</span>{% endif %}
+                            <a href="{{ url_for('admin_panel.edit_user', user_id=u.id) }}" class="font-semibold hover:text-primary hover:underline underline-offset-4">{{ u.username }}</a>
+                            {% if u.full_name %}<span class="block text-[13px] text-on-surface-variant">{{ u.full_name }}</span>{% endif %}
                         </td>
-                        <td class="py-3"><span class="chip {% if u.is_admin %}accent{% elif u.is_coach %}info{% endif %}"><span class="dot" aria-hidden="true"></span>{{ u.role_label }}</span></td>
-                        <td class="py-3 text-right mono text-on-surface-variant">{{ u.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                        <td class="py-3"><span class="chip {% if u.is_admin %}accent{% elif u.is_coach %}info{% endif %}">{{ u.role_label }}</span></td>
+                        <td class="py-3 text-right mono text-on-surface-variant whitespace-nowrap">{{ u.created_at.strftime('%d. %m. %Y %H:%M') }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-        </div>
+        </section>
 
-        <!-- ── Disk a databáza ── -->
-        <div>
-            <div class="rule"><p class="eyebrow">Disk a databáza</p></div>
+        <section aria-labelledby="h-disk">
+            <div class="rule"><h2 id="h-disk">Disk a databáza</h2></div>
             <table class="w-full">
                 <thead>
-                    <tr class="border-b border-white/10">
-                        <th scope="col" class="py-2.5 text-left">Úložisko</th>
-                        <th scope="col" class="py-2.5 text-right">Veľkosť</th>
+                    <tr>
+                        <th scope="col" class="text-left">Úložisko</th>
+                        <th scope="col" class="text-right">Veľkosť</th>
                     </tr>
                 </thead>
-                <tbody class="text-[13px]">
+                <tbody>
                     {% for s in storage %}
-                    <tr class="border-b border-white/5">
-                        <td class="py-3 text-on-surface-variant">
-                            Videá{% if loop.index > 1 %} (starý adresár){% endif %}
-                            <p class="mono text-[10px] text-on-surface-variant break-all">{{ s.path }}</p>
+                    <tr>
+                        <td class="py-3">
+                            Videá{% if loop.index > 1 %} (starý priečinok){% endif %}
+                            <span class="block mono text-[12.5px] text-on-surface-variant break-all">{{ s.path }}</span>
                         </td>
-                        <td class="py-3 text-right mono text-on-surface whitespace-nowrap align-top">
-                            {{ s.size_text }}
-                            <span class="text-on-surface-variant"> · {{ s.files }} súb.</span>
+                        <td class="py-3 text-right whitespace-nowrap align-top">
+                            <span class="mono font-semibold">{{ s.size_text }}</span>
+                            <span class="block text-[13px] text-on-surface-variant">{{ s.files }} súborov</span>
                         </td>
                     </tr>
                     {% endfor %}
-                    <tr class="border-b border-white/5">
-                        <td class="py-3 text-on-surface-variant">
+                    <tr>
+                        <td class="py-3">
                             Databáza
-                            <p class="mono text-[10px] text-on-surface-variant break-all">{{ dbinfo.path }}</p>
+                            <span class="block mono text-[12.5px] text-on-surface-variant break-all">{{ dbinfo.path }}</span>
                         </td>
-                        <td class="py-3 text-right mono text-on-surface whitespace-nowrap align-top">{{ dbinfo.size_text }}</td>
+                        <td class="py-3 text-right mono font-semibold whitespace-nowrap align-top">{{ dbinfo.size_text }}</td>
                     </tr>
-                    <tr class="border-b border-white/5">
-                        <td class="py-3 text-on-surface-variant">Strava pripojenia</td>
-                        <td class="py-3 text-right mono text-on-surface">{{ totals.strava }}</td>
+                    <tr>
+                        <td class="py-3">Strava pripojenia</td>
+                        <td class="py-3 text-right mono font-semibold">{{ totals.strava }}</td>
                     </tr>
                 </tbody>
             </table>
-        </div>
+        </section>
 
-        <!-- ── Prostredie ── -->
-        <div>
-            <div class="rule"><p class="eyebrow">Prostredie</p></div>
+        <section aria-labelledby="h-prostredie">
+            <div class="rule"><h2 id="h-prostredie">Prostredie</h2></div>
             <table class="w-full">
                 <thead>
-                    <tr class="border-b border-white/10">
-                        <th scope="col" class="py-2.5 text-left">Súčasť</th>
-                        <th scope="col" class="py-2.5 text-right">Verzia / stav</th>
+                    <tr>
+                        <th scope="col" class="text-left">Súčasť</th>
+                        <th scope="col" class="text-right">Verzia alebo stav</th>
                     </tr>
                 </thead>
-                <tbody class="text-[13px]">
-                    <tr class="border-b border-white/5">
-                        <td class="py-3 text-on-surface-variant">Python</td>
-                        <td class="py-3 text-right mono text-on-surface">{{ environment.python }}</td>
+                <tbody>
+                    <tr><td class="py-3">Python</td><td class="py-3 text-right mono">{{ environment.python }}</td></tr>
+                    <tr><td class="py-3">Flask</td><td class="py-3 text-right mono">{{ environment.flask }}</td></tr>
+                    <tr><td class="py-3">SQLAlchemy</td><td class="py-3 text-right mono">{{ environment.sqlalchemy }}</td></tr>
+                    <tr><td class="py-3">Systém</td><td class="py-3 text-right mono text-[14px]">{{ environment.platform }}</td></tr>
+                    <tr>
+                        <td class="py-3">Ladiaci režim (debug)</td>
+                        <td class="py-3 text-right">{{ state(not environment.debug, 'vypnutý', 'zapnutý', warn_only=true) }}</td>
                     </tr>
-                    <tr class="border-b border-white/5">
-                        <td class="py-3 text-on-surface-variant">Flask</td>
-                        <td class="py-3 text-right mono text-on-surface">{{ environment.flask }}</td>
-                    </tr>
-                    <tr class="border-b border-white/5">
-                        <td class="py-3 text-on-surface-variant">SQLAlchemy</td>
-                        <td class="py-3 text-right mono text-on-surface">{{ environment.sqlalchemy }}</td>
-                    </tr>
-                    <tr class="border-b border-white/5">
-                        <td class="py-3 text-on-surface-variant">Systém</td>
-                        <td class="py-3 text-right mono text-on-surface">{{ environment.platform }}</td>
-                    </tr>
-                    <tr class="border-b border-white/5">
-                        <td class="py-3 text-on-surface-variant">Debug režim</td>
-                        <td class="py-3 text-right mono" style="color:{{ 'var(--warn-text)' if environment.debug else 'var(--success-text)' }}">
-                            {{ 'zapnutý' if environment.debug else 'vypnutý' }}
+                    <tr>
+                        <td class="py-3">
+                            Analýza videa (OpenCV a MediaPipe)
+                            {% if not environment.mediapipe.ok %}<span class="block text-[13px] text-on-surface-variant">{{ environment.mediapipe.text }}</span>{% endif %}
                         </td>
-                    </tr>
-                    <tr class="border-b border-white/5">
-                        <td class="py-3 text-on-surface-variant">
-                            Analýza videa (OpenCV + MediaPipe)
-                            {% if not environment.mediapipe.ok %}
-                            <p class="mono text-[10px] text-on-surface-variant">{{ environment.mediapipe.text }}</p>
-                            {% endif %}
-                        </td>
-                        <td class="py-3 text-right mono align-top" style="color:{{ 'var(--success-text)' if environment.mediapipe.ok else 'var(--danger-text)' }}">
-                            {{ 'dostupná' if environment.mediapipe.ok else 'nedostupná' }}
-                        </td>
+                        <td class="py-3 text-right align-top">{{ state(environment.mediapipe.ok, 'dostupná', 'nedostupná') }}</td>
                     </tr>
                 </tbody>
             </table>
-        </div>
+        </section>
 
-        <!-- ── Kľúče v .env ── -->
-        <div>
-            <div class="rule"><p class="eyebrow">Kľúče v .env</p></div>
+        <section aria-labelledby="h-env">
+            <div class="rule"><h2 id="h-env">Kľúče v súbore .env</h2></div>
             <table class="w-full">
                 <thead>
-                    <tr class="border-b border-white/10">
-                        <th scope="col" class="py-2.5 text-left">Kľúč</th>
-                        <th scope="col" class="py-2.5 text-right">Stav</th>
+                    <tr>
+                        <th scope="col" class="text-left">Kľúč</th>
+                        <th scope="col" class="text-right">Stav</th>
                     </tr>
                 </thead>
-                <tbody class="text-[13px]">
+                <tbody>
                     {% for name, label, ok in environment.env %}
-                    <tr class="border-b border-white/5">
-                        <td class="py-3 text-on-surface-variant">
+                    <tr>
+                        <td class="py-3">
                             {{ label }}
-                            <p class="mono text-[10px] text-on-surface-variant">{{ name }}</p>
+                            <span class="block mono text-[12.5px] text-on-surface-variant">{{ name }}</span>
                         </td>
-                        <td class="py-3 text-right mono align-top" style="color:{{ 'var(--success-text)' if ok else 'var(--warn-text)' }}">
-                            {{ 'nastavený' if ok else 'chýba' }}
-                        </td>
+                        <td class="py-3 text-right align-top">{{ state(ok, 'nastavený', 'chýba', warn_only=true) }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-            <p class="mono text-[10px] text-on-surface-variant mt-3">Zobrazuje sa len to, či je kľúč nastavený – hodnoty sa nikdy nevypisujú.</p>
-        </div>
+            <p class="mt-3 text-[14px] text-on-surface-variant">Ukazuje sa len to, či je kľúč nastavený. Hodnoty sa nikdy nevypisujú.</p>
+        </section>
 
-    </section>
+    </div>
 
 </main>
 {% endblock %}

@@ -41,12 +41,19 @@ if (!existsSync(CHROME)) {
 
 // 1. syntetický záznam: pruh stojí do 1,0 s pri x = 0,1, potom ide rovnomerne a stred dosiahne x = 0,6 v 3,5 s
 execFileSync(PY, ['-c', `
-import cv2, numpy as np
+import cv2, numpy as np, os, shutil, subprocess
 fps, w, h, n = 30, 640, 360, 180
 x0, x_line, t0, t_cross = 0.10, 0.60, 1.0, 3.5
 speed = (x_line - x0) / (t_cross - t0)
-wr = cv2.VideoWriter(${JSON.stringify(VIDEO)}, cv2.VideoWriter_fourcc(*"avc1"), fps, (w, h))
-assert wr.isOpened(), "VideoWriter avc1"
+out = ${JSON.stringify(VIDEO)}
+# Chrome prehrá len H.264 (avc1). Niektoré buildy OpenCV ho nevedia zapísať – vtedy mp4v a prekódovanie cez ffmpeg.
+wr = cv2.VideoWriter(out, cv2.VideoWriter_fourcc(*"avc1"), fps, (w, h))
+tmp = None
+if not wr.isOpened():
+    assert shutil.which("ffmpeg"), "OpenCV nevie zapísať avc1 a ffmpeg nie je nainštalovaný"
+    tmp = out + ".mp4v.mp4"
+    wr = cv2.VideoWriter(tmp, cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h))
+    assert wr.isOpened(), "VideoWriter mp4v"
 for i in range(n):
     t = i / fps
     fr = np.full((h, w, 3), 24, np.uint8)
@@ -54,6 +61,10 @@ for i in range(n):
     cv2.rectangle(fr, (px - 12, 60), (px + 12, h - 60), (230, 230, 230), -1)
     wr.write(fr)
 wr.release()
+if tmp:
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", tmp, "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                    "-r", str(fps), out], check=True)
+    os.remove(tmp)
 `]);
 const EXPECTED_S = 3.406 - 1.0;          // predná hrana pruhu (12 px) dosiahne čiaru v 3,406 s
 

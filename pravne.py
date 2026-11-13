@@ -14,7 +14,7 @@ from flask import Blueprint, render_template
 
 bp = Blueprint('pravne', __name__)
 
-GITHUB_URL = 'https://github.com/scalyeu/maturitny_projekt'
+GITHUB_URL = 'https://github.com/SPSE-Zochova-2627-4c/zigo_atletcoach'
 # Dátum poslednej zmeny textov – ukazuje sa na stránkach a mení sa pri každej úprave.
 VERZIA = '20. októbra 2026'
 

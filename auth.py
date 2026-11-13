@@ -10,7 +10,6 @@ Blueprint 'auth' + pomocné funkcie, ktoré používajú všetky ostatné moduly
 """
 import time
 import re
-from datetime import datetime
 from functools import wraps
 from urllib.parse import urlparse
 
@@ -18,7 +17,7 @@ from flask import (Blueprint, render_template, request, redirect, url_for,
                    session, flash, g, abort, jsonify)
 from werkzeug.local import LocalProxy
 
-from models import db, User, ROLE_LABELS
+from models import utcnow, db, User, ROLE_LABELS
 
 bp = Blueprint('auth', __name__)
 
@@ -303,7 +302,7 @@ def register():
 
         user = User(username=form['username'], role=form['role'],
                     full_name=form['full_name'] or None,
-                    terms_accepted_at=datetime.utcnow())
+                    terms_accepted_at=utcnow())
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
@@ -350,7 +349,7 @@ def change_password():
         g.user.set_password(new)
         g.user.must_change_password = False
         if needs_terms:
-            g.user.terms_accepted_at = datetime.utcnow()
+            g.user.terms_accepted_at = utcnow()
         db.session.commit()
         flash('Heslo bolo zmenené.', 'success')
         return redirect(url_for('index'))

@@ -1,19 +1,21 @@
 {% extends "base.html" %}
-{% block title %}Prístup zamietnutý · AtletCoach{% endblock %}
+{% from "_ui.html" import page_head %}
+{% block title %}Bez oprávnenia – AtletCoach{% endblock %}
 
 {% block content %}
-<main class="mt-16 pb-12">
-    <p class="eyebrow mb-2">Chyba 403</p>
-    <h1 class="page-title">Na toto nemáš oprávnenie</h1>
-    <p class="text-on-surface-variant mt-4 max-w-[52ch]">
-        Táto stránka je určená inej roli, alebo sa snažíš pozrieť údaje, ktoré nepatria tebe ani tvojim zverencom.
-    </p>
-    <div class="mt-8 flex flex-wrap gap-2.5">
-        <a href="{{ url_for('index') }}" class="btn btn-primary">Domov</a>
-        {% if not current_user %}
-        <a href="{{ url_for('auth.login') }}"
-           class="btn btn-secondary">Prihlásiť sa</a>
-        {% endif %}
+<main class="pb-4 max-w-[68ch]">
+    {% if current_user %}
+    {{ page_head('Na túto stránku nemáš prístup',
+                 'Si prihlásený ako ' ~ current_user.display_name ~ ' (' ~ current_user.role_label|lower ~ '). Stránka patrí inej role, alebo ukazuje údaje, ktoré nie sú tvoje ani tvojich zverencov.') }}
+    <div class="flex flex-wrap gap-2.5">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">Ísť na úvodnú stránku</a>
     </div>
+    {% else %}
+    {{ page_head('Na túto stránku nemáš prístup', 'Stránka je len pre prihlásených. Po prihlásení sa k nej dostaneš, ak patrí tvojej role.') }}
+    <div class="flex flex-wrap gap-2.5">
+        <a href="{{ url_for('auth.login', next=request.path) }}" class="btn btn-primary">Prihlásiť sa</a>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Ísť na úvodnú stránku</a>
+    </div>
+    {% endif %}
 </main>
 {% endblock %}

@@ -1,226 +1,155 @@
 {% extends "base.html" %}
-{% block title %}AI tréner · AtletCoach{% endblock %}
+{% from "_ui.html" import page_head %}
+{% block title %}AI tréner – AtletCoach{% endblock %}
 
 {% block content %}
-<main class="mt-6 pb-12 space-y-8">
+<main class="pb-4">
 
-    <!-- Hlavička -->
-    <div>
-        <p class="eyebrow mb-2">Pripravenosť a chat</p>
-        <h1 class="page-title">AI tréner</h1>
-    </div>
+    {% call page_head('AI tréner', 'Pripravenosť na tréning podľa HRV a regenerácie a chat s jazykovým modelom, ktorý pozná tvoje tréningy.') %}
+        <a href="{{ url_for('dennik.log_data') }}" class="btn btn-secondary">
+            <span class="material-symbols-outlined" aria-hidden="true">add</span>Zapísať HRV
+        </a>
+    {% endcall %}
 
-    <!-- ─── Pripravenosť ─────────────────────────────────────────────── -->
-    <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+    {# ── Pripravenosť: jedna tabuľa – skóre na stupnici pásiem a tri merania ── #}
+    <section id="readiness-section" class="ready" aria-labelledby="readiness-heading">
+        <div class="rule">
+            <h2 id="readiness-heading">Pripravenosť na tréning</h2>
+            <span id="readiness-date" aria-live="polite">Načítavam…</span>
+        </div>
 
-        <!-- Hlavná karta -->
-        <section class="md:col-span-7 card p-6 lg:p-8 relative overflow-hidden" aria-labelledby="readiness-heading">
+        <div class="kpi-strip ready-board" id="readiness-board">
+            <div class="kpi ready-main">
+                <div class="flex items-baseline gap-4 flex-wrap">
+                    <p class="kpi-value ready-score"><span id="readiness-pct">–</span><span class="kpi-suffix">%</span></p>
+                    <p id="readiness-label" class="section-title">Načítavam</p>
+                </div>
+                <p id="readiness-sublabel" class="text-[15px] text-on-surface-variant mt-2 max-w-[56ch]"></p>
 
-            <div class="relative">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-10 h-10 bg-surface-container-high flex items-center justify-center">
-                        <span class="material-symbols-outlined text-xl" id="readiness-icon" style="color:var(--success-text)" aria-hidden="true">rocket_launch</span>
+                <div class="ready-scale" id="readiness-scale" role="img" aria-label="Pripravenosť: načítava sa">
+                    <div class="ready-track" aria-hidden="true">
+                        <span></span><span></span><span></span>
+                        <i id="readiness-fill"></i>
+                        <b id="readiness-marker"></b>
                     </div>
-                    <div>
-                        <h2 id="readiness-heading" class="font-headline font-bold text-on-surface">Pripravenosť na tréning</h2>
-                        <p class="text-xs text-on-surface-variant" id="readiness-date">Načítavam…</p>
-                        <p class="eyebrow mt-1">orientačný odhad z HRV a regenerácie, nie zdravotná rada</p>
+                    <div class="ready-zones" aria-hidden="true">
+                        <span data-from="0">oddych</span><span data-from="40">ľahký</span><span data-from="60">stredný</span><span data-from="80">naplno</span>
                     </div>
                 </div>
 
-                <!-- Kruh + percento -->
-                <div class="flex items-center gap-8 py-4">
-                    <div class="relative w-36 h-36 flex-shrink-0">
-                        <svg class="w-full h-full -rotate-90" viewBox="0 0 100 100" role="img" id="readiness-svg" aria-label="Pripravenosť: načítava sa">
-                            <circle cx="50" cy="50" r="42" fill="none" style="stroke:var(--bg)" stroke-width="10"/>
-                            <circle id="readiness-ring" cx="50" cy="50" r="42" fill="none"
-                                style="stroke:var(--success)" stroke-width="10"
-                                stroke-linecap="butt"
-                                stroke-dasharray="264"
-                                stroke-dashoffset="264"
-                                class="transition-all duration-1000"/>
-                        </svg>
-                        <div class="absolute inset-0 flex flex-col items-center justify-center" aria-hidden="true">
-                            <span id="readiness-pct" class="font-headline font-black text-4xl text-on-surface">--</span>
-                            <span class="text-xs text-on-surface-variant font-bold">%</span>
-                        </div>
-                    </div>
+                <p id="readiness-no-data" class="hidden mt-4">
+                    <a href="{{ url_for('dennik.log_data') }}" class="link font-semibold">Zapísať dnešné HRV a regeneráciu</a>
+                </p>
+                <p class="text-[13px] text-on-surface-variant mt-4">Orientačný odhad z HRV a regenerácie, nie zdravotná rada.</p>
+            </div>
+            <div class="kpi ready-stat">
+                <p class="kpi-label">HRV dnes</p>
+                <p class="kpi-value" id="stat-hrv">–</p>
+                <p class="kpi-hint" id="stat-hrv-diff">oproti priemeru</p>
+            </div>
+            <div class="kpi ready-stat">
+                <p class="kpi-label">Regenerácia</p>
+                <p class="kpi-value" id="stat-recovery">–</p>
+                <p class="kpi-hint">zo 100</p>
+            </div>
+            <div class="kpi ready-stat">
+                <p class="kpi-label">Pokojový tep</p>
+                <p class="kpi-value" id="stat-rhr">–</p>
+                <p class="kpi-hint">úderov za minútu</p>
+            </div>
+        </div>
 
-                    <div class="flex-1 min-w-0">
-                        <p id="readiness-label" class="font-headline font-extrabold text-2xl text-on-surface mb-2">--</p>
-                        <p id="readiness-sublabel" class="text-sm text-on-surface-variant leading-relaxed">--</p>
-                        <div id="readiness-no-data" class="hidden mt-3">
-                            <a href="{{ url_for('log_data') }}" class="inline-flex items-center gap-1.5 text-xs text-on-surface font-bold hover:underline">
-                                <span class="material-symbols-outlined text-sm" aria-hidden="true">add_circle</span>
-                                Zapíš dnešné HRV a regeneráciu
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Štatistiky -->
-                <dl id="readiness-stats" class="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-white/5 m-0">
-                    <div class="text-center">
-                        <dt class="eyebrow">HRV dnes</dt>
-                        <dd id="stat-hrv" class="font-bold text-on-surface text-lg mt-1 m-0">--</dd>
-                        <dd id="stat-hrv-diff" class="text-[10px] text-on-surface-variant m-0">vs. priemer</dd>
-                    </div>
-                    <div class="text-center border-x border-white/5">
-                        <dt class="eyebrow">Regenerácia</dt>
-                        <dd id="stat-recovery" class="font-bold text-on-surface text-lg mt-1 m-0">--</dd>
-                        <dd class="text-[10px] text-on-surface-variant m-0">zo 100</dd>
-                    </div>
-                    <div class="text-center">
-                        <dt class="eyebrow">Pokojový tep</dt>
-                        <dd id="stat-rhr" class="font-bold text-on-surface text-lg mt-1 m-0">--</dd>
-                        <dd class="text-[10px] text-on-surface-variant m-0">úderov/min</dd>
-                    </div>
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <section class="card p-5 ready-hrv" aria-labelledby="hrv-trend-heading">
+                <h3 id="hrv-trend-heading" class="text-[17px]">HRV za posledných 30 dní</h3>
+                <dl class="ready-list mt-3">
+                    <div><dt>Priemer</dt><dd class="mono" id="stat-hrv-avg">–</dd></div>
+                    <div><dt>Dnes</dt><dd class="mono" id="stat-hrv-today">–</dd></div>
+                    <div><dt>Dni s meraním</dt><dd class="mono" id="stat-days">–</dd></div>
                 </dl>
-            </div>
-        </section>
-
-        <!-- Bočný panel -->
-        <div class="md:col-span-5 flex flex-col gap-4">
-
-            <!-- HRV trend -->
-            <section class="card p-5 flex-1" aria-labelledby="hrv-trend-heading">
-                <div class="flex items-center gap-2 mb-4">
-                    <span class="material-symbols-outlined text-on-surface-variant text-base" aria-hidden="true">monitoring</span>
-                    <h3 id="hrv-trend-heading" class="font-headline font-bold text-on-surface text-sm">HRV trend (30 dní)</h3>
-                </div>
-                <div id="hrv-avg-info" class="space-y-3">
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs text-on-surface-variant">30-dňový priemer</span>
-                        <span id="stat-hrv-avg" class="font-bold text-on-surface text-sm">-- ms</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs text-on-surface-variant">Dnešné HRV</span>
-                        <span id="stat-hrv-today" class="font-bold text-sm text-on-surface">-- ms</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs text-on-surface-variant">Dni s meraním</span>
-                        <span id="stat-days" class="font-bold text-on-surface text-sm">--</span>
-                    </div>
-                    <div class="tiny-bar w-full h-2 mt-2" aria-hidden="true">
-                        <span id="hrv-bar" class="transition-all duration-700" style="width:0%"></span>
-                    </div>
-                    <p class="text-[10px] text-on-surface-variant">HRV dnes vs. priemer (stred = 100 % priemeru)</p>
-                </div>
+                <div class="tiny-bar ready-ratio" aria-hidden="true"><span id="hrv-bar" style="width:0%"></span></div>
+                <p class="text-[13px] text-on-surface-variant mt-2">Dnešné HRV oproti priemeru. Zvislá čiara v strede je presne priemer.</p>
             </section>
 
-            <!-- Odporúčanie dňa -->
-            <section class="card p-5" aria-labelledby="tip-heading">
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="material-symbols-outlined text-on-surface-variant text-base" aria-hidden="true">lightbulb</span>
-                    <h3 id="tip-heading" class="font-headline font-bold text-on-surface text-sm">Odporúčanie dňa</h3>
+            <section class="card p-5 ready-tip" aria-labelledby="tip-heading">
+                <div class="flex items-start justify-between gap-3">
+                    <h3 id="tip-heading" class="text-[17px]">Odporúčanie na dnes</h3>
+                    <button type="button" onclick="loadReadiness()" class="btn btn-ghost btn-sm -mt-1 -mr-2">
+                        <span class="material-symbols-outlined" aria-hidden="true">refresh</span>Načítať znova
+                    </button>
                 </div>
-                <p id="daily-tip" class="text-sm text-on-surface-variant leading-relaxed">Načítavam…</p>
-                <p class="eyebrow mt-3">pevné pravidlo podľa pásma pripravenosti, nie individuálna rada</p>
+                <p id="daily-tip" class="text-[15px] leading-relaxed mt-3">Načítavam…</p>
+                <p class="text-[13px] text-on-surface-variant mt-3">Pevné pravidlo podľa pásma pripravenosti, nie individuálna rada.</p>
             </section>
-
-            <!-- Obnoviť -->
-            <button type="button" onclick="loadReadiness()" class="btn btn-secondary w-full">
-                <span class="material-symbols-outlined text-base" aria-hidden="true">refresh</span>
-                Načítať pripravenosť znova
-            </button>
         </div>
+    </section>
+
+    {# ── Profil, ktorý AI dostane ku každej otázke ── #}
+    <div id="profile-banner" class="hidden profile-strip mt-10">
+        <div class="min-w-0">
+            <p class="font-semibold" id="profile-name-display">Tvoj profil</p>
+            <p class="text-[14px] text-on-surface-variant" id="profile-detail-display"></p>
+        </div>
+        <a href="{{ url_for('ai.profile') }}" class="btn btn-secondary btn-sm flex-shrink-0">Upraviť profil</a>
+    </div>
+    <div id="no-profile-banner" class="profile-strip mt-10">
+        <p class="text-[15px] text-on-surface-variant min-w-0">
+            Nastav si profil: meno, vek, disciplínu a cieľ dostane AI ku každej otázke. Všetky polia sú nepovinné.
+        </p>
+        <a href="{{ url_for('ai.profile') }}" class="btn btn-primary btn-sm flex-shrink-0">Nastaviť profil</a>
     </div>
 
-    <!-- ─── Profil ──────────────────────────────────────────────────── -->
-    <div id="profile-banner" class="hidden bg-surface-container-high border border-white/10 px-5 py-3 flex items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-            <span class="material-symbols-outlined text-on-surface-variant text-xl" aria-hidden="true">person</span>
-            <div>
-                <p class="font-bold text-on-surface text-sm" id="profile-name-display">Tvoj profil</p>
-                <p class="text-xs text-on-surface-variant" id="profile-detail-display"></p>
-            </div>
-        </div>
-        <a href="{{ url_for('profile') }}" class="btn btn-ghost btn-sm flex-shrink-0">Upraviť profil</a>
-    </div>
-    <div id="no-profile-banner" class="bg-surface-container border border-white/10 px-5 py-3 flex items-center justify-between gap-4">
-        <div class="flex items-center gap-3">
-            <span class="material-symbols-outlined text-on-surface-variant text-xl" aria-hidden="true">person_add</span>
-            <p class="text-sm text-on-surface-variant">Nastav si profil atléta – meno, vek, disciplínu a cieľ dostane AI ako kontext k otázkam. Všetko je nepovinné.</p>
-        </div>
-        <a href="{{ url_for('profile') }}" class="btn btn-primary btn-sm flex-shrink-0">Nastaviť profil</a>
-    </div>
+    {# ── Chat ── #}
+    <section class="card chat-card mt-4" aria-labelledby="chat-heading">
 
-    <!-- ─── Chat ────────────────────────────────────────────────────── -->
-    <section class="card overflow-hidden flex flex-col" style="height:620px" aria-labelledby="chat-heading">
-
-        <div class="flex items-center gap-3 px-6 py-4 border-b border-white/5 flex-shrink-0">
-            <div class="w-10 h-10 bg-surface-container-high flex items-center justify-center">
-                <span class="material-symbols-outlined text-on-surface-variant text-xl" aria-hidden="true">smart_toy</span>
+        <div class="chat-head">
+            <div class="min-w-0">
+                <h2 id="chat-heading" class="section-title">Chat s AI trénerom</h2>
+                <p class="text-[14px] text-on-surface-variant">
+                    Ku každej otázke dostane tvoj profil, HRV a tréningy za 60 dní a posledné analýzy videa.
+                </p>
             </div>
-            <div class="flex-1 min-w-0">
-                <h2 id="chat-heading" class="font-headline font-bold text-on-surface">Chat s AI trénerom</h2>
-                <p class="text-xs text-on-surface-variant truncate">K otázke dostane tvoj profil, HRV a tréningy za 60 dní a posledné analýzy videa · jazykový model cez Groq</p>
-            </div>
-            <button type="button" onclick="clearChat()" aria-label="Vymazať konverzáciu" title="Vymazať konverzáciu"
-                class="btn btn-ghost btn-sm">
-                <span class="material-symbols-outlined text-base" aria-hidden="true">delete_sweep</span>
+            <button type="button" onclick="clearChat()" class="btn btn-ghost btn-sm flex-shrink-0">
+                <span class="material-symbols-outlined" aria-hidden="true">delete_sweep</span>Vymazať konverzáciu
             </button>
         </div>
 
-        <div id="chat-messages" class="flex-1 overflow-y-auto px-6 py-5 space-y-5" aria-live="polite">
-            <div class="flex items-start gap-3">
-                <div class="w-8 h-8 bg-surface-container-high flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span class="material-symbols-outlined text-on-surface-variant text-sm" aria-hidden="true">smart_toy</span>
+        <div id="chat-messages" class="chat-log" aria-live="polite">
+            <div class="chat-msg chat-msg-coach">
+                <div class="chat-body">
+                    <p>Ahoj, som AI tréner pre bežcov a šprintérov. Pomôžem ti s <strong>tréningovým plánom</strong>,
+                    čítaním <strong>HRV</strong>, regeneráciou a technikou behu. Nie som lekár: pri bolesti alebo zranení
+                    sa obráť na lekára alebo fyzioterapeuta. Na čo sa chceš opýtať?</p>
                 </div>
-                <div class="max-w-xl">
-                    <div class="bg-surface-container-high px-4 py-3">
-                        <p class="text-sm text-on-surface leading-relaxed">
-                            Ahoj! Som AI tréner pre bežcov a šprintérov. Môžem ti pomôcť s
-                            <strong>tréningovými plánmi</strong>, čítaním <strong>HRV</strong>,
-                            regeneráciou a technikou behu. Nie som lekár – pri bolesti alebo zranení
-                            sa obráť na lekára či fyzioterapeuta. Na čo sa chceš opýtať?
-                        </p>
-                    </div>
-                    <p class="text-[10px] text-on-surface-variant mt-1 ml-1">Práve teraz</p>
-                </div>
+                <p class="chat-meta">AI tréner</p>
             </div>
 
-            <div class="flex flex-wrap gap-2 ml-11">
-                <button type="button" onclick="sendSuggestion('Ako zlepšiť čas na 400m šprint?')"
-                    class="suggestion-btn btn btn-secondary btn-sm">
-                    Ako zlepšiť 400 m?
-                </button>
-                <button type="button" onclick="sendSuggestion('Mám nízke HRV, čo to znamená a čo mám robiť?')"
-                    class="suggestion-btn btn btn-secondary btn-sm">
-                    Nízke HRV – čo robiť?
-                </button>
-                <button type="button" onclick="sendSuggestion('Zostav mi 4-týždňový tréningový plán pre 400m šprint, 3x týždenne')"
-                    class="suggestion-btn btn btn-secondary btn-sm">
-                    Tréningový plán
-                </button>
-                <button type="button" onclick="sendSuggestion('Ako sa rozcvičiť deň pred pretekmi na 400m?')"
-                    class="suggestion-btn btn btn-secondary btn-sm">
-                    Deň pred pretekmi
-                </button>
+            <div id="chat-suggestions" class="flex flex-wrap gap-2">
+                <button type="button" onclick="sendSuggestion('Ako zlepšiť čas na 400m šprint?')" class="suggestion-btn btn btn-secondary btn-sm">Ako zlepšiť 400 m?</button>
+                <button type="button" onclick="sendSuggestion('Mám nízke HRV, čo to znamená a čo mám robiť?')" class="suggestion-btn btn btn-secondary btn-sm">Mám nízke HRV, čo robiť?</button>
+                <button type="button" onclick="sendSuggestion('Zostav mi 4-týždňový tréningový plán pre 400m šprint, 3x týždenne')" class="suggestion-btn btn btn-secondary btn-sm">Plán na 4 týždne</button>
+                <button type="button" onclick="sendSuggestion('Ako sa rozcvičiť deň pred pretekmi na 400m?')" class="suggestion-btn btn btn-secondary btn-sm">Deň pred pretekmi</button>
             </div>
         </div>
 
-        <div class="px-6 py-4 border-t border-white/5 flex-shrink-0">
-            <div class="flex gap-3 items-end">
+        <div class="chat-compose">
+            <div class="flex gap-2 items-end">
                 <label for="chat-input" class="sr-only">Správa pre AI trénera</label>
                 <textarea id="chat-input" rows="1"
-                    placeholder="Napíš otázku o behu, šprinte, HRV, regenerácii…"
-                    class="flex-1 resize-none text-sm leading-relaxed"
-                    style="min-height:42px; max-height:120px;"
+                    placeholder="Napíš otázku o behu, šprinte, HRV alebo regenerácii"
+                    class="flex-1 resize-none leading-relaxed"
+                    style="min-height:44px; max-height:140px;"
+                    aria-describedby="chat-hint"
                     onkeydown="handleKey(event)"
                     oninput="autoResize(this)"></textarea>
-                <button type="button" onclick="sendMessage()" id="send-btn" aria-label="Odoslať správu"
-                    class="btn btn-primary w-11 h-11 flex-shrink-0 !px-0">
-                    <span class="material-symbols-outlined text-xl" id="send-icon" aria-hidden="true">send</span>
+                <button type="button" onclick="sendMessage()" id="send-btn" class="btn btn-primary flex-shrink-0" style="min-height:44px">
+                    <span class="material-symbols-outlined" id="send-icon" aria-hidden="true">send</span><span id="send-label">Odoslať</span>
                 </button>
             </div>
-            <p class="text-[12px] text-on-surface-variant mt-2 leading-relaxed">
-                Správy a tvoj profil sa odošlú službe Groq (USA) až po kliknutí na Odoslať. Odpovede sú orientačné,
-                nie sú zdravotná ani odborná rada.
-                <a href="{{ url_for('pravne.ochrana_udajov') }}#tretie-strany" class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">Viac o tretích stranách</a>
-            </p>
-            <p class="text-[10px] text-on-surface-variant mt-1 mono">
-                Enter = odoslať &nbsp;·&nbsp; Shift+Enter = nový riadok
+            <p id="chat-hint" class="text-[13px] text-on-surface-variant mt-2 leading-relaxed">
+                Enter odošle správu, Shift + Enter pridá nový riadok. Správa a tvoj profil sa odošlú službe Groq (USA)
+                až po odoslaní. Odpovede sú orientačné, nie zdravotná ani odborná rada.
+                <a href="{{ url_for('pravne.ochrana_udajov') }}#tretie-strany" class="link">Viac o tretích stranách</a>
             </p>
         </div>
     </section>
@@ -230,79 +159,92 @@
 
 {% block scripts %}
 <script>
-// ── Farby podľa pripravenosti – len tri stavové farby dizajnového systému ──
+// ── Pásma pripravenosti: farba výplne stupnice a čísla (len stavové farby systému) ──
 const COLORS = {
-    green:  { text: 'var(--success-text)', ring: 'var(--success)' },
-    yellow: { text: 'var(--warn-text)', ring: 'var(--warn)' },
-    orange: { text: 'var(--warn-text)', ring: 'var(--warn)' },
-    red:    { text: 'var(--danger-text)', ring: 'var(--danger)' },
+    green:  { text: 'var(--success-text)', fill: 'var(--success)' },
+    yellow: { text: 'var(--text)', fill: 'var(--text-soft)' },
+    orange: { text: 'var(--warn-text)', fill: 'var(--warn)' },
+    red:    { text: 'var(--danger-text)', fill: 'var(--danger)' },
 };
 
 const TIPS = {
-    green:  'HRV je nad tvojím priemerom – telo je zregenerované. Vhodný deň na intervalový tréning alebo rýchlostné úseky.',
-    yellow: 'Forma je dobrá, ale nie na maxime. Skús tempový beh (80–85 % maximálneho tempa) alebo technické cvičenia.',
-    orange: 'Telo stále regeneruje. Skôr 20–30 min ľahký klus a strečing; intenzita počká na ďalší deň.',
+    green:  'HRV je nad tvojím priemerom a telo je zregenerované. Vhodný deň na intervalový tréning alebo rýchlostné úseky.',
+    yellow: 'Forma je dobrá, ale nie na maxime. Skús tempový beh (80 – 85 % maximálneho tempa) alebo technické cvičenia.',
+    orange: 'Telo stále regeneruje. Skôr 20 – 30 min ľahký klus a strečing, intenzita počká na ďalší deň.',
     red:    'HRV a regenerácia sú pod tvojím normálom. Aktívny odpočinok (prechádzka, plávanie) alebo úplné voľno. Ak sa cítiš chorý alebo máš bolesti, povedz to trénerovi a vyhľadaj lekára.',
 };
 
+// Čísla po slovensky: desatinná čiarka
+const num = (v, digits = 1) => Number(v).toLocaleString('sk-SK', { maximumFractionDigits: digits });
+
 // ── Načítanie pripravenosti ────────────────────────────────────────────
 async function loadReadiness() {
-    const svg = document.getElementById('readiness-svg');
+    const scale = document.getElementById('readiness-scale');
+    const board = document.getElementById('readiness-section');
+    const fill = document.getElementById('readiness-fill');
+    const marker = document.getElementById('readiness-marker');
     try {
         const res  = await fetch('/api/readiness');
         const data = await res.json();
 
-        if (data.error) {
-            document.getElementById('readiness-label').textContent = 'Žiadne merania';
-            document.getElementById('readiness-sublabel').textContent = data.error;
+        // bez meraní vráti server {empty: true}, chyba (napr. odhlásenie) má {error}
+        if (data.empty || data.error) {
+            board.classList.add('is-empty');
+            board.classList.remove('has-data');
+            document.getElementById('readiness-label').textContent = 'Zatiaľ žiadne merania';
+            document.getElementById('readiness-sublabel').textContent = 'Pripravenosť sa počíta z HRV a regenerácie. Zapíš si prvé meranie a skóre sa ukáže tu.';
             document.getElementById('readiness-no-data').classList.remove('hidden');
-            document.getElementById('readiness-pct').textContent = '--';
-            svg.setAttribute('aria-label', 'Pripravenosť: bez údajov');
-            document.getElementById('daily-tip').textContent = 'Zapíš HRV a regeneráciu v sekcii Regenerácia a HRV – pripravenosť sa vypočíta z týchto hodnôt.';
+            document.getElementById('readiness-pct').textContent = '–';
+            document.getElementById('readiness-date').textContent = 'bez údajov';
+            scale.setAttribute('aria-label', 'Pripravenosť: bez údajov');
+            document.getElementById('daily-tip').textContent = 'Zapíš HRV a regeneráciu v časti Regenerácia. Pripravenosť sa vypočíta z týchto hodnôt.';
             return;
         }
 
+        board.classList.remove('is-empty');
+        board.classList.add('has-data');
+        document.getElementById('readiness-no-data').classList.add('hidden');
         const c = COLORS[data.color] || COLORS.green;
 
-        // Percento + kruh
+        // Skóre a jeho miesto na stupnici pásiem
         document.getElementById('readiness-pct').textContent = data.readiness;
-        const offset = 264 - (264 * data.readiness / 100);
-        const ring = document.getElementById('readiness-ring');
-        ring.style.strokeDashoffset = offset;
-        ring.style.stroke = c.ring;
-        svg.setAttribute('aria-label', `Pripravenosť ${data.readiness} %`);
+        document.getElementById('readiness-pct').style.color = c.text;
+        fill.style.width = data.readiness + '%';
+        fill.style.background = c.fill;
+        marker.style.left = data.readiness + '%';
+        scale.setAttribute('aria-label', `Pripravenosť ${data.readiness} %, pásmo: ${data.label}`);
+        // zvýrazni pásmo, do ktorého skóre padne
+        const zones = [...document.querySelectorAll('.ready-zones span')];
+        zones.forEach(z => z.classList.remove('on'));
+        zones.filter(z => data.readiness >= Number(z.dataset.from)).pop()?.classList.add('on');
 
-        // Ikona
-        document.getElementById('readiness-icon').style.color = c.text;
-        document.getElementById('readiness-icon').textContent = data.icon;
-
-        // Text
         document.getElementById('readiness-label').textContent   = data.label;
         document.getElementById('readiness-sublabel').textContent = data.sublabel;
-        document.getElementById('readiness-date').textContent     = `Údaje z ${data.log_date}`;
+        document.getElementById('readiness-date').textContent     = `údaje z ${data.log_date}`;
 
-        // Štatistiky
-        document.getElementById('stat-hrv').textContent      = data.hrv + ' ms';
-        document.getElementById('stat-hrv-diff').textContent  = data.hrv_diff + ' ms vs. priemer';
-        document.getElementById('stat-recovery').textContent  = (data.recovery != null) ? (data.recovery + ' %') : '—';
-        document.getElementById('stat-rhr').textContent       = data.rhr ? data.rhr : '—';
+        // Merania
+        const diff = parseFloat(data.hrv_diff);
+        document.getElementById('stat-hrv').innerHTML = `${num(data.hrv)}<span class="kpi-suffix">ms</span>`;
+        document.getElementById('stat-hrv-diff').textContent = `${diff >= 0 ? '+' : '−'}${num(Math.abs(diff))} ms oproti priemeru`;
+        document.getElementById('stat-recovery').innerHTML = (data.recovery != null) ? `${data.recovery}<span class="kpi-suffix">%</span>` : '–';
+        document.getElementById('stat-rhr').textContent = data.rhr ? data.rhr : '–';
 
-        // Bočný panel
-        document.getElementById('stat-hrv-avg').textContent   = data.hrv_avg_30 + ' ms';
-        document.getElementById('stat-hrv-today').textContent = data.hrv + ' ms';
+        // HRV za 30 dní
+        document.getElementById('stat-hrv-avg').textContent   = num(data.hrv_avg_30) + ' ms';
+        document.getElementById('stat-hrv-today').textContent = num(data.hrv) + ' ms';
         document.getElementById('stat-hrv-today').style.color = c.text;
-        document.getElementById('stat-days').textContent      = data.days_of_data + ' dní';
+        document.getElementById('stat-days').textContent      = data.days_of_data;
 
         const barPct = Math.min(100, Math.max(5, (data.hrv / data.hrv_avg_30) * 50));
         document.getElementById('hrv-bar').style.width = barPct + '%';
+        document.getElementById('hrv-bar').style.background = c.fill;
 
-        // Tip
         document.getElementById('daily-tip').textContent = TIPS[data.color];
 
     } catch(e) {
         document.getElementById('readiness-label').textContent    = 'Chyba načítania';
         document.getElementById('readiness-sublabel').textContent = 'Údaje o pripravenosti sa nepodarilo načítať. Skús to o chvíľu znova.';
-        svg.setAttribute('aria-label', 'Pripravenosť: chyba načítania');
+        scale.setAttribute('aria-label', 'Pripravenosť: chyba načítania');
     }
 }
 
@@ -322,8 +264,8 @@ async function loadProfile() {
             const parts = [];
             if (p.age) parts.push(p.age + ' r.');
             if (p.sport) parts.push(p.sport);
-            if (p.goal) parts.push('Cieľ: ' + p.goal);
-            document.getElementById('profile-detail-display').textContent = parts.join(' · ');
+            if (p.goal) parts.push('cieľ: ' + p.goal);
+            document.getElementById('profile-detail-display').textContent = parts.join(', ');
         }
     } catch(e) {}
 }
@@ -340,53 +282,50 @@ function formatMarkdown(text) {
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
         .replace(/^#{1,3} (.+)$/gm, '<p class="font-bold text-on-surface mt-2 mb-0.5">$1</p>')
-        .replace(/^\d+\.\s(.+)$/gm, '<div class="flex gap-2 mt-1"><span class="text-on-surface-variant font-bold flex-shrink-0" aria-hidden="true">•</span><span>$1</span></div>')
-        .replace(/^[-*]\s(.+)$/gm,  '<div class="flex gap-2 mt-1"><span class="text-on-surface-variant font-bold flex-shrink-0" aria-hidden="true">•</span><span>$1</span></div>')
+        .replace(/^\d+\.\s(.+)$/gm, '<div class="flex gap-2 mt-1"><span class="text-primary font-bold flex-shrink-0" aria-hidden="true">•</span><span>$1</span></div>')
+        .replace(/^[-*]\s(.+)$/gm,  '<div class="flex gap-2 mt-1"><span class="text-primary font-bold flex-shrink-0" aria-hidden="true">•</span><span>$1</span></div>')
+        .replace(/(<\/div>|<\/p>)\n/g, '$1')      // za odrážkou a nadpisom už netreba zalomenie
         .replace(/\n\n/g, '<div class="mt-2"></div>')
         .replace(/\n/g, '<br>');
 }
 
 function autoResize(el) {
     el.style.height = 'auto';
-    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    el.style.height = Math.min(el.scrollHeight, 140) + 'px';
 }
 
 function handleKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 }
 
+function removeSuggestions() {
+    document.getElementById('chat-suggestions')?.remove();
+}
+
 function sendSuggestion(text) {
-    document.querySelectorAll('.suggestion-btn').forEach(b => b.closest('.flex.flex-wrap')?.remove());
+    removeSuggestions();
     document.getElementById('chat-input').value = text;
     sendMessage();
 }
 
-function appendMessage(role, text) {
+// Správa trénera: text s tartanovou čiarou vľavo. Tvoja správa: sivý blok vpravo.
+function appendMessage(role, text, isError = false) {
     const container = document.getElementById('chat-messages');
     const isUser = role === 'user';
-    const wrapper = document.createElement('div');
-    wrapper.className = `flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
+    const msg = document.createElement('div');
+    msg.className = 'chat-msg ' + (isUser ? 'chat-msg-user' : 'chat-msg-coach') + (isError ? ' chat-msg-error' : '');
 
-    const avatar = document.createElement('div');
-    avatar.className = 'w-8 h-8 flex items-center justify-center flex-shrink-0 mt-0.5 bg-surface-container-high';
-    avatar.innerHTML = `<span class="material-symbols-outlined text-on-surface-variant text-sm" aria-hidden="true">${isUser ? 'person' : 'smart_toy'}</span>`;
+    const body = document.createElement('div');
+    body.className = 'chat-body';
+    body.innerHTML = formatMarkdown(text);
 
-    const msgWrap = document.createElement('div');
-    msgWrap.className = 'max-w-xl flex flex-col ' + (isUser ? 'items-end' : 'items-start');
+    const meta = document.createElement('p');
+    meta.className = 'chat-meta';
+    meta.textContent = (isUser ? 'Ty, ' : 'AI tréner, ') + timeNow();
 
-    const bubble = document.createElement('div');
-    bubble.className = `px-4 py-3 text-sm text-on-surface leading-relaxed ${isUser ? 'bg-surface-container-low border border-white/10' : 'bg-surface-container-high'}`;
-    bubble.innerHTML = formatMarkdown(text);
-
-    const ts = document.createElement('p');
-    ts.className = `text-[10px] text-on-surface-variant mt-1 ${isUser ? 'mr-1 text-right' : 'ml-1'}`;
-    ts.textContent = (isUser ? 'Ty · ' : 'AI tréner · ') + timeNow();
-
-    msgWrap.appendChild(bubble);
-    msgWrap.appendChild(ts);
-    wrapper.appendChild(avatar);
-    wrapper.appendChild(msgWrap);
-    container.appendChild(wrapper);
+    msg.appendChild(body);
+    msg.appendChild(meta);
+    container.appendChild(msg);
     container.scrollTop = container.scrollHeight;
 }
 
@@ -394,19 +333,8 @@ function appendTyping() {
     const container = document.getElementById('chat-messages');
     const el = document.createElement('div');
     el.id = 'typing-indicator';
-    el.className = 'flex items-start gap-3';
-    el.innerHTML = `
-        <div class="w-8 h-8 bg-surface-container-high flex items-center justify-center flex-shrink-0">
-            <span class="material-symbols-outlined text-on-surface-variant text-sm" aria-hidden="true">smart_toy</span>
-        </div>
-        <div class="bg-surface-container-high px-4 py-3">
-            <span class="sr-only">AI tréner píše odpoveď</span>
-            <div class="flex gap-1 items-center h-5" aria-hidden="true">
-                <span class="w-2 h-2 bg-on-surface-variant rounded-full animate-bounce" style="animation-delay:0ms"></span>
-                <span class="w-2 h-2 bg-on-surface-variant rounded-full animate-bounce" style="animation-delay:150ms"></span>
-                <span class="w-2 h-2 bg-on-surface-variant rounded-full animate-bounce" style="animation-delay:300ms"></span>
-            </div>
-        </div>`;
+    el.className = 'chat-msg chat-msg-coach';
+    el.innerHTML = '<div class="chat-body chat-typing">AI tréner píše odpoveď…</div>';
     container.appendChild(el);
     container.scrollTop = container.scrollHeight;
 }
@@ -417,8 +345,8 @@ async function loadChatHistory() {
         const res = await fetch('/api/chat/history');
         const msgs = await res.json();
         if (!msgs.length) return;
-        // Skry návrhy otázok, ak už história existuje
-        document.querySelectorAll('.suggestion-btn').forEach(b => b.closest('.flex.flex-wrap')?.remove());
+        // Návrhy otázok sa skryjú, ak už história existuje
+        removeSuggestions();
         msgs.forEach(m => appendMessage(m.role, m.content));
     } catch(e) {}
 }
@@ -428,15 +356,17 @@ async function sendMessage() {
     const input    = document.getElementById('chat-input');
     const sendBtn  = document.getElementById('send-btn');
     const sendIcon = document.getElementById('send-icon');
+    const sendLabel = document.getElementById('send-label');
     const message  = input.value.trim();
     if (!message || sendBtn.disabled) return;
 
     input.value = '';
     input.style.height = 'auto';
     sendBtn.disabled = true;
-    sendBtn.setAttribute('aria-label', 'Odosiela sa…');
     sendIcon.textContent = 'hourglass_empty';
+    sendLabel.textContent = 'Odosielam';
 
+    removeSuggestions();
     appendMessage('user', message);
     appendTyping();
 
@@ -452,15 +382,15 @@ async function sendMessage() {
         if (data.reply) {
             appendMessage('assistant', data.reply);
         } else {
-            appendMessage('assistant', `Chyba: ${data.error || 'Neznáma chyba'}`);
+            appendMessage('assistant', `Odpoveď sa nepodarilo získať: ${data.error || 'neznáma chyba'}`, true);
         }
     } catch(e) {
         document.getElementById('typing-indicator')?.remove();
-        appendMessage('assistant', 'Nepodarilo sa spojiť so serverom.');
+        appendMessage('assistant', 'Nepodarilo sa spojiť so serverom. Skontroluj pripojenie a skús to znova.', true);
     } finally {
         sendBtn.disabled = false;
-        sendBtn.setAttribute('aria-label', 'Odoslať správu');
         sendIcon.textContent = 'send';
+        sendLabel.textContent = 'Odoslať';
         input.focus();
     }
 }
@@ -470,16 +400,9 @@ async function clearChat() {
     await fetch('/api/chat/clear', { method: 'POST' });
     const container = document.getElementById('chat-messages');
     container.innerHTML = `
-        <div class="flex items-start gap-3">
-            <div class="w-8 h-8 bg-surface-container-high flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span class="material-symbols-outlined text-on-surface-variant text-sm" aria-hidden="true">smart_toy</span>
-            </div>
-            <div class="max-w-xl">
-                <div class="bg-surface-container-high px-4 py-3">
-                    <p class="text-sm text-on-surface">Konverzácia vymazaná. Na čo sa chceš opýtať?</p>
-                </div>
-                <p class="text-[10px] text-on-surface-variant mt-1 ml-1">${timeNow()}</p>
-            </div>
+        <div class="chat-msg chat-msg-coach">
+            <div class="chat-body"><p>Konverzácia je vymazaná. Na čo sa chceš opýtať?</p></div>
+            <p class="chat-meta">AI tréner, ${timeNow()}</p>
         </div>`;
     document.getElementById('chat-input').focus();
 }

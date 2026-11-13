@@ -1,0 +1,192 @@
+/* Stránky: Plán, Tréningy, Regenerácia, Grafy. Len to, čo sa nedá rozumne zapísať utilitami Tailwindu v šablóne.
+   (Predtým samostatný static/css/planovanie.css – teraz je súčasťou zostaveného app.css.) */
+
+/* Tabuľa čísel na stránkach plánu a grafov: na mobile dve bunky vedľa seba namiesto jednej */
+.kpi-strip--tight { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+@media (max-width: 640px) {
+    .kpi-strip--tight { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .kpi-strip--tight .kpi-value { font-size: 38px; }
+}
+
+/* --------------------------------------------------------------------------
+   Kalendár plánu (/plan): jeden papier, dni oddelené 1 px čiarami ako tréningový denník
+   -------------------------------------------------------------------------- */
+.cal {
+    display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 1px; background: rgb(var(--c-line));
+    border: 1px solid rgb(var(--c-line)); border-radius: var(--radius); overflow: hidden;
+}
+.cal-head {
+    padding: 8px 10px;
+    background: rgb(var(--c-surface));
+    border-bottom: 1px solid rgb(var(--c-text));
+    font-size: 13px; font-weight: 620; color: rgb(var(--c-text-soft));
+}
+.cal-cell {
+    position: relative;
+    display: flex; flex-direction: column; gap: 3px;
+    min-height: 112px; padding: 8px 9px 10px;
+    background: rgb(var(--c-surface)); color: rgb(var(--c-text));
+    text-decoration: none; overflow: hidden;
+    transition: background-color .12s ease;
+}
+a.cal-cell:hover { background: rgb(var(--c-surface-2)); }
+.cal-cell--muted { background: rgb(var(--c-surface-2) / 0.6); }
+.cal-num {
+    display: flex; align-items: baseline; gap: 6px; margin-bottom: 3px;
+    font-stretch: var(--w-heading); font-weight: 650; font-size: 15px; line-height: 1;
+    color: rgb(var(--c-muted));
+}
+.cal-cell--has .cal-num { color: rgb(var(--c-text)); }
+.cal-num .cal-wd { display: none; font-stretch: 100%; font-weight: 560; font-size: 13px; color: rgb(var(--c-muted)); }
+.cal-num .cal-today { font-stretch: 100%; font-size: 12px; font-weight: 650; color: rgb(var(--c-track)); }
+/* Dnešok: tartanový pás hore a číslo dňa v tartane */
+.cal-cell--today { box-shadow: inset 0 3px 0 rgb(var(--c-track)); }
+.cal-cell--today .cal-num { color: rgb(var(--c-track)); font-weight: 760; }
+:root[data-theme="dark"] .cal-cell--today .cal-num,
+:root[data-theme="dark"] .cal-num .cal-today { color: var(--accent-text); }
+
+/* Riadok tréningu: značka stavu (tvar) + čas + názov. Farba je len doplnok k tvaru. */
+.cal-plan {
+    display: flex; align-items: baseline; gap: 5px; min-width: 0;
+    font-size: 13px; line-height: 1.3; color: rgb(var(--c-text));
+}
+.cal-plan .t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-plan .h { flex-shrink: 0; font-stretch: var(--w-data); font-size: 12px; color: rgb(var(--c-muted)); }
+.cal-plan--done { color: rgb(var(--c-infield)); }
+.cal-plan--done .t { color: rgb(var(--c-text-soft)); }
+.cal-plan--missed { color: rgb(var(--c-danger)); }
+.cal-plan--missed .t { color: rgb(var(--c-danger)); }
+
+.plan-mark {
+    flex-shrink: 0; width: 12px; text-align: center;
+    font-weight: 800; font-size: 12px; line-height: 1;
+}
+.plan-mark--planned::before {
+    content: ''; display: inline-block; width: 8px; height: 8px;
+    border: 1.5px solid rgb(var(--c-text-soft)); vertical-align: 0;
+}
+.plan-mark--done::before { content: '✓'; color: rgb(var(--c-infield)); }
+.plan-mark--missed::before { content: '!'; color: rgb(var(--c-danger)); }
+
+/* Zápis v denníku (čo sa reálne odbehlo): tichý riadok s čiarou vľavo */
+.cal-log {
+    display: block; margin-top: 1px; padding-left: 6px;
+    border-left: 2px solid rgb(var(--c-line-strong));
+    font-size: 12px; line-height: 1.3; color: rgb(var(--c-muted));
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.plan-legend { display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: center; font-size: 13.5px; color: rgb(var(--c-muted)); }
+.plan-legend > span { display: inline-flex; align-items: center; gap: 7px; }
+.plan-legend .cal-log { display: inline-block; margin: 0; }
+
+/* Mobil: z mriežky sa stane zoznam dní, ktoré niečo obsahujú (+ dnešok) */
+@media (max-width: 720px) {
+    .cal { grid-template-columns: 1fr; }
+    .cal-head, .cal-cell--muted, .cal-cell--empty:not(.cal-cell--today) { display: none; }
+    .cal-cell { min-height: 0; padding: 11px 12px 12px; }
+    .cal-num { font-size: 17px; }
+    .cal-num .cal-wd { display: inline; }
+    .cal-plan { font-size: 14.5px; }
+    .cal-log { font-size: 13px; }
+}
+
+/* --------------------------------------------------------------------------
+   Detail dňa a týždenný plán: druh položky, stavové štítky, položky tréningu
+   -------------------------------------------------------------------------- */
+.plan-kind {
+    display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 6px;
+    font-size: 12px; font-weight: 620; line-height: 1.55; vertical-align: 1px;
+    background: rgb(var(--c-text) / 0.07); color: rgb(var(--c-text-soft));
+}
+.plan-kind--sila { background: rgb(var(--c-track) / 0.1); color: var(--accent-text); }
+.plan-kind--beh { background: rgb(var(--c-info) / 0.12); color: rgb(var(--c-info)); }
+
+.plan-item { padding: 10px 0; border-bottom: 1px solid rgb(var(--c-line)); }
+.plan-item:last-child { border-bottom: none; }
+.plan-item input[type="text"] { padding: 7px 9px; font-size: 14px; }
+
+/* Tréning v detaile dňa: farebný pás vľavo podľa stavu (spolu so štítkom v texte) */
+.plan-card { border-left-width: 4px; }
+.plan-card--done { border-left-color: rgb(var(--c-infield)); }
+.plan-card--missed { border-left-color: rgb(var(--c-danger)); }
+.plan-card--pending { border-left-color: rgb(var(--c-line-strong)); }
+
+/* <summary> ako tlačidlo – bez trojuholníka */
+.plan-summary { list-style: none; cursor: pointer; }
+.plan-summary::-webkit-details-marker { display: none; }
+details[open] > .plan-summary .chev { transform: rotate(90deg); }
+.plan-summary .chev { transition: transform .15s ease; }
+
+/* Malé štvorcové ikonové tlačidlo (zmazanie položky, šípky mesiaca v denníku) */
+.sq-btn {
+    display: inline-grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0;
+    border: 1px solid rgb(var(--c-line-strong)); border-radius: var(--radius);
+    background: rgb(var(--c-surface)); color: rgb(var(--c-text-soft)); cursor: pointer;
+    transition: border-color .15s ease, color .15s ease;
+}
+.sq-btn:hover { border-color: rgb(var(--c-text)); color: rgb(var(--c-text)); }
+.sq-btn .material-symbols-outlined { font-size: 19px; }
+.sq-btn--quiet { border-color: transparent; background: transparent; color: rgb(var(--c-muted)); }
+.sq-btn--quiet:hover { border-color: rgb(var(--c-danger) / 0.5); color: rgb(var(--c-danger)); }
+
+/* Týždenný plán z textu: text trénera je hlavný prvok stránky */
+.plan-text {
+    width: 100%; min-height: 30rem;
+    font-size: 15.5px; line-height: 1.65; padding: 16px 18px;
+    resize: vertical; tab-size: 4;
+}
+.plan-rules { display: grid; gap: 0; }
+.plan-rules > div { display: grid; grid-template-columns: 9.5rem 1fr; gap: 16px; padding: 12px 0; border-bottom: 1px solid rgb(var(--c-line)); }
+.plan-rules dt { font-stretch: var(--w-heading); font-weight: 700; font-size: 16px; color: rgb(var(--c-text)); }
+.plan-rules dd { font-size: 14.5px; color: rgb(var(--c-text-soft)); }
+@media (max-width: 640px) { .plan-rules > div { grid-template-columns: 1fr; gap: 4px; } }
+
+/* --------------------------------------------------------------------------
+   Tréningový denník (/trainings) a regenerácia (/log)
+   -------------------------------------------------------------------------- */
+.mini-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.mini-cal-day {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    width: 100%; min-height: 40px; padding: 4px 0;
+    border: 0; border-radius: 6px; background: transparent; color: rgb(var(--c-muted));
+    font-stretch: var(--w-data); font-size: 14px; font-weight: 600; line-height: 1;
+}
+button.mini-cal-day { background: rgb(var(--c-track) / 0.1); color: rgb(var(--c-text)); cursor: pointer; transition: background-color .12s ease; }
+button.mini-cal-day:hover { background: rgb(var(--c-track) / 0.2); }
+.mini-cal-day.is-today { box-shadow: inset 0 0 0 2px rgb(var(--c-track)); color: rgb(var(--c-track)); font-weight: 760; }
+.mini-cal-day .dots { display: flex; gap: 2px; height: 5px; }
+.mini-cal-day .dots > span { width: 5px; height: 5px; background: rgb(var(--c-track)); }
+
+/* Prepínač „intervalový tréning“: skutočný checkbox (sr-only) + kreslená dráha */
+.switch-track {
+    display: block; width: 40px; height: 22px; border-radius: 999px;
+    background: rgb(var(--c-line-strong)); transition: background-color .15s ease;
+}
+.switch-knob {
+    position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 999px;
+    background: #fff; transition: transform .15s ease;
+}
+.peer:checked ~ .switch-track { background: rgb(var(--c-track)); }
+.peer:checked ~ .switch-knob { transform: translateX(18px); }
+.peer:focus-visible ~ .switch-track { outline: 2px solid rgb(var(--c-track)); outline-offset: 2px; }
+
+/* Výber súboru: skutočný <input type="file"> je sr-only, rámček dostane obrys pri fokuse */
+.file-pick:focus-within { outline: 2px solid rgb(var(--c-track)); outline-offset: 2px; border-color: rgb(var(--c-text)); }
+
+/* Časy úsekov v denníku */
+.splits { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 0; padding: 0; list-style: none; }
+.splits > li {
+    padding: 1px 7px; border-radius: 6px; background: rgb(var(--c-text) / 0.06);
+    font-stretch: var(--w-data); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.splits > li .n { margin-right: 4px; font-weight: 500; color: rgb(var(--c-muted)); }
+
+/* --------------------------------------------------------------------------
+   Grafy (/grafy)
+   -------------------------------------------------------------------------- */
+.chart-box { padding: 16px 18px 12px; }
+.as-table > summary { list-style: none; }
+.as-table > summary::-webkit-details-marker { display: none; }
+.empty-note { padding: 22px 24px; }

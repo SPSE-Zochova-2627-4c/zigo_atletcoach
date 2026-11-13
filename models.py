@@ -9,12 +9,23 @@ Názvy tabuliek sú vypísané explicitne, aby sa pri presune z app.py nezmenili
 a existujúca database.db ostala čitateľná.
 """
 import json
-from datetime import datetime
+from datetime import date, datetime, timezone
 
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
+
+
+def utcnow():
+    """Aktuálny čas v UTC bez časovej zóny (tak ho ukladá SQLite). Náhrada za datetime.utcnow(),
+    ktoré je od Pythonu 3.12 zastarané."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def today():
+    """Dnešný dátum podľa hodín servera – predvolený deň merania a tréningu."""
+    return date.today()
 
 ROLES = ('zverenec', 'trener', 'admin')
 ROLE_LABELS = {'zverenec': 'Zverenec', 'trener': 'Tréner', 'admin': 'Administrátor'}
@@ -45,7 +56,7 @@ class User(db.Model):
     # Kedy používateľ odsúhlasil Podmienky používania a Ochranu osobných údajov.
     # None = ešte nie (účet založil tréner/admin) – pri prvom prihlásení sa súhlas vyžiada.
     terms_accepted_at = db.Column(db.DateTime, nullable=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
 
     coach = db.relationship('User', remote_side=[id], foreign_keys=[coach_id],
                             backref=db.backref('athletes', lazy='select'))
@@ -96,7 +107,7 @@ class RaceResult(db.Model):
     source = db.Column(db.String(20), nullable=False, default='manual')   # manual | world_athletics | stopky
     note = db.Column(db.Text, nullable=True)
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
 
     athlete = db.relationship('User', foreign_keys=[user_id],
                               backref=db.backref('race_results', lazy='select'))
@@ -129,7 +140,7 @@ class PlannedTraining(db.Model):
     # (dá sa zmazať celý týždeň naraz); time_text je čas začiatku „15:00“ z textu.
     batch_id = db.Column(db.String(36), nullable=True, index=True)
     time_text = db.Column(db.String(5), nullable=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
 
     athlete = db.relationship('User', foreign_keys=[athlete_id],
                               backref=db.backref('planned_trainings', lazy='select'))
@@ -168,7 +179,7 @@ class PlanItem(db.Model):
     result_json = db.Column(db.Text, nullable=True)         # [kg na sériu] alebo [s na úsek]
     result_note = db.Column(db.String(200), nullable=True)
     added_by_athlete = db.Column(db.Boolean, nullable=False, default=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
 
     @property
     def results(self):
@@ -216,7 +227,7 @@ class BiometricLog(db.Model):
     __tablename__ = 'biometric_log'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
-    date = db.Column(db.Date, nullable=False, default=datetime.utcnow)
+    date = db.Column(db.Date, nullable=False, default=today)
     hrv = db.Column(db.Float, nullable=False)
     recovery = db.Column(db.Integer, nullable=True)
     rhr = db.Column(db.Integer, nullable=True)
@@ -226,7 +237,7 @@ class TrainingLog(db.Model):
     __tablename__ = 'training_log'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
-    date = db.Column(db.Date, nullable=False, default=datetime.utcnow)
+    date = db.Column(db.Date, nullable=False, default=today)
     training_type = db.Column(db.String(100), nullable=False)
     distance_km = db.Column(db.Float, nullable=True)
     duration_min = db.Column(db.Float, nullable=True)
@@ -243,7 +254,7 @@ class StravaToken(db.Model):
     access_token = db.Column(db.Text, nullable=False)
     refresh_token = db.Column(db.Text, nullable=True)
     expires_at = db.Column(db.Integer, nullable=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
 
 
 class ChatMessage(db.Model):
@@ -252,7 +263,7 @@ class ChatMessage(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
     role = db.Column(db.String(20), nullable=False)
     content = db.Column(db.Text, nullable=False)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
 
 
 class UserProfile(db.Model):
@@ -264,7 +275,33 @@ class UserProfile(db.Model):
     sport = db.Column(db.String(100), nullable=True)
     goal = db.Column(db.String(200), nullable=True)
     height_cm = db.Column(db.Float, nullable=True)
-    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+
+    @classmethod
+    def for_user(cls, user_id, create=False):
+        """Profil daného používateľa (každý má najviac jeden); create=True ho založí (bez commitu)."""
+        if user_id is None:
+            return None
+        profile = cls.query.filter_by(user_id=user_id).first()
+        if profile is None and create:
+            profile = cls(user_id=user_id)
+            db.session.add(profile)
+        return profile
+
+    def summary_for_ai(self):
+        """Krátky popis atléta pre AI („meno X, vek 17, výška 181 cm…“) alebo prázdny reťazec."""
+        bits = []
+        if self.name:
+            bits.append(f'meno {self.name}')
+        if self.age:
+            bits.append(f'vek {self.age}')
+        if self.height_cm:
+            bits.append(f'výška {self.height_cm:.0f} cm')
+        if self.sport:
+            bits.append(f'disciplína {self.sport}')
+        if self.goal:
+            bits.append(f'cieľ {self.goal}')
+        return ', '.join(bits)
 
 
 class VideoAnalysis(db.Model):
@@ -272,7 +309,7 @@ class VideoAnalysis(db.Model):
     __tablename__ = 'video_analysis'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
     original_name = db.Column(db.String(255), nullable=True)
     stored_name = db.Column(db.String(255), nullable=True)
     overlay_name = db.Column(db.String(255), nullable=True)
@@ -300,7 +337,7 @@ class HurdleAnalysis(db.Model):
     __tablename__ = 'hurdle_analysis'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True, index=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
     original_name = db.Column(db.String(255), nullable=True)
     stored_name = db.Column(db.String(255), nullable=True)
     overlay_name = db.Column(db.String(255), nullable=True)

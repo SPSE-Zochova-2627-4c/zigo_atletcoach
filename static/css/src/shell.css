@@ -1,0 +1,150 @@
+/* Rám appky: menu (nočná modrá dráha), mobilný pás, oblasť obsahu s pohyblivým modrým svetlom v pozadí. */
+
+/* --------------------------------------------------------------------------
+   3. Rám appky
+   -------------------------------------------------------------------------- */
+.app { display: grid; grid-template-columns: 252px minmax(0, 1fr); min-height: 100vh; }
+
+/* Pozadie obsahu: dve rozmazané svetlá (modrá, tyrkysová), ktoré sa pomaly presúvajú */
+.main-col { position: relative; isolation: isolate; }
+.main-col::before {
+    content: ''; position: fixed; z-index: -1; pointer-events: none;
+    inset: -20vh -10vw auto auto; width: 70vw; height: 70vh;
+    background:
+        radial-gradient(closest-side, rgb(var(--c-track) / 0.12), transparent 70%) 0 0 / 60% 60% no-repeat,
+        radial-gradient(closest-side, rgb(var(--c-cyan) / 0.14), transparent 70%) 100% 30% / 55% 55% no-repeat;
+    animation: aurora 26s ease-in-out infinite alternate;
+}
+:root[data-theme="dark"] .main-col::before { opacity: .9; }
+@keyframes aurora {
+    0%   { transform: translate3d(0, 0, 0) scale(1); }
+    50%  { transform: translate3d(-6vw, 4vh, 0) scale(1.08); }
+    100% { transform: translate3d(3vw, -3vh, 0) scale(0.96); }
+}
+
+.sidebar {
+    position: sticky; top: 0; height: 100vh; z-index: 40;
+    display: flex; flex-direction: column;
+    background:
+        radial-gradient(120% 50% at 0% 0%, rgb(var(--c-track) / 0.35), transparent 60%),
+        rgb(var(--c-navy));
+    color: #fff;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 0.25) transparent;
+    view-transition-name: sidebar;     /* pri prechode medzi stránkami ostane menu na mieste */
+}
+.sidebar :focus-visible { outline-color: #fff; }
+
+.brand {
+    display: flex; align-items: center; gap: 12px;
+    padding: 22px 20px 18px;
+    color: #fff; text-decoration: none;
+}
+.brand-mark { width: 36px; height: 36px; flex-shrink: 0; display: block; color: rgb(var(--c-cyan)); transition: transform .5s var(--ease-spring); }
+.brand:hover .brand-mark { transform: rotate(-8deg) scale(1.08); }
+.brand-name {
+    display: block;
+    font-stretch: 72%; font-weight: 820; font-size: 25px; line-height: 1;
+    letter-spacing: 0.005em;
+}
+.brand-sub { display: block; font-size: 12.5px; line-height: 1.3; color: rgb(255 255 255 / 0.6); margin-top: 4px; }
+
+/* Skupina = jedna dráha; medzi dráhami tenká modrá čiara */
+.nav-group { padding: 8px 12px 9px; border-top: 1px solid rgb(120 160 255 / 0.16); }
+.nav-label { font-size: 12px; font-weight: 600; color: rgb(255 255 255 / 0.48); padding: 4px 12px 5px; }
+.nav-item {
+    position: relative;
+    display: flex; align-items: center; gap: 11px;
+    min-height: 38px; padding: 7px 12px; margin-bottom: 2px;
+    border-radius: 12px;
+    font-size: 15px; font-weight: 520; color: rgb(255 255 255 / 0.78);
+    text-decoration: none;
+    transition: background-color .2s ease, color .2s ease, transform .2s var(--ease);
+}
+.nav-item:hover { background: rgb(255 255 255 / 0.07); color: #fff; transform: translateX(3px); }
+.nav-item.active {
+    background: var(--grad-deep); color: #fff; font-weight: 650;
+    box-shadow: 0 8px 22px rgb(var(--c-track) / 0.45);
+}
+.nav-item .material-symbols-outlined { font-size: 20px; flex-shrink: 0; font-variation-settings: 'wght' 420; transition: transform .25s var(--ease-spring); }
+.nav-item:hover .material-symbols-outlined { transform: scale(1.12); }
+.nav-item .label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav-item .count {
+    min-width: 24px; padding: 0 7px; border-radius: 999px;
+    font-size: 12px; font-weight: 700; line-height: 20px; text-align: center;
+    font-stretch: var(--w-data);
+    background: rgb(255 255 255 / 0.1); color: rgb(255 255 255 / 0.9);
+}
+.nav-item.active .count { background: rgb(255 255 255 / 0.22); color: #fff; }
+.nav-item .count.warn { background: rgb(var(--c-hot)); color: rgb(10 26 51); }
+
+.sidebar-foot { margin-top: auto; padding: 14px 20px 18px; border-top: 1px solid rgb(120 160 255 / 0.16); }
+.sidebar-user { display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; }
+.sidebar-user .avatar {
+    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+    display: grid; place-items: center;
+    background: var(--grad-deep); font-stretch: 80%; font-weight: 800; font-size: 16px;
+}
+.sidebar-user strong { display: block; font-size: 15px; font-weight: 650; line-height: 1.25; }
+.sidebar-user small { display: block; font-size: 12.5px; color: rgb(255 255 255 / 0.6); }
+.sidebar-user:hover strong { text-decoration: underline; text-underline-offset: 3px; }
+.sidebar-tools { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.side-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    height: 36px; padding: 0 14px; border-radius: 999px;
+    border: 1px solid rgb(255 255 255 / 0.18); background: rgb(255 255 255 / 0.04);
+    color: #fff; font-size: 13.5px; font-weight: 600; text-decoration: none; cursor: pointer;
+    transition: background-color .2s ease, border-color .2s ease;
+}
+.side-btn:hover { background: rgb(255 255 255 / 0.12); border-color: rgb(255 255 255 / 0.4); }
+.side-btn .material-symbols-outlined { font-size: 18px; }
+.side-btn.icon-only { width: 36px; padding: 0; justify-content: center; }
+.sidebar-note { font-size: 13px; line-height: 1.45; color: rgb(255 255 255 / 0.65); }
+
+.main-col { min-width: 0; display: flex; flex-direction: column; }
+.main-inner { width: 100%; max-width: 1240px; margin: 0 auto; padding: 34px 40px 56px; flex: 1; }
+
+/* Mobil: menu je pás hore a vysúva sa zľava */
+.mobilebar { display: none; }
+.sidebar-backdrop { display: none; }
+@media (max-width: 1023px) {
+    .app { grid-template-columns: 1fr; }
+    .sidebar {
+        position: fixed; left: 0; top: 0; bottom: 0; width: 288px; height: 100dvh;
+        transform: translateX(-104%); transition: transform .32s var(--ease);
+        view-transition-name: none;
+    }
+    /* tieň len pri otvorenom menu – zatvorené menu nesmie tieniť do obrazovky */
+    .sidebar.open { transform: none; box-shadow: var(--shadow-pop); }
+    .sidebar-backdrop {
+        display: block; position: fixed; inset: 0; z-index: 35;
+        background: rgb(4 11 26 / 0.5); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+        animation: fade-in .25s ease both;
+    }
+    .sidebar-backdrop[hidden] { display: none; }
+    .mobilebar {
+        position: sticky; top: 0; z-index: 30;
+        display: flex; align-items: center; gap: 10px;
+        /* na iPhone s výrezom (appka na ploche) pás siaha pod stavový riadok, obsah ostane 58 px vysoký */
+        height: calc(58px + env(safe-area-inset-top)); padding: 0 12px 0 8px;
+        padding-top: env(safe-area-inset-top);
+        background: rgb(var(--c-navy) / 0.86); color: #fff;
+        backdrop-filter: saturate(160%) blur(12px); -webkit-backdrop-filter: saturate(160%) blur(12px);
+        box-shadow: inset 0 -2px 0 0 rgb(var(--c-track));
+        view-transition-name: mobilebar;
+    }
+    .mobilebar .brand-mark { width: 30px; height: 30px; }
+    .mobilebar .brand-name { font-size: 22px; }
+    .mobilebar a { color: #fff; text-decoration: none; display: inline-flex; align-items: center; gap: 9px; }
+    .mobilebar :focus-visible { outline-color: #fff; }
+    .mobilebar .spacer { flex: 1; }
+    .main-inner { padding: 22px 16px 48px; }
+}
+.bar-btn {
+    width: 40px; height: 40px; display: inline-grid; place-items: center;
+    background: transparent; border: 0; border-radius: 12px; color: #fff; cursor: pointer;
+    transition: background-color .2s ease;
+}
+.bar-btn:hover { background: rgb(255 255 255 / 0.12); }
+@keyframes fade-in { from { opacity: 0; } }

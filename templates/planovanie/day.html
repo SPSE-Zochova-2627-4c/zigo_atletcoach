@@ -1,99 +1,104 @@
 {% extends "base.html" %}
-{% block title %}{{ day|plan_date }} · Plán · AtletCoach{% endblock %}
-{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/planovanie.css') }}">{% endblock %}
+{% from "_ui.html" import page_head %}
+{% block title %}{{ weekday }} {{ day|plan_date }} – Plán – AtletCoach{% endblock %}
 
 {% set btn_primary = 'btn btn-primary' %}
 {% set btn_secondary = 'btn btn-secondary' %}
 {% set kind_label = {'beh': 'beh', 'sila': 'sila', 'ine': 'iné'} %}
+{% set status_chip = {'done': ('ok', 'splnené'), 'missed': ('bad', 'nesplnené po termíne'), 'pending': ('', 'čaká')} %}
 
 {% block content %}
-<main class="mt-10 pb-12">
+<main class="pb-4">
 
-    <!-- ── Hlavička ── -->
-    <div class="flex items-end justify-between flex-wrap gap-5 mb-9">
-        <div>
-            <p class="eyebrow mb-2">
-                Plán · {% if aid %}{{ athlete.display_name }} · {% endif %}{{ weekday }}{% if day == today %} · dnes{% endif %}
-            </p>
-            <h1 class="page-title">{{ day|plan_date }}</h1>
-        </div>
-        <div class="flex flex-wrap items-center gap-2.5">
-            <a href="{{ url_for('planovanie.day', iso=prev_day.isoformat(), athlete_id=aid) }}" class="{{ btn_secondary }}" aria-label="Predchádzajúci deň: {{ prev_day.day }}. {{ prev_day.month }}."><span aria-hidden="true">←</span> {{ prev_day.day }}. {{ prev_day.month }}.</a>
-            <a href="{{ url_for('planovanie.index', y=day.year, m=day.month, athlete_id=aid) }}" class="{{ btn_secondary }}">Kalendár</a>
-            <a href="{{ url_for('planovanie.day', iso=next_day.isoformat(), athlete_id=aid) }}" class="{{ btn_secondary }}" aria-label="Nasledujúci deň: {{ next_day.day }}. {{ next_day.month }}.">{{ next_day.day }}. {{ next_day.month }}. <span aria-hidden="true">→</span></a>
-        </div>
-    </div>
+    {% set sub = (athlete.display_name ~ ', ' if aid else '') ~ (day|plan_date) ~ (', dnes' if day == today else '') %}
+    {% call page_head(weekday ~ ' ' ~ (day|den_mesiac), sub) %}
+        <a href="{{ url_for('planovanie.day', iso=prev_day.isoformat(), athlete_id=aid) }}" class="btn btn-secondary btn-sm"
+           aria-label="Predchádzajúci deň: {{ prev_day.day }}. {{ prev_day.month }}.">
+            <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>{{ prev_day.day }}. {{ prev_day.month }}.
+        </a>
+        <a href="{{ url_for('planovanie.index', y=day.year, m=day.month, athlete_id=aid) }}" class="btn btn-secondary btn-sm">
+            <span class="material-symbols-outlined" aria-hidden="true">calendar_month</span>Kalendár
+        </a>
+        <a href="{{ url_for('planovanie.day', iso=next_day.isoformat(), athlete_id=aid) }}" class="btn btn-secondary btn-sm"
+           aria-label="Nasledujúci deň: {{ next_day.day }}. {{ next_day.month }}.">
+            {{ next_day.day }}. {{ next_day.month }}.<span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        </a>
+    {% endcall %}
 
-    <section class="grid grid-cols-1 lg:grid-cols-2 gap-x-14 gap-y-11">
+    <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] gap-x-10 gap-y-12">
 
-        <!-- ── Naplánované tréningy ── -->
-        <div>
-            <div class="rule"><p class="eyebrow">Naplánované tréningy</p></div>
+        {# ── Naplánované tréningy ── #}
+        <section aria-labelledby="h-plany">
+            <div class="rule"><h2 id="h-plany">Naplánované tréningy</h2>{% if plans %}<span>{{ plans|length }}</span>{% endif %}</div>
 
             {% for p in plans %}
             {% set status = statuses[p.id] %}
-            <article class="card p-5 mb-3 {% if status == 'missed' %}border-l-2 border-l-[color:var(--danger)]{% elif status == 'done' %}border-l-2 border-l-[color:var(--success)]{% endif %}">
+            <article class="card plan-card plan-card--{{ status }} p-5 mb-4">
                 <div class="flex items-start justify-between gap-4">
                     <div class="min-w-0">
-                        <h2 class="font-headline font-bold text-lg leading-tight {% if status == 'done' %}text-on-surface-variant{% else %}text-on-surface{% endif %}">
-                            {% if status == 'done' %}<span style="color:var(--success)" aria-hidden="true">✓</span> {% endif %}{% if p.time_text %}<span class="mono text-[13px] text-on-surface-variant font-normal">{{ p.time_text }}</span> {% endif %}{{ p.title }}
-                        </h2>
+                        <h3 class="text-[21px] leading-tight {% if status == 'done' %}text-on-surface-variant{% else %}text-on-surface{% endif %}">
+                            {% if p.time_text %}<span class="mono text-[17px] text-on-surface-variant font-semibold mr-1">{{ p.time_text }}</span>{% endif %}{{ p.title }}
+                        </h3>
                         {% if p.description %}
-                        <p class="text-[13px] text-on-surface-variant mt-1.5 whitespace-pre-line leading-relaxed">{{ p.description }}</p>
+                        <p class="text-[14.5px] text-on-surface-variant mt-1.5 whitespace-pre-line leading-relaxed">{{ p.description }}</p>
                         {% endif %}
-                        <p class="mono text-[11px] text-on-surface-variant mt-2">naplánoval {{ p.coach.display_name if p.coach else '—' }}</p>
+                        <p class="text-[13px] text-on-surface-variant mt-2">Naplánoval {{ p.coach.display_name if p.coach else 'neznámy tréner' }}</p>
                     </div>
-                    <span class="plan-status plan-status--{{ status }} flex-shrink-0 pt-1">
-                        {% if status == 'done' %}splnené{% elif status == 'missed' %}nesplnené po termíne{% else %}čaká{% endif %}
+                    <span class="chip {{ status_chip[status][0] }} flex-shrink-0">
+                        {% if status == 'done' %}<span aria-hidden="true">✓</span>{% elif status == 'missed' %}<span aria-hidden="true">!</span>{% endif %}
+                        {{ status_chip[status][1] }}
                     </span>
                 </div>
 
                 {# ── Položky: cviky a úseky z textu trénera + vlastné; zápis kíl a časov ── #}
                 {% if p.items or perms[p.id].complete %}
-                <div class="mt-4 border-t border-white/10 pt-3">
+                <div class="mt-4 border-t border-line pt-2">
                     {% if p.items %}
-                    <p class="eyebrow mb-1">Cviky a úseky</p>
+                    <h4 class="sr-only">Cviky a úseky</h4>
                     {% for it in p.items %}
                     <div class="plan-item">
                         <div class="flex items-start justify-between gap-3">
-                            <p class="text-[13px] text-on-surface leading-snug">
+                            <p class="text-[14.5px] text-on-surface leading-snug">
                                 <span class="plan-kind plan-kind--{{ it.kind }}">{{ kind_label[it.kind] }}</span>{{ it.text }}
-                                {% if it.added_by_athlete %}<span class="eyebrow ml-1">vlastné</span>{% endif %}
+                                {% if it.added_by_athlete %}<span class="text-[13px] text-on-surface-variant ml-1">(vlastné)</span>{% endif %}
                             </p>
                             {% if perms[p.id].manage or (it.added_by_athlete and perms[p.id].complete) %}
                             <form method="post" action="{{ url_for('planovanie.item_delete', item_id=it.id) }}" onsubmit="return confirm('Zmazať položku „{{ it.text|e }}“?')">
                                 {% if aid %}<input type="hidden" name="athlete_id" value="{{ aid }}">{% endif %}
-                                <button type="submit" class="eyebrow hover:text-on-surface transition-colors" aria-label="Zmazať položku „{{ it.text }}“"><span aria-hidden="true">×</span></button>
+                                <button type="submit" class="sq-btn sq-btn--quiet" aria-label="Zmazať položku „{{ it.text }}“" title="Zmazať položku">
+                                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                                </button>
                             </form>
                             {% endif %}
                         </div>
                         {% if it.has_results %}
-                        <p class="mono text-[12px] mt-1" style="color:var(--volt)">
-                            {% for v in it.results %}{% if v is not none %}{{ '%g'|format(v) }}{% else %}–{% endif %}{% if not loop.last %} / {% endif %}{% endfor %} {{ it.unit }}
-                            {% if it.result_note %}<span class="text-on-surface-variant">· {{ it.result_note }}</span>{% endif %}
+                        <p class="mono text-[15px] font-semibold mt-1">
+                            {% for v in it.results %}{% if v is not none %}{{ '%g'|format(v) }}{% else %}–{% endif %}{% if not loop.last %} / {% endif %}{% endfor %}
+                            <span class="font-normal text-on-surface-variant">{{ it.unit }}</span>
+                            {% if it.result_note %}<span class="font-normal text-on-surface-variant">, {{ it.result_note }}</span>{% endif %}
                         </p>
                         {% endif %}
                         {% if perms[p.id].complete and it.slots %}
-                        <details class="mt-1">
-                            <summary class="plan-summary eyebrow hover:text-on-surface transition-colors">{{ 'Upraviť' if it.has_results else 'Zapísať' }} {{ 'kilá' if it.kind == 'sila' else 'časy' }}</summary>
+                        <details class="mt-2">
+                            <summary class="plan-summary link text-[14px] inline-block">{{ 'Upraviť' if it.has_results else 'Zapísať' }} {{ 'kilá' if it.kind == 'sila' else 'časy' }}</summary>
                             <form method="post" action="{{ url_for('planovanie.item_record', item_id=it.id) }}" class="mt-3 space-y-3">
                                 {% if aid %}<input type="hidden" name="athlete_id" value="{{ aid }}">{% endif %}
-                                <p class="text-[11px] text-on-surface-variant">
-                                    {% if it.kind == 'sila' %}{{ it.sets or 1 }} {{ 'séria' if (it.sets or 1) == 1 else 'série' }}{% if it.reps %} × {{ it.reps }}{% if it.per_side %} na stranu{% endif %}{% endif %} – kilá na každú sériu
-                                    {% else %}{{ it.slots }} {{ 'úsek' if it.slots == 1 else 'úsekov' }}{% if it.distance_m %} × {{ '%g'|format(it.distance_m) }} m{% endif %} – čas v sekundách (napr. 58,3){% endif %}
+                                <p class="text-[13px] text-on-surface-variant">
+                                    {% if it.kind == 'sila' %}{{ it.sets or 1 }} {{ 'séria' if (it.sets or 1) == 1 else 'série' }}{% if it.reps %} × {{ it.reps }}{% if it.per_side %} na stranu{% endif %}{% endif %}: kilá na každú sériu
+                                    {% else %}{{ it.slots }} {{ 'úsek' if it.slots == 1 else 'úsekov' }}{% if it.distance_m %} × {{ '%g'|format(it.distance_m) }} m{% endif %}: čas v sekundách (napr. 58,3){% endif %}
                                 </p>
                                 <div class="grid grid-cols-4 sm:grid-cols-6 gap-2">
                                     {% for i in range(it.slots) %}
                                     {% set val = it.results[i] if i < it.results|length else none %}
-                                    <input type="text" inputmode="decimal" name="v{{ i }}" value="{% if val is not none %}{{ '%g'|format(val) }}{% endif %}" placeholder="{{ it.unit }}" aria-label="{{ i + 1 }}. {{ 'séria' if it.kind == 'sila' else 'úsek' }} ({{ it.unit }})">
+                                    <input type="text" inputmode="decimal" name="v{{ i }}" value="{% if val is not none %}{{ '%g'|format(val) }}{% endif %}" placeholder="{{ it.unit }}" class="mono text-center" aria-label="{{ i + 1 }}. {{ 'séria' if it.kind == 'sila' else 'úsek' }} ({{ it.unit }})">
                                     {% endfor %}
                                 </div>
                                 <div class="flex flex-wrap items-end gap-3">
                                     <div class="flex-1 min-w-[160px]">
                                         <label for="inote-{{ it.id }}">Poznámka</label>
-                                        <input type="text" id="inote-{{ it.id }}" name="note" value="{{ it.result_note or '' }}" maxlength="200" placeholder="nepovinné">
+                                        <input type="text" id="inote-{{ it.id }}" name="note" value="{{ it.result_note or '' }}" maxlength="200" placeholder="nepovinné" class="w-full">
                                     </div>
-                                    <button type="submit" class="{{ btn_secondary }}">Uložiť</button>
+                                    <button type="submit" class="{{ btn_secondary }}">Uložiť {{ 'kilá' if it.kind == 'sila' else 'časy' }}</button>
                                 </div>
                             </form>
                         </details>
@@ -107,7 +112,7 @@
                         {% if aid %}<input type="hidden" name="athlete_id" value="{{ aid }}">{% endif %}
                         <div class="flex-1">
                             <label for="add-{{ p.id }}">Pridať cvik alebo úsek</label>
-                            <input type="text" id="add-{{ p.id }}" name="text" maxlength="200" placeholder="napr. Drep 5x5, Mŕtvy ťah 3x8, 6x150m">
+                            <input type="text" id="add-{{ p.id }}" name="text" maxlength="200" placeholder="napr. Drep 5x5, Mŕtvy ťah 3x8, 6x150m" class="w-full">
                         </div>
                         <button type="submit" class="{{ btn_secondary }}">Pridať</button>
                     </form>
@@ -116,37 +121,35 @@
                 {% endif %}
 
                 {% if p.completed %}
-                <div class="mt-4 border-t border-white/10 pt-4">
-                    <p class="eyebrow mb-2">Splnené{% if p.completed_at %} · zapísané {{ p.completed_at.strftime('%d.%m.%Y %H:%M') }}{% endif %}</p>
+                <div class="mt-4 border-t border-line pt-4">
+                    <p class="text-[13.5px] font-semibold text-on-surface-variant mb-1.5">Splnené{% if p.completed_at %}, zapísané {{ p.completed_at.strftime('%d. %m. %Y %H:%M') }}{% endif %}</p>
                     {% if p.training_log %}
-                    <p class="mono text-[13px] text-on-surface">
-                        {{ p.training_log.training_type }}
-                        {% if p.training_log.distance_km %} · {{ p.training_log.distance_km }} km{% endif %}
-                        {% if p.training_log|plan_duration %} · {{ p.training_log|plan_duration }}{% endif %}
+                    <p class="text-[15px] text-on-surface">
+                        {{ p.training_log.training_type }}{% if p.training_log.distance_km %}, <span class="mono">{{ p.training_log.distance_km }} km</span>{% endif %}{% if p.training_log|plan_duration %}, <span class="mono">{{ p.training_log|plan_duration }}</span>{% endif %}
                     </p>
                     {% else %}
-                    <p class="mono text-[13px] text-on-surface-variant">bez zápisu v denníku</p>
+                    <p class="text-[14px] text-on-surface-variant">Bez zápisu v denníku.</p>
                     {% endif %}
                     {% if p.athlete_note %}
-                    <p class="text-[13px] text-on-surface-variant mt-2 leading-relaxed">„{{ p.athlete_note }}“</p>
+                    <p class="text-[14.5px] text-on-surface-variant mt-2 leading-relaxed">„{{ p.athlete_note }}“</p>
                     {% endif %}
                     {% if perms[p.id].complete %}
-                    <form method="post" action="{{ url_for('planovanie.uncomplete', plan_id=p.id) }}" class="mt-4">
+                    <form method="post" action="{{ url_for('planovanie.uncomplete', plan_id=p.id) }}" class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
                         {% if aid %}<input type="hidden" name="athlete_id" value="{{ aid }}">{% endif %}
-                        <button type="submit" class="{{ btn_secondary }}">Označiť ako nesplnené</button>
+                        <button type="submit" class="{{ btn_secondary }} btn-sm">Označiť ako nesplnené</button>
+                        <span class="text-[13px] text-on-surface-variant">Zápis v denníku ostane, zruší sa len prepojenie.</span>
                     </form>
-                    <p class="mono text-[10px] text-on-surface-variant mt-2">Zápis v denníku ostane, zruší sa len prepojenie.</p>
                     {% endif %}
                 </div>
 
                 {% elif perms[p.id].complete %}
-                <details class="mt-4 border-t border-white/10 pt-4">
-                    <summary class="plan-summary inline-block {{ btn_primary }}">Splniť</summary>
+                <details class="mt-4 border-t border-line pt-4">
+                    <summary class="plan-summary {{ btn_primary }}"><span class="material-symbols-outlined" aria-hidden="true">check</span>Splniť tréning</summary>
 
                     <form method="post" action="{{ url_for('planovanie.complete', plan_id=p.id) }}" class="mt-5 space-y-4">
                         <input type="hidden" name="mode" value="new">
                         {% if aid %}<input type="hidden" name="athlete_id" value="{{ aid }}">{% endif %}
-                        <p class="eyebrow">Nový zápis do denníka{% if aid %} zverenca{% endif %}</p>
+                        <p class="text-[14px] font-semibold text-on-surface">Nový zápis do denníka{% if aid %} zverenca{% endif %}</p>
                         <div>
                             <label for="type-{{ p.id }}">Typ tréningu</label>
                             <input type="text" id="type-{{ p.id }}" name="training_type" value="{{ p.title }}" maxlength="100" required>
@@ -157,31 +160,31 @@
                                 <input type="number" id="km-{{ p.id }}" name="distance_km" step="0.01" min="0" placeholder="0.0">
                             </div>
                             <div>
-                                <label for="min-{{ p.id }}">Čas – min</label>
+                                <label for="min-{{ p.id }}">Čas, minúty</label>
                                 <input type="number" id="min-{{ p.id }}" name="dur_min" min="0" placeholder="0">
                             </div>
                             <div>
-                                <label for="sec-{{ p.id }}">Čas – sek</label>
+                                <label for="sec-{{ p.id }}">Čas, sekundy</label>
                                 <input type="number" id="sec-{{ p.id }}" name="dur_sec" min="0" max="59.99" step="0.01" placeholder="00.00">
                             </div>
                         </div>
                         <div>
-                            <label for="note-{{ p.id }}">Poznámka – ako to išlo</label>
+                            <label for="note-{{ p.id }}">Ako to išlo</label>
                             <textarea id="note-{{ p.id }}" name="note" rows="2" placeholder="pocity, podmienky, čo nevyšlo…"></textarea>
                         </div>
                         <button type="submit" class="{{ btn_primary }}">Zapísať a splniť</button>
                     </form>
 
                     {% if free_logs %}
-                    <form method="post" action="{{ url_for('planovanie.complete', plan_id=p.id) }}" class="mt-6 border-t border-white/10 pt-5 space-y-4">
+                    <form method="post" action="{{ url_for('planovanie.complete', plan_id=p.id) }}" class="mt-6 border-t border-line pt-5 space-y-4">
                         <input type="hidden" name="mode" value="link">
                         {% if aid %}<input type="hidden" name="athlete_id" value="{{ aid }}">{% endif %}
-                        <p class="eyebrow">Alebo prepojiť s existujúcim zápisom z tohto dňa</p>
+                        <p class="text-[14px] font-semibold text-on-surface">Alebo prepojiť so zápisom, ktorý už v tento deň je</p>
                         <div>
                             <label for="log-{{ p.id }}">Zápis v denníku</label>
                             <select id="log-{{ p.id }}" name="training_log_id" required>
                                 {% for log in free_logs %}
-                                <option value="{{ log.id }}">{{ log.training_type }}{% if log.distance_km %} · {{ log.distance_km }} km{% endif %}{% if log|plan_duration %} · {{ log|plan_duration }}{% endif %}</option>
+                                <option value="{{ log.id }}">{{ log.training_type }}{% if log.distance_km %}, {{ log.distance_km }} km{% endif %}{% if log|plan_duration %}, {{ log|plan_duration }}{% endif %}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -196,8 +199,8 @@
                 {% endif %}
 
                 {% if perms[p.id].manage %}
-                <details class="mt-4 border-t border-white/10 pt-3">
-                    <summary class="plan-summary eyebrow hover:text-on-surface transition-colors">Upraviť / zmazať</summary>
+                <details class="mt-4 border-t border-line pt-3">
+                    <summary class="plan-summary btn btn-ghost btn-sm -ml-2"><span class="material-symbols-outlined chev" aria-hidden="true">chevron_right</span>Upraviť alebo zmazať tréning</summary>
                     <form method="post" action="{{ url_for('planovanie.edit', plan_id=p.id) }}" class="mt-4 space-y-4">
                         {% if aid %}<input type="hidden" name="athlete_id" value="{{ aid }}">{% endif %}
                         <div>
@@ -214,27 +217,29 @@
                         </div>
                         <button type="submit" class="{{ btn_secondary }}">Uložiť zmeny</button>
                     </form>
-                    <form method="post" action="{{ url_for('planovanie.delete', plan_id=p.id) }}" class="mt-3"
+                    <form method="post" action="{{ url_for('planovanie.delete', plan_id=p.id) }}" class="mt-4"
                           onsubmit="return confirm('Zmazať tréning „{{ p.title|e }}“ z plánu? Zápis v denníku ostane.')">
                         {% if aid %}<input type="hidden" name="athlete_id" value="{{ aid }}">{% endif %}
-                        <button type="submit" class="text-[11px] font-semibold uppercase tracking-[0.1em] border-b border-transparent hover:border-current pb-0.5 transition-colors" style="color:var(--danger)">Zmazať tréning</button>
+                        <button type="submit" class="btn btn-danger btn-sm">Zmazať tréning</button>
                     </form>
                 </details>
                 {% endif %}
             </article>
             {% else %}
-            <p class="text-on-surface-variant py-4">Na tento deň nie je nič naplánované.</p>
+            <p class="text-on-surface-variant py-2">Na tento deň nie je nič naplánované.</p>
             {% endfor %}
 
             {% if is_planner %}
-            <!-- ── Tréner: nový plán ── -->
-            <form method="post" action="{{ url_for('planovanie.add', iso=day.isoformat()) }}"
-                  class="card p-5 mt-6 space-y-4">
+            {# ── Tréner: nový plán ── #}
+            <form method="post" action="{{ url_for('planovanie.add', iso=day.isoformat()) }}" class="card p-5 mt-6 space-y-4">
+                <div>
+                    <h3 class="text-[19px]">Naplánovať tréning</h3>
+                    <p class="text-[13.5px] text-on-surface-variant">{{ athlete.display_name }}, {{ day|plan_date }}</p>
+                </div>
                 <input type="hidden" name="athlete_id" value="{{ athlete.id }}">
-                <p class="eyebrow">Naplánovať tréning · {{ athlete.display_name }} · {{ day|plan_date }}</p>
                 <div>
                     <label for="new-title">Názov</label>
-                    <input type="text" id="new-title" name="title" maxlength="160" placeholder='napr. "6x200m / 2 min", "10 km voľne"' required>
+                    <input type="text" id="new-title" name="title" maxlength="160" placeholder='napr. „6x200m / 2 min“, „10 km voľne“' required>
                 </div>
                 <div>
                     <label for="new-desc">Popis</label>
@@ -243,53 +248,53 @@
                 <button type="submit" class="{{ btn_primary }}">Pridať do plánu</button>
             </form>
             {% endif %}
-        </div>
+        </section>
 
-        <!-- ── Denník ── -->
-        <div>
+        {# ── Denník ── #}
+        <section aria-labelledby="h-dennik">
             <div class="rule">
-                <p class="eyebrow">Zápisy v denníku · {{ day|plan_date }}</p>
-                {% if not aid %}
-                <a href="{{ url_for('trainings') }}" class="eyebrow hover:text-on-surface transition-colors">Denník <span aria-hidden="true">→</span></a>
-                {% endif %}
+                <h2 id="h-dennik">Zápisy v denníku</h2>
+                {% if not aid %}<a href="{{ url_for('dennik.trainings') }}">Otvoriť denník</a>{% endif %}
             </div>
             {% if logs %}
+            <div class="overflow-x-auto relative">
             <table class="w-full">
                 <thead>
-                    <tr class="border-b border-white/10">
-                        <th class="py-2.5 text-left">Typ</th>
-                        <th class="py-2.5 text-right">km</th>
-                        <th class="py-2.5 text-right">Čas</th>
-                        <th class="py-2.5 text-left pl-4">Plán</th>
+                    <tr>
+                        <th class="text-left">Tréning</th>
+                        <th class="text-right">km</th>
+                        <th class="text-right">Čas</th>
+                        <th class="text-left">Plán</th>
                     </tr>
                 </thead>
-                <tbody class="text-[13px]">
+                <tbody class="text-[14.5px]">
                     {% for log in logs %}
-                    <tr class="border-b border-white/5 align-top">
+                    <tr class="align-top">
                         <td class="py-3 text-on-surface">
                             {{ log.training_type }}
-                            {% if log.intervals_data %}<p class="mono text-[11px] text-on-surface-variant mt-1">{{ log.intervals_data.split(',')|join(' · ') }} s</p>{% endif %}
-                            {% if log.notes %}<p class="text-[12px] text-on-surface-variant mt-1 leading-relaxed">{{ log.notes }}</p>{% endif %}
+                            {% if log.intervals_data %}<p class="mono text-[14px] text-on-surface-variant mt-1">{{ log.intervals_data.split(',')|join(' / ') }} s</p>{% endif %}
+                            {% if log.notes %}<p class="text-[13.5px] text-on-surface-variant mt-1 leading-relaxed">{{ log.notes }}</p>{% endif %}
                         </td>
-                        <td class="py-3 text-right mono text-on-surface">{% if log.distance_km %}{{ log.distance_km }}{% else %}<span class="text-on-surface-variant">—</span>{% endif %}</td>
-                        <td class="py-3 text-right mono text-on-surface">{{ log|plan_duration or '—' }}</td>
-                        <td class="py-3 pl-4">
+                        <td class="py-3 text-right mono">{% if log.distance_km %}{{ log.distance_km }}{% else %}<span class="text-on-surface-variant">–</span>{% endif %}</td>
+                        <td class="py-3 text-right mono">{{ log|plan_duration or '–' }}</td>
+                        <td class="py-3">
                             {% set lp = linked.get(log.id) %}
-                            {% if lp %}<span class="plan-status plan-status--done"><span aria-hidden="true">✓</span><span class="sr-only">splnené:</span> {{ lp.title }}</span>
-                            {% else %}<span class="plan-status plan-status--pending">mimo plánu</span>{% endif %}
+                            {% if lp %}<span class="text-infield"><span aria-hidden="true">✓</span><span class="sr-only">splnené:</span></span> {{ lp.title }}
+                            {% else %}<span class="text-on-surface-variant">mimo plánu</span>{% endif %}
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
             {% else %}
-            <p class="text-on-surface-variant py-4">
+            <p class="text-on-surface-variant py-2">
                 V tento deň {% if aid %}zverenec nemá{% else %}nemáš{% endif %} žiadny zápis v denníku.
-                {% if not aid %}Vznikne, keď označíš plánovaný tréning ako splnený, alebo ho <a href="{{ url_for('trainings') }}" class="text-on-surface border-b border-white/25 hover:border-white/60 transition-colors">pridáš v denníku</a>.{% endif %}
+                {% if not aid %}Vznikne, keď označíš naplánovaný tréning ako splnený, alebo ho <a href="{{ url_for('dennik.trainings') }}" class="link">pridáš v denníku</a>.{% endif %}
             </p>
             {% endif %}
-        </div>
-    </section>
+        </section>
+    </div>
 
 </main>
 {% endblock %}

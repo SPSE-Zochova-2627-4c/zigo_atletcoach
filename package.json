@@ -1,0 +1,12 @@
+{
+  "name": "atletcoach",
+  "private": true,
+  "description": "Zostavenie CSS pre AtletCoach (Tailwind CLI). Python appka Node.js na behu nepotrebuje – zostavený static/css/app.css je v repozitári.",
+  "scripts": {
+    "css": "tailwindcss -c tailwind.config.js -i static/css/src/app.css -o static/css/app.css --minify",
+    "css:watch": "tailwindcss -c tailwind.config.js -i static/css/src/app.css -o static/css/app.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}

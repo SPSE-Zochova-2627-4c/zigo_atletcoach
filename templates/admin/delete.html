@@ -1,78 +1,69 @@
 {% extends "base.html" %}
-{% block title %}Zmazať účet · AtletCoach{% endblock %}
+{% from "_ui.html" import page_head %}
+{% block title %}Zmazať účet {{ user.username }} – AtletCoach{% endblock %}
+
+{% set sub %}{{ user.role_label }}{% if user.full_name %} {{ user.full_name }}{% endif %}, účet vytvorený {{ user.created_at|den_mesiac }} {{ user.created_at.year }}. Zmazanie sa nedá vrátiť.{% endset %}
 
 {% block content %}
-<main class="mt-10 pb-12 max-w-[640px]">
+<main class="pb-4 max-w-[720px]">
 
-    <div class="mb-8">
-        <p class="eyebrow mb-2">
-            <a href="{{ url_for('admin_panel.users') }}" class="hover:text-on-surface transition-colors">Používatelia</a>
-            · zmazanie účtu
-        </p>
-        <h1 class="page-title">
-            Zmazať <span class="mono normal-case font-medium">{{ user.username }}</span>?
-        </h1>
-        <p class="text-[13px] text-on-surface-variant mt-3 leading-relaxed">
-            {{ user.role_label }}{% if user.full_name %} · {{ user.full_name }}{% endif %}
-            · vytvorený {{ user.created_at.strftime('%d.%m.%Y') }}
-        </p>
-    </div>
+    <a href="{{ url_for('admin_panel.edit_user', user_id=user.id) }}" class="back-link"><span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>Účet {{ user.username }}</a>
+    {{ page_head('Zmazať účet ' ~ user.username ~ '?', sub) }}
 
     {% if blocker %}
-    <div class="bg-surface-container border-l-2 border-l-[color:var(--danger)] px-5 py-4 mb-8" role="alert">
-        <p class="eyebrow mb-1" style="color:var(--danger)">Nedá sa zmazať</p>
-        <p class="text-[13px] text-on-surface">{{ blocker }}</p>
+    <div class="note bad mb-10" role="alert">
+        <p class="note-title">Tento účet sa teraz zmazať nedá</p>
+        <p>{{ blocker }}</p>
     </div>
     {% endif %}
 
-    <div class="rule"><p class="eyebrow">Spolu s účtom sa nenávratne zmaže</p></div>
-    <table class="w-full mb-8">
-        <thead>
-            <tr class="border-b border-white/10">
-                <th scope="col" class="py-2.5 text-left">Údaje</th>
-                <th scope="col" class="py-2.5 text-right">Počet</th>
-            </tr>
-        </thead>
-        <tbody class="text-[13px]">
-            {% for label, key in [('Tréningy', 'trainings'), ('Výsledky z pretekov', 'results'),
-                                  ('Analýzy videa (aj súbory)', 'videos'), ('Analýzy prekážok (aj súbory)', 'hurdles'),
-                                  ('Plánované tréningy (ako zverenec)', 'planned_as_athlete'),
-                                  ('Plánované tréningy pre zverencov (ako tréner)', 'planned_as_coach'),
-                                  ('Biometrické záznamy', 'biometrics'), ('AI správy', 'chat'),
-                                  ('Profil', 'profile'), ('Strava tokeny', 'strava')] %}
-            <tr class="border-b border-white/5">
-                <td class="py-2.5 text-on-surface-variant">{{ label }}</td>
-                <td class="py-2.5 text-right mono {{ 'text-on-surface' if data[key] else 'text-on-surface-variant' }}">{{ data[key] }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <p class="text-[13px] text-on-surface-variant mb-8">
-        Výsledky iných atlétov, ktoré tento používateľ zapísal, ostávajú – iba bez autora.
-    </p>
+    <section aria-labelledby="h-co">
+        <div class="rule"><h2 id="h-co">Spolu s účtom sa nenávratne zmaže</h2></div>
+        <table class="w-full">
+            <thead>
+                <tr>
+                    <th scope="col" class="text-left">Čo</th>
+                    <th scope="col" class="text-right">Počet</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for label, key in [('Tréningy', 'trainings'), ('Výsledky z pretekov', 'results'),
+                                      ('Analýzy videa aj s videosúbormi', 'videos'), ('Analýzy prekážok aj s videosúbormi', 'hurdles'),
+                                      ('Plánované tréningy (ako zverenec)', 'planned_as_athlete'),
+                                      ('Plánované tréningy pre zverencov (ako tréner)', 'planned_as_coach'),
+                                      ('Biometrické záznamy', 'biometrics'), ('Správy AI trénerovi', 'chat'),
+                                      ('Profil', 'profile'), ('Strava pripojenia', 'strava')] %}
+                <tr>
+                    <td class="py-2.5 {{ 'text-on-surface-variant' if not data[key] }}">{{ label }}</td>
+                    <td class="py-2.5 text-right mono {{ 'font-semibold text-danger' if data[key] else 'text-on-surface-variant' }}">{{ data[key] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p class="mt-3 text-[14px] text-on-surface-variant">
+            Výsledky iných atlétov, ktoré tento používateľ zapísal, ostanú, len bez autora.
+        </p>
+    </section>
 
     {% if not blocker %}
-    <form method="POST" class="card p-6 space-y-5">
+    <form method="POST" class="card p-6 space-y-5 mt-10" aria-labelledby="h-potvrdit">
+        <h2 id="h-potvrdit" class="section-title">Potvrdenie</h2>
         <div>
-            <label for="confirm">Na potvrdenie opíš používateľské meno</label>
-            <input type="text" id="confirm" name="confirm" placeholder="{{ user.username }}"
-                   autocomplete="off" autocapitalize="off" spellcheck="false" required autofocus>
+            <label for="confirm">Napíš používateľské meno <span class="mono">{{ user.username }}</span></label>
+            <input type="text" id="confirm" name="confirm" autocomplete="off" autocapitalize="off" spellcheck="false" required autofocus
+                   class="w-full mono">
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
-            <button type="submit"
-                    class="btn btn-danger transition-colors">
-                Nenávratne zmazať účet {{ user.username }}
+            <button type="submit" class="btn btn-danger">
+                <span class="material-symbols-outlined" aria-hidden="true">delete</span>Nenávratne zmazať účet {{ user.username }}
             </button>
-            <a href="{{ url_for('admin_panel.edit_user', user_id=user.id) }}"
-               class="btn btn-secondary">Späť</a>
+            <a href="{{ url_for('admin_panel.edit_user', user_id=user.id) }}" class="btn btn-secondary">Nechať účet tak</a>
         </div>
     </form>
     {% else %}
-    <div class="flex flex-wrap items-center gap-2.5">
-        <a href="{{ url_for('admin_panel.edit_user', user_id=user.id) }}"
-           class="btn btn-primary">Upraviť účet</a>
-        <a href="{{ url_for('admin_panel.users') }}"
-           class="btn btn-secondary">Späť na zoznam</a>
+    <div class="mt-10 flex flex-wrap items-center gap-2.5">
+        <a href="{{ url_for('admin_panel.edit_user', user_id=user.id) }}" class="btn btn-primary">Upraviť účet</a>
+        <a href="{{ url_for('admin_panel.users') }}" class="btn btn-secondary">Späť na používateľov</a>
     </div>
     {% endif %}
 

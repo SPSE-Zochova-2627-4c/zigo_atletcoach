@@ -7,7 +7,7 @@ zverencov, ich výsledky, osobné rekordy, plán tréningov a grafy výkonnosti.
 **Autor:** Tomáš Žigo · **Trieda:** IV.C · **SPŠE Bratislava, Zochova 9** · maturitný projekt 2026/2027
 
 **Technológie:** Python 3 · Flask · Flask-SQLAlchemy + SQLite · MediaPipe Pose + OpenCV + NumPy (kostra bežca
-z videa) · HTML, Tailwind CSS, JavaScript bez frameworku (fotobunka beží v prehliadači cez `getUserMedia`
+z videa) · HTML, CSS (vlastný dizajnový systém „Modrá dráha“, utility Tailwind CSS zostavené vopred), JavaScript bez frameworku (fotobunka beží v prehliadači cez `getUserMedia`
 a `<canvas>`) · Chart.js · World Athletics (import výsledkov) · Groq API (AI tréner, voliteľné) ·
 pytest a skriptové testy na syntetických dátach · headless Chrome test cez DevTools protokol.
 Podrobnejšie v [7. Technické parametre](#7-technické-parametre).
@@ -259,13 +259,18 @@ Sekcia **Používatelia** (`/admin/pouzivatelia`) je dostupná len administráto
 
 ### Architektúra
 
-Flask aplikácia s plochou štruktúrou modulov. `app.py` drží konfiguráciu, migráciu databázy, prvotné vytvorenie
-admina a pôvodné routy (video, prekážky, tréningy, biometrika, Strava, AI, profil, chránené médiá). Nové funkcie sú
-v blueprintoch:
+Flask aplikácia s plochou štruktúrou modulov. `app.py` drží len konfiguráciu, migráciu databázy, prvotné vytvorenie
+admina, domovskú stránku (úvod / prehľad trénera / prehľad zverenca) a registráciu blueprintov. Každá časť appky je
+vlastný blueprint:
 
 | Súbor | Blueprint | URL prefix | Obsah |
 |---|---|---|---|
-| `app.py` | – | `/` | Flask app, config, `_ensure_columns()`, `_seed_admin()`, video, prekážky, `/media`, Strava, AI, tréningy, biometrika, profil |
+| `app.py` | – | `/` | Flask app, config, `_ensure_columns()`, `_seed_admin()`, domovská stránka, registrácia blueprintov |
+| `analyza.py` | `analyza` | `/video`, `/prekazky`, `/media`, `/api/video/…`, `/api/hurdles/…`, `/api/coach/…` | analýza šprintu aj prekážok jedným postupom (nahratie → úloha vo vlákne → DB), chránené médiá, AI komentár k analýze |
+| `dennik.py` | `dennik` | `/trainings`, `/log`, `/import-whoop`, `/api/readiness` | tréningový denník, HRV a regenerácia (so súhlasom), import CSV z WHOOP, skóre pripravenosti |
+| `ai_trener.py` | `ai` | `/ai`, `/api/chat…`, `/profile` | AI chat s kontextom atléta, profil; `groq_complete()` – jediné volanie Groq API v appke |
+| `strava.py` | `strava` | `/strava/…`, `/dashboard`, `/osobaky`, `/heatmap`, `/api/heatmap-data` | OAuth so Stravou, obnovenie tokenu, aktivity, osobáky z best_efforts (cache), heatmapa |
+| `formaty.py` | – | – | slovenské dátumy v šablónach (`den_mesiac`, `rozsah_dni`, `tyzden`) |
 | `models.py` | – | – | `db = SQLAlchemy()` a všetky modely (importujú ich blueprinty bez kruhového importu) |
 | `auth.py` | `auth` | `/` | `/prihlasenie`, `/odhlasenie`, `/registracia`, `/zmena-hesla`; `g.user`, dekorátory, viditeľnosť údajov |
 | `trener.py` | `trener` | `/trener` | zverenci, žiadosti, výsledky a osobné rekordy zverenca |
@@ -281,22 +286,38 @@ v blueprintoch:
 | `hurdle_analysis.py` | – | – | prekážky nad výstupom analýzy videa |
 | `technique_rules.py` | – | – | pravidlá hodnotenia techniky a rytmu |
 
-Žiadny blueprint neimportuje `app.py`; všetky berú `db` a modely z `models.py` a prístupové pomôcky z `auth.py`.
+Žiadny blueprint neimportuje `app.py`; všetky berú `db` a modely z `models.py` a prístupové pomôcky z `auth.py`
+(`analyza` používa `groq_complete` z `ai_trener`, `ai_trener` číta rekordy z cache v `strava`).
 Navigácia v `templates/base.html` sa skladá podľa roly; názvy endpointov sú kontrakt medzi modulmi.
 
-### Vzhľad (`templates/base.html`)
+### Vzhľad – dizajnový systém „Modrá dráha“ (`DESIGN.md`)
 
-Jeden dizajnový systém pre všetky stránky, so svetlým a tmavým režimom (prepínač v hornej lište, voľba sa pamätá
-v prehliadači, inak podľa systému). Neutrálna paleta – biele karty na jemne sivom podklade, atramentový text,
-jediný modrý akcent; v tmavom režime to isté na čiernom. Písmo Inter (text, nadpisy) a IBM Plex Mono (popisky,
-dáta). Rozloženie: bočné menu s ikonami a počtami (zverenci, čakajúce žiadosti, tréningy týždňa – `navigacia.py`),
-dlaždice s číslami (`.kpi`), tabuľky ako karty, štítky stavov (`.chip`), sekcie „01 · názov“ (`.rule`).
-Pohyb: plynulý prechod medzi stránkami (View Transitions), objavenie obsahu, postupné objavenie kariet, napočítanie
-čísel v dlaždiciach, reakcie tlačidiel a kariet na hover; pri nastavení „obmedziť pohyb“ v systéme sa všetko vypne.
-Tokeny sú v `:root` (svetlý) a `:root[data-theme="dark"]`; farby Tailwindu ukazujú na tie isté premenné, takže
-staršie šablóny sa preladili bez prepisovania. Nič sa nenačítava z CDN ani z Google Fonts – písma, ikony, Tailwind,
-Chart.js a Leaflet sú v `static/vendor` (licencie v `static/vendor/LICENSES.md`); výnimkou sú dlaždice mapy na
-stránke Heatmapa (CARTO).
+Vzhľad je opísaný v `DESIGN.md` (formát DESIGN.md s 9 sekciami podľa
+[awesome-claude-design](https://github.com/VoltAgent/awesome-claude-design)) – farby, písmo, komponenty, rozloženie,
+pohyb a čo sa nerobí. Nevychádza zo šablóny ani z inej značky, ale z prostredia atletiky:
+
+- **Modrá dráha a svetelná tabuľa** – elektrická modrá `#1F4BFF` s tyrkysovým prechodom, tmavomodré bočné menu
+  ako tribúna večer, oranžová iba pre osobné rekordy (**PB**) a víťaza. Karty a tlačidlá sú zaoblené, jemné
+  modrasté tiene, za obsahom sa pomaly vlní modrá žiara.
+- **Pohyb** – stránky do seba plynulo prechádzajú (View Transitions: menu stojí, obsah sa vymení), bloky stránky
+  postupne vychádzajú, čísla na tabuli sa napočítajú, ovál a pásy týždňa sa nakreslia, tlačidlá majú lesk a vlnu
+  po kliknutí. Pri nastavení „obmedziť pohyb“ sa všetko ukáže hneď a v pokoji.
+- **Úvodná stránka** – skutočné fotky autora z MS do 20 rokov v Eugene 2026 (prelínajú sa, pomaly sa približujú,
+  pri scrollovaní idú pomalšie), **animovaný bežec** – kostra ako z analýzy videa beží spomalene a vedľa sa
+  ukazuje fáza kroku a uhol v kolene, **fotofiniš** – čiara cieľovej kamery prebehne cez osem dráh a ukážu sa časy,
+  prehľad funkcií s malými ukážkami (týždeň plánu, graf výkonnosti, kroky medzi prekážkami, HRV, AI chat).
+- **Ovál 400 m** – na prehľade trénera je splnenie plánu na tento týždeň nakreslené ako kus kola od štartu.
+- Písmo **Archivo** (variabilné, hrúbka aj šírka): úzke a ťažké na titulky a čísla ako na tabuli, normálne na text.
+  Žiadne verzálkové popisky ani ikonky v štvorčekoch nad každou kartou.
+- Svetlý a tmavý režim (prepínač v menu, voľba sa pamätá v prehliadači, inak podľa systému).
+
+CSS je v `static/css/src/` rozdelené na časti (`tokens.css` – farby a písmo, `shell.css` – rám, `components.css`
+– tlačidlá, tabuľky, štítky, `uvod.css`, a súbory pre jednotlivé stránky). `npm run css` z nich Tailwind CLI zostaví
+jeden minifikovaný `static/css/app.css` aj s utilitami, ktoré šablóny naozaj používajú. Zostavený súbor je
+v repozitári, takže na spustenie appky Node.js netreba – len pri zmene vzhľadu. Spoločné kúsky šablón sú v
+`templates/_ui.html` (hlavička stránky, ovál, fotka pri prihlásení), správanie rámu a pohyb v `static/js/app.js`, animovaný bežec v `static/js/bezec.js`, fotky v `static/img/fotky/`, predvolené písmo a farby grafov
+v `static/js/chart-defaults.js`. Nič sa nenačítava z CDN ani z Google Fonts – písma, ikony, Chart.js a Leaflet sú
+v `static/vendor` (licencie v `static/vendor/LICENSES.md`); výnimkou sú dlaždice mapy na stránke Heatmapa (CARTO).
 
 ### Prístupové práva (`auth.py`)
 
@@ -457,13 +478,21 @@ v sieti nefunguje (pozri [Kamera pri stopkách](#kamera-pri-stopkách)).
 ### Ručne
 
 ```bash
-git clone https://github.com/scalyeu/maturitny_projekt.git
-cd maturitny_projekt
+git clone https://github.com/SPSE-Zochova-2627-4c/zigo_atletcoach.git
+cd zigo_atletcoach
 python3.12 -m venv venv
 source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env              # voliteľné – kľúče pre Groq a Stravu
 python app.py
+```
+
+Zmena vzhľadu (CSS) potrebuje Node.js – appka samotná nie, zostavený `static/css/app.css` je v repozitári:
+
+```bash
+npm install                       # raz: Tailwind CLI do node_modules/
+npm run css                       # static/css/src/*.css + triedy zo šablón → static/css/app.css
+npm run css:watch                 # počas úprav: zostaví znova pri každej zmene
 ```
 
 ### Prvé spustenie
@@ -611,7 +640,7 @@ cez GET. Žiadny test nenašiel čítanie ani zápis cudzích údajov, obídenie
 ## 6. Testy
 
 ```bash
-venv/bin/python -m pytest -q test_world_athletics.py   # 60 testov, offline (HTTP je nahradené)
+venv/bin/python -m pytest -q test_app.py test_world_athletics.py   # integračné testy appky + World Athletics, offline
 python test_video_analysis.py     # kontakt so zemou, mierka, dĺžka kroku, celý reťazec – syntetické dáta
 python test_hurdle_analysis.py    # prekážky: detekcia, kroky medzi prekážkami, medzičasy, kontrola vierohodnosti
 node test_stopky_zaznam.mjs        # stopky zo záznamu v headless Google Chrome (potrebuje Chrome a Node 22+)
@@ -619,14 +648,21 @@ python test_optical_flow.py       # optický tok na vykreslenom videu s textúra
 python test_plan_text.py          # rozbor týždenného plánu z textu trénera: dni, bloky, skupiny, mená, cviky, úseky
 ```
 
+- `test_app.py` (pytest, 71 testov, Flask `test_client` na dočasnej databáze, bez siete): každá stránka sa
+  vykreslí pre hosťa, zverenca, trénera aj admina (zachytí aj chybný odkaz v šablóne); prístupové pravidlá –
+  zverenec nevidí stránky trénera, tréner nevidí cudzieho ani nepotvrdeného zverenca ani jeho analýzy, `/media`
+  odmietne neznámy či cudzí súbor; súhlas a rozsahy pri zápise HRV; skóre pripravenosti; import CSV z WHOOP
+  (hlavička nie na prvom riadku, desatinná čiarka, chybné riadky); PB v prehľade trénera; AI a Strava bez
+  nastavených kľúčov; dekodér polyline, tempo a slovenské dátumy; celý postup analýzy videa aj prekážok
+  (nahratie → úloha vo vlákne → riadok v DB → kto smie vidieť výsledok) s náhradou za MediaPipe.
 - `test_world_athletics.py` (pytest, 60 testov): parsovanie výkonov, dátumov, vetra a disciplín, filter bežeckých
   disciplín, extrakcia WA ID z URL, spracovanie reálnych dát profilu, hľadanie a načítanie s falošným HTTP, overenie
   ID pred sieťovým volaním, chybové stavy so slovenskými správami, znovuobjavenie kľúča pri 503, HTML fallback,
   expirácia cache.
 - Tri skriptové testy analýzy videa (spúšťajú sa priamo Pythonom, nie cez pytest) overujú algoritmy na syntetických
   dátach so známou pravdou – čísla sú v časti [Analýza videa](#analýza-videa-mediapipe--opencv--metriky).
-- Integračná sada (375 kontrol cez Flask `test_client` a živý server na dočasnej databáze) a útočné testy bežali
-  mimo repozitára ako súčasť vývoja; ich výsledky sú zhrnuté v časti [Bezpečnosť](#5-bezpečnosť-a-známe-obmedzenia).
+- Staršia rozsiahlejšia integračná sada (375 kontrol aj so živým serverom) a útočné testy bežali mimo repozitára;
+  ich výsledky sú zhrnuté v časti [Bezpečnosť](#5-bezpečnosť-a-známe-obmedzenia).
 
 ---
 
@@ -636,28 +672,33 @@ python test_plan_text.py          # rozbor týždenného plánu z textu trénera
 |---|---|
 | Jazyk a server | Python 3.9 – 3.12, Flask 3.1, Jinja2 šablóny, python-dotenv |
 | Databáza | SQLite cez Flask-SQLAlchemy 3.1 (aditívna migrácia `ALTER TABLE`) |
-| Frontend | HTML, CSS, Tailwind CSS (uložený lokálne v `static/vendor`, bez CDN), JavaScript (bez frameworku), písma Inter a IBM Plex Mono a ikony Material Symbols (lokálne, licencie v `static/vendor/LICENSES.md`), svetlý a tmavý režim, manifest webovej appky (ikona na ploche telefónu) |
+| Frontend | HTML, CSS – dizajnový systém „Modrá dráha“ (`DESIGN.md`, zdroj `static/css/src/`) zostavený Tailwind CLI 3.4 do `static/css/app.css` (`npm run css`), JavaScript (bez frameworku), písmo Archivo (variabilné) a ikony Material Symbols (lokálne, licencie v `static/vendor/LICENSES.md`), svetlý a tmavý režim, manifest webovej appky (ikona na ploche telefónu) |
 | Grafy a mapy | Chart.js 4.4, Leaflet 1.9 + Leaflet.heat (lokálne kópie; heatmapa behov, vlastný dekodér Google polyline) |
 | Počítačové videnie | OpenCV 4.10 (optický tok Lucas-Kanade, RANSAC odhad pohybu kamery, kreslenie prekryvu), MediaPipe Pose 0.10 (33 bodov kostry), NumPy 1.26 |
 | Fotobunka | Web API prehliadača: `getUserMedia`, `<canvas>` `getImageData`, Web Audio (štart na zvuk), `localStorage` |
 | Externé služby | World Athletics GraphQL (neoficiálne, `requests`), Strava API (OAuth 2.0, `stravalib` + `requests`), Groq API (LLM chat completions, modely `llama-3.3-70b-versatile` → `openai/gpt-oss-120b` → `deepseek-r1-distill-llama-70b` ako záloha) |
 | Bezpečnosť | `werkzeug.security` hašovanie hesiel, podpísaná session cookie, role a viditeľnosť v `auth.py` |
-| Testy | pytest (World Athletics), skriptové testy na syntetických dátach (video, prekážky, optický tok) |
-| Nástroje | Git / GitHub, VS Code, `venv`, spúšťače `run.command` (macOS) a `run.bat` (Windows), Docker + gunicorn (nasadenie) |
+| Testy | pytest (integračné testy appky, World Athletics), skriptové testy na syntetických dátach (video, prekážky, optický tok), headless Chrome (stopky) |
+| Nástroje | Git / GitHub, VS Code, `venv`, Node.js + npm (len na zostavenie CSS), spúšťače `run.command` (macOS) a `run.bat` (Windows), Docker + gunicorn (nasadenie) |
 
 ### Štruktúra projektu
 
 ```
 maturitny_projekt/
-├── app.py                  # Flask app, config, migrácia, admin seed, video / prekážky / Strava / AI / médiá
+├── app.py                  # Flask app, config, migrácia, admin seed, domovská stránka, registrácia blueprintov
 ├── models.py               # db + všetky modely
+├── analyza.py              # analýza videa a prekážok, chránené médiá, AI komentár   /video /prekazky /media
+├── dennik.py               # tréningový denník, HRV, import WHOOP, pripravenosť     /trainings /log
+├── ai_trener.py            # AI chat a profil, jediné volanie Groq API              /ai /profile
+├── strava.py               # Strava: OAuth, aktivity, osobáky, heatmapa             /strava /dashboard /osobaky /heatmap
 ├── auth.py                 # prihlásenie, registrácia, role, viditeľnosť údajov
 ├── trener.py               # zverenci, výsledky, osobné rekordy          /trener
 ├── zverenec.py             # moje výsledky, vzťah s trénerom              /zverenec
 ├── planovanie.py           # kalendár a plán tréningov                    /plan
 ├── plan_text.py            # rozbor týždenného plánu z textu trénera (bez Flasku)
 ├── pravne.py               # ochrana údajov, podmienky, cookies          /ochrana-udajov …
-├── navigacia.py            # počty do bočného menu
+├── navigacia.py            # počty do bočného menu, verzia CSS/JS pre cache
+├── formaty.py              # slovenské dátumy v šablónach
 ├── grafy.py                # grafy výkonnosti + JSON API                  /grafy
 ├── stopky.py               # stopky s fotobunkou (uloženie času)          /stopky
 ├── admin_panel.py          # správa používateľov                          /admin
@@ -665,20 +706,27 @@ maturitny_projekt/
 ├── video_analysis.py       # analýza šprintu (MediaPipe + OpenCV)
 ├── hurdle_analysis.py      # prekážky
 ├── technique_rules.py      # hodnotenie techniky a rytmu
+├── test_app.py             # pytest – integračné testy všetkých stránok a prístupových práv
 ├── test_world_athletics.py # pytest
 ├── test_video_analysis.py  # skriptové testy na syntetických dátach
 ├── test_hurdle_analysis.py
 ├── test_optical_flow.py
 ├── test_plan_text.py       # rozbor plánu z textu na skutočnej správe trénera
+├── test_stopky_zaznam.mjs  # stopky v headless Chrome
 ├── requirements.txt
+├── DESIGN.md               # dizajnový systém „Modrá dráha“ (farby, písmo, komponenty, pohyb, pravidlá)
+├── package.json, tailwind.config.js   # zostavenie CSS: npm install, npm run css
 ├── run.command / run.bat   # spúšťače
 ├── wsgi.py, gunicorn.conf.py, Dockerfile   # nasadenie na hosting
 ├── .env.example            # vzor konfigurácie
-├── static/css, static/js   # style.css, stopky.js, grafy.js, main.js
-├── static/vendor/          # Tailwind, Chart.js, Leaflet, písma IBM Plex, ikony – lokálne kópie + licencie
+├── static/css/src/         # zdroj CSS (tokeny, rám, komponenty, stránky) → static/css/app.css
+├── static/js/              # app.js (menu, téma, hlásenia, pohyb), bezec.js (animovaný bežec na úvode),
+│                           # chart-defaults.js, grafy.js, stopky.js
+├── static/img/fotky/       # fotky z MS do 20 rokov v Eugene 2026 (WebP, dve veľkosti, bez metadát)
+├── static/vendor/          # Chart.js, Leaflet, písmo Archivo, ikony – lokálne kópie + licencie
 ├── static/strava/          # oficiálne logo „Powered by Strava“
 ├── static/icons, static/manifest.webmanifest   # ikona a manifest appky na ploche
-├── templates/              # base.html (dizajnový systém: tokeny, bočné menu, karty, štítky) + šablóny podľa modulu (auth/, trener/, zverenec/, planovanie/, grafy/, stopky/, admin/, wa/, pravne/)
+├── templates/              # base.html (rám: dráha, hlásenia, päta), _ui.html (hlavička stránky, ovál) + šablóny podľa modulu (auth/, trener/, zverenec/, planovanie/, grafy/, stopky/, admin/, wa/, pravne/)
 ├── instance/               # database.db, secret_key, videos/  (negitované)
 ├── cache/                  # World Athletics a Strava cache  (negitované)
 └── models/                 # model kostry MediaPipe, sťahuje sa sám  (negitované)

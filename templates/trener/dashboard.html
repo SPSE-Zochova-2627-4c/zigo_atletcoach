@@ -1,128 +1,136 @@
 {% extends "base.html" %}
-{% block title %}Prehľad trénera · AtletCoach{% endblock %}
+{% from "_ui.html" import page_head, oval %}
+{% block title %}Prehľad – AtletCoach{% endblock %}
 
 {% block content %}
-<main class="mt-10 pb-12">
+<main class="pb-4">
 
-    <!-- ── Hlavička ── -->
-    <div class="flex items-end justify-between flex-wrap gap-5 mb-9">
-        <div>
-            <p class="eyebrow mb-2">{{ current_user.role_label }} · {{ current_user.display_name }}</p>
-            <h1 class="page-title">Prehľad</h1>
+    {% call page_head('Prehľad', today|tyzden ~ ', ' ~ (week_start, week_end)|rozsah_dni) %}
+        <a href="{{ url_for('planovanie.week_form') }}" class="btn btn-primary">
+            <span class="material-symbols-outlined" aria-hidden="true">edit</span>Napísať plán na týždeň
+        </a>
+        <a href="{{ url_for('trener.athletes') }}" class="btn btn-secondary">Pridať zverenca</a>
+    {% endcall %}
+
+    {# Tabuľa: tento týždeň ako kolo na ováli + tri čísla #}
+    <div class="kpi-strip dash-board">
+        <div class="kpi dash-oval">
+            {{ oval(week_done, week_planned, 'splnených tento týždeň') }}
         </div>
-        <div class="flex flex-wrap items-center gap-2.5">
-            <a href="{{ url_for('trener.athletes') }}"
-               class="btn btn-primary">Zverenci</a>
-            <a href="{{ url_for('planovanie.index') }}"
-               class="btn btn-secondary">Plán</a>
-            <a href="{{ url_for('grafy.index') }}"
-               class="btn btn-secondary">Grafy</a>
-            {% if current_user.is_admin %}
-            <a href="{{ url_for('admin_panel.users') }}"
-               class="btn btn-secondary">Používatelia</a>
+        <div class="kpi">
+            <p class="kpi-label">Zverenci</p>
+            <p class="kpi-value">{{ athletes|length }}</p>
+            {% if nav_info and nav_info.pending %}
+            <p class="kpi-hint"><a class="link" href="{{ url_for('trener.athletes') }}">{{ nav_info.pending }} {{ 'čaká' if nav_info.pending == 1 else 'čakajú' }} na potvrdenie</a></p>
             {% endif %}
         </div>
-    </div>
-
-    <!-- ── Čísla ── -->
-    <div class="grid grid-cols-3 gap-3">
-        <div class="card px-5 py-5">
-            <p class="eyebrow mb-3">Zverenci</p>
-            <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">{{ athletes|length }}</p>
+        <div class="kpi">
+            <p class="kpi-label">Tréningy tento týždeň</p>
+            <p class="kpi-value">{{ week_planned }}</p>
+            <p class="kpi-hint">{{ week_planned - week_done }} ešte zostáva</p>
         </div>
-        <div class="card px-5 py-5">
-            <p class="eyebrow mb-3">Naplánované tento týždeň</p>
-            <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">{{ planned_week }}</p>
-            <p class="mono text-[11px] text-on-surface-variant mt-2">{{ week_start.strftime('%d.%m.') }} – {{ week_end.strftime('%d.%m.') }}</p>
-        </div>
-        <div class="card px-5 py-5">
-            <p class="eyebrow mb-3">Splnené za 28 dní</p>
+        <div class="kpi {{ 'good' if completion_pct is not none and completion_pct >= 80 else ('warn' if completion_pct is not none and completion_pct < 60 else '') }}">
+            <p class="kpi-label">Splnené za 28 dní</p>
             {% if completion_pct is not none %}
-            <p class="font-headline font-extrabold text-[34px] leading-none" style="color:var(--volt)">
-                {{ completion_pct }}<span class="mono text-xs font-normal text-on-surface-variant ml-1.5">%</span>
-            </p>
-            <p class="mono text-[11px] text-on-surface-variant mt-2">{{ completed_count }} z {{ due_count }} tréningov</p>
+            <p class="kpi-value">{{ completion_pct }}<span class="kpi-suffix">%</span></p>
+            <p class="kpi-hint">{{ completed_count }} z {{ due_count }} tréningov</p>
             {% else %}
-            <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface"><span class="text-on-surface-variant text-[20px] align-middle">—</span></p>
-            <p class="mono text-[11px] text-on-surface-variant mt-2">žiadne uplynulé tréningy</p>
+            <p class="kpi-value text-on-surface-variant">–</p>
+            <p class="kpi-hint">Zatiaľ žiadny tréning s uplynulým termínom.</p>
             {% endif %}
         </div>
     </div>
 
-    <section class="py-11 grid grid-cols-1 lg:grid-cols-2 gap-x-14 gap-y-11">
+    <div class="mt-12 grid grid-cols-1 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-x-10 gap-y-12">
 
-        <!-- ── Zverenci ── -->
-        <div>
+        <section aria-labelledby="h-zverenci">
             <div class="rule">
-                <p class="eyebrow">Zverenci</p>
-                <a href="{{ url_for('trener.athletes') }}" class="eyebrow hover:text-on-surface transition-colors">Spravovať<span class="sr-only"> zverencov</span> <span aria-hidden="true">→</span></a>
+                <h2 id="h-zverenci">Zverenci</h2>
+                <a href="{{ url_for('trener.athletes') }}">Spravovať zverencov</a>
             </div>
             {% if athletes %}
-            <table class="w-full">
+            <div class="overflow-x-auto">
+            <table class="w-full min-w-[560px]">
                 <thead>
-                    <tr class="border-b border-white/10">
-                        <th class="py-2.5 text-left">Zverenec</th>
-                        <th class="py-2.5 text-left">Meno</th>
-                        <th class="py-2.5 text-right">Posledný výsledok</th>
+                    <tr>
+                        <th class="text-left">Meno</th>
+                        <th class="text-left">Tento týždeň</th>
+                        <th class="text-right">Posledný výsledok</th>
                     </tr>
                 </thead>
-                <tbody class="text-[13px]">
+                <tbody>
                     {% for a in athletes %}
-                    <tr class="border-b border-white/5 hover:bg-surface-container transition-colors">
+                    {% set w = week[a.id] %}
+                    {% set r = last_result_by_athlete.get(a.id) %}
+                    <tr>
                         <td class="py-3">
-                            <a href="{{ url_for('trener.athlete_detail', athlete_id=a.id) }}" class="mono text-on-surface hover:text-[color:var(--volt)] transition-colors">{{ a.username }}</a>
+                            <a href="{{ url_for('trener.athlete_detail', athlete_id=a.id) }}" class="font-semibold hover:text-primary hover:underline underline-offset-4">{{ a.display_name }}</a>
+                            {% if a.group_name %}<span class="block text-[13px] text-on-surface-variant">{{ a.group_name }}</span>{% endif %}
                         </td>
-                        <td class="py-3 text-on-surface-variant">{{ a.full_name or '—' }}</td>
-                        <td class="py-3 text-right mono text-on-surface-variant">
-                            {% set r = last_result_by_athlete.get(a.id) %}
-                            {% if r %}{{ r.discipline }} <span class="text-on-surface">{{ r.result_text }}</span>{% else %}—{% endif %}
+                        <td class="py-3">
+                            {% if w.planned %}
+                            <span class="week-lane" role="img" aria-label="splnené {{ w.done }} z {{ w.planned }}">
+                                {% for i in range(w.planned) %}<span class="{{ 'done' if i < w.done }}" style="--n: {{ i }}"></span>{% endfor %}
+                            </span>
+                            <span class="mono text-[14px] ml-2 text-on-surface-variant" aria-hidden="true">{{ w.done }}/{{ w.planned }}</span>
+                            {% else %}
+                            <span class="text-[14px] text-on-surface-variant">bez plánu</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 text-right whitespace-nowrap">
+                            {% if r %}
+                            <span class="text-[14px] text-on-surface-variant">{{ r.discipline }}</span>
+                            <span class="mono font-semibold ml-1">{{ r.result_text }}</span>{% if r.id in pb_ids %}<span class="pb" title="osobný rekord">PB</span>{% endif %}
+                            {% else %}<span class="text-on-surface-variant">–</span>{% endif %}
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+            </div>
             {% else %}
-            <p class="font-headline font-bold text-2xl text-on-surface mb-2">Zatiaľ nemáš zverencov</p>
-            <p class="text-on-surface-variant max-w-[52ch] mb-6">
-                Zverenec sa zaregistruje a povie ti svoje používateľské meno. Pridáš ho v sekcii Zverenci —
-                potom uvidíš jeho tréningy, analýzy videí a výsledky.
-            </p>
-            <a href="{{ url_for('trener.athletes') }}"
-               class="inline-block text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface-variant hover:text-on-surface transition-colors border-b border-white/25 pb-0.5">
-                Pridať zverenca <span aria-hidden="true">→</span>
-            </a>
+            <div class="card p-6">
+                <p class="section-title">Zatiaľ nemáš zverencov</p>
+                <p class="text-on-surface-variant max-w-[60ch] mt-2">
+                    Vytvor zverencovi účet, alebo pridaj jeho existujúci účet podľa používateľského mena.
+                    Keď to potvrdí, uvidíš tu jeho týždeň a výsledky.
+                </p>
+                <a href="{{ url_for('trener.athletes') }}" class="btn btn-primary mt-5">Pridať zverenca</a>
+            </div>
             {% endif %}
-        </div>
+        </section>
 
-        <!-- ── Posledné výsledky ── -->
-        <div>
-            <div class="rule"><p class="eyebrow">Posledné výsledky z pretekov</p></div>
+        <section aria-labelledby="h-vysledky">
+            <div class="rule"><h2 id="h-vysledky">Posledné výsledky</h2></div>
             {% if last_results %}
             <table class="w-full">
                 <thead>
-                    <tr class="border-b border-white/10">
-                        <th class="py-2.5 text-left">Dátum</th>
-                        <th class="py-2.5 text-left">Zverenec</th>
-                        <th class="py-2.5 text-left">Disciplína</th>
-                        <th class="py-2.5 text-right">Čas</th>
+                    <tr>
+                        <th class="text-left">Dátum</th>
+                        <th class="text-left">Zverenec</th>
+                        <th class="text-right">Čas</th>
                     </tr>
                 </thead>
-                <tbody class="mono text-[13px]">
+                <tbody>
                     {% for r in last_results %}
-                    <tr class="border-b border-white/5">
-                        <td class="py-3 text-on-surface-variant">{{ r.date.strftime('%d.%m.%Y') }}</td>
-                        <td class="py-3 text-on-surface">{{ r.athlete.username if r.athlete else '—' }}</td>
-                        <td class="py-3 text-on-surface-variant">{{ r.discipline }}</td>
-                        <td class="py-3 text-right text-on-surface">{{ r.result_text }}</td>
+                    <tr>
+                        <td class="py-3 mono text-on-surface-variant whitespace-nowrap">{{ r.date.strftime('%d. %m.') }}</td>
+                        <td class="py-3">
+                            {{ r.athlete.display_name if r.athlete else '–' }}
+                            <span class="block text-[13px] text-on-surface-variant">{{ r.discipline }}{% if r.competition %}, {{ r.competition }}{% endif %}</span>
+                        </td>
+                        <td class="py-3 text-right whitespace-nowrap">
+                            <span class="mono font-semibold">{{ r.result_text }}</span>{% if r.id in pb_ids %}<span class="pb" title="osobný rekord">PB</span>{% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
             {% else %}
-            <p class="text-on-surface-variant py-8">Zatiaľ žiadne výsledky. Pridáš ich v detaile zverenca.</p>
+            <p class="text-on-surface-variant">Zatiaľ žiadne výsledky. Pridáš ich v profile zverenca alebo ich načítaš z World Athletics.</p>
             {% endif %}
-        </div>
-    </section>
+        </section>
+    </div>
 
 </main>
 {% endblock %}

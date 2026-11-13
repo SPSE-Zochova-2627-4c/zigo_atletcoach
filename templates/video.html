@@ -1,369 +1,330 @@
 {% extends "base.html" %}
-{% block title %}Analýza videa · AtletCoach{% endblock %}
-
-{% block head %}
-<style>
-    /* Stavové plochy na svetlom podklade – pôvodné triedy (red-300, yellow-900/20…) boli písané
-       pre tmavý motív a na bielej karte mali kontrast 1,1–1,9:1. */
-    .note { border: 1px solid var(--border); background: var(--surface); }
-    .note.bad  { background: var(--danger-soft);  border-color: rgba(179,38,30,0.35); }
-    .note.warn { background: var(--warn-soft);    border-color: rgba(154,101,20,0.4); }
-    .note.ok   { background: var(--success-soft); border-color: rgba(46,125,79,0.35); }
-    .note.info { background: var(--bg-elev);      border-color: var(--border); }
-    .t-bad  { color: var(--danger-text); }
-    .t-warn { color: var(--warn-text); }
-    .t-ok   { color: var(--success-text); }
-    .dot-bad { background: var(--danger); } .dot-warn { background: var(--warn); }
-    .dot-ok { background: var(--success); } .dot-info { background: var(--muted); }
-    /* Skrytý <input type="file"> má fokus z klávesnice – zvýrazní sa celá plocha na nahranie. */
-    #dropzone:focus-within { border-color: var(--accent) !important; box-shadow: 0 0 0 3px var(--accent-ring); }
-    .delete-btn:hover { color: var(--danger-text); }
-    .history-open:hover .history-title { text-decoration: underline; }
-</style>
-{% endblock %}
+{% from "_ui.html" import page_head %}
+{% block title %}Analýza videa – AtletCoach{% endblock %}
 
 {% block content %}
-<main class="mt-6 pb-16">
+<main class="pb-4">
 
-    <!-- ── Hlavička ── -->
-    <div class="mb-8 page-content">
-        <p class="eyebrow mb-2">Biomechanika</p>
-        <h1 class="page-title">Analýza videa</h1>
-        <p class="text-sm text-on-surface-variant mt-2 max-w-2xl">
-            Nahraj video svojho behu a appka z neho vyčíta <strong class="text-on-surface">čas kontaktu so zemou</strong>,
-            letovú fázu, frekvenciu, dĺžku kroku, uhly v kĺboch a odhad rýchlosti — krok po kroku, pre ľavú aj pravú nohu.
-            Na konci dostaneš <strong class="text-on-surface">orientačné hodnotenie techniky</strong>: čo je v poriadku,
-            čo zlepšiť a ako. Presnosť závisí od snímkovej frekvencie a záberu z boku.
-        </p>
-    </div>
+    {{ page_head('Analýza videa', 'Z videa behu natočeného z boku appka vyčíta kontakt so zemou, letovú fázu, frekvenciu, dĺžku kroku a uhly v kĺboch pre každý krok ľavej aj pravej nohy.') }}
 
     {% if not deps_ok %}
-    <div class="note bad rounded-3xl p-5 mb-6 card-enter" role="alert">
-        <p class="font-bold t-bad mb-1">Chýbajú knižnice pre analýzu videa</p>
-        <p class="text-sm text-on-surface">{{ deps_msg }}</p>
+    <div class="note bad mb-8" role="alert">
+        <p class="font-semibold t-bad">Chýbajú knižnice pre analýzu videa</p>
+        <p class="text-[14px] mt-1">{{ deps_msg }}</p>
     </div>
     {% endif %}
 
-    <div class="grid lg:grid-cols-3 gap-5">
+    <div class="grid grid-cols-1 lg:grid-cols-[minmax(300px,380px)_minmax(0,1fr)] gap-x-8 gap-y-10 items-start">
 
         <!-- ══ ĽAVÝ STĹPEC: nahrávanie ══ -->
-        <div class="lg:col-span-1 space-y-5">
+        <div class="space-y-10 min-w-0">
 
-            <section class="card rounded-3xl p-6 card-enter delay-1" aria-labelledby="h-upload">
-                <h2 id="h-upload" class="font-headline font-bold text-lg mb-4">Nahrať video</h2>
+            <section class="card p-5" aria-labelledby="h-upload">
+                <h2 id="h-upload" class="section-title mb-4">Nahrať video</h2>
 
                 <form id="video-form" class="space-y-4">
-                    <div id="dropzone"
-                         class="border-2 border-dashed border-white/15 rounded-2xl p-6 text-center cursor-pointer
-                                hover:border-primary/50 hover:bg-white/5 transition-colors">
-                        <span class="material-symbols-outlined text-4xl text-on-surface-variant" aria-hidden="true">videocam</span>
-                        <label for="video-input" id="drop-label" class="block text-sm font-semibold mt-2 cursor-pointer">Klikni alebo sem pretiahni video</label>
-                        <p class="text-xs text-on-surface-variant mt-1" id="drop-hint">MP4, MOV — ideálne 3–5 sekúnd</p>
+                    <div id="dropzone" class="dropzone">
+                        <span class="material-symbols-outlined text-[22px] text-on-surface-variant" aria-hidden="true">upload_file</span>
+                        <label for="video-input" id="drop-label" class="mt-1">Vyber video alebo ho sem pretiahni</label>
+                        <p class="text-[13px] text-on-surface-variant mt-1" id="drop-hint">MP4 alebo MOV, ideálne 3 až 5 sekúnd</p>
                         <input type="file" id="video-input" name="video" accept="video/*" class="sr-only" aria-describedby="drop-hint">
                     </div>
 
-                    <div id="file-meta" class="hidden text-xs bg-surface-container rounded-2xl p-3 space-y-1"></div>
+                    <div id="file-meta" class="hidden text-[13px] border border-line p-3 space-y-1"></div>
 
                     <!-- výber bežca v prvom snímku -->
                     <div id="pick-wrap" class="hidden">
-                        <p class="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2" id="pick-title">Kde je bežec?</p>
-                        <div class="relative rounded-2xl overflow-hidden bg-black">
+                        <p class="text-[13px] font-semibold text-on-surface-variant mb-2" id="pick-title">Kde je bežec?</p>
+                        <div class="relative overflow-hidden bg-black">
                             <canvas id="pick-canvas" class="w-full block cursor-crosshair" role="img"
                                     aria-label="Prvý snímok videa – kliknutím myšou označíš bežca (nepovinné)"></canvas>
                         </div>
-                        <p class="text-xs text-on-surface-variant mt-2" id="pick-hint">
-                            Ak je v zábere viac ľudí alebo je bežec malý, klikni naňho v prvom snímku. Inak to nechaj tak —
-                            označenie je nepovinné.
+                        <p class="text-[13px] text-on-surface-variant mt-2" id="pick-hint">
+                            Ak je v zábere viac ľudí alebo je bežec malý, klikni naňho v prvom snímku.
+                            Inak to nechaj tak, označenie je nepovinné.
                         </p>
-                        <button type="button" id="pick-clear" class="hidden text-xs text-primary underline mt-1">Zrušiť označenie bežca</button>
+                        <button type="button" id="pick-clear" class="hidden link text-[13px] mt-1">Zrušiť označenie bežca</button>
                         <input type="hidden" id="click_x"><input type="hidden" id="click_y">
                     </div>
 
                     <div>
-                        <label for="label" class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Popis merania</label>
+                        <label for="label">Popis merania</label>
                         <input type="text" id="label" placeholder="napr. 60 m rozbeh, tartan" maxlength="120">
                     </div>
 
                     {# Výber zverenca vidí len tréner/admin – analýza sa uloží pod jeho účet. #}
                     {% if athletes and athletes|length > 1 %}
                     <div>
-                        <label for="athlete_id" class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Zverenec</label>
+                        <label for="athlete_id">Zverenec</label>
                         <select id="athlete_id" name="athlete_id" class="w-full" aria-describedby="athlete-hint" data-heights='{{ (athlete_heights or {})|tojson }}'>
                             {% for a in athletes %}
                             <option value="{{ a.id }}" {% if a.id == current_user.id %}selected{% endif %}>
-                                {{ a.username }}{% if a.id == current_user.id %} (ja){% elif a.full_name %} – {{ a.full_name }}{% endif %}
+                                {{ a.display_name }}{% if a.id == current_user.id %} (ja){% endif %}
                             </option>
                             {% endfor %}
                         </select>
-                        <p class="text-xs text-on-surface-variant mt-1" id="athlete-hint">Analýza sa uloží k vybranému zverencovi; výška sa predvyplní z jeho profilu.</p>
+                        <p class="text-[13px] text-on-surface-variant mt-1" id="athlete-hint">Analýza sa uloží k vybranému zverencovi, výška sa predvyplní z jeho profilu.</p>
                     </div>
                     {% endif %}
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label for="height_cm" class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Výška (cm)</label>
-                            <input type="number" id="height_cm" value="{{ default_height }}" placeholder="182" min="120" max="230" aria-describedby="hf-hint">
+                            <label for="height_cm">Výška (cm)</label>
+                            <input type="number" id="height_cm" value="{{ '%.0f'|format(default_height) if default_height else '' }}" placeholder="182" min="120" max="230" aria-describedby="hf-hint">
                         </div>
                         <div>
-                            <label for="fps_override" class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Skutočné fps</label>
+                            <label for="fps_override">Skutočné fps</label>
                             <input type="number" id="fps_override" placeholder="auto" min="10" max="1000" aria-describedby="hf-hint">
                         </div>
                     </div>
-                    <p class="text-xs text-on-surface-variant -mt-2" id="hf-hint">
-                        Výška slúži na prepočet pixelov na metre. Fps nechaj prázdne — vyplň len ak vieš,
-                        že telefón uložil spomalené video s nesprávnym údajom.
+                    <p class="text-[13px] text-on-surface-variant -mt-2" id="hf-hint">
+                        Výška slúži na prepočet pixelov na metre. Fps nechaj prázdne, vyplň ho len vtedy, keď telefón
+                        uložil spomalené video s nesprávnym údajom.
                     </p>
 
                     <div>
-                        <label for="phase" class="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Fáza behu</label>
+                        <label for="phase">Fáza behu</label>
                         <select id="phase" class="w-full" aria-describedby="phase-hint">
                             <option value="auto">odhadnúť z videa</option>
                             <option value="max">maximálna rýchlosť (letmý úsek)</option>
                             <option value="accel">rozbeh / akcelerácia</option>
                         </select>
-                        <p class="text-xs text-on-surface-variant mt-1" id="phase-hint">Podľa fázy sa vyberú referenčné pásma pre hodnotenie techniky.</p>
+                        <p class="text-[13px] text-on-surface-variant mt-1" id="phase-hint">Podľa fázy sa vyberú referenčné pásma pre hodnotenie techniky.</p>
                     </div>
 
-                    <label class="flex items-center gap-2.5 text-sm cursor-pointer">
-                        <input type="checkbox" id="overlay" checked class="rounded">
+                    <label class="flex items-center gap-2.5 text-[14.5px] cursor-pointer">
+                        <input type="checkbox" id="overlay" checked>
                         <span>Vytvoriť video s kostrou a uhlami</span>
                     </label>
 
-                    <label class="flex items-start gap-2.5 text-sm cursor-pointer">
-                        <input type="checkbox" id="flow" checked class="rounded mt-0.5">
+                    <label class="flex items-start gap-2.5 text-[14.5px] cursor-pointer">
+                        <input type="checkbox" id="flow" checked class="mt-1">
                         <span>Overiť optickým tokom
-                            <span class="block text-xs text-on-surface-variant">
-                                Druhá, nezávislá metóda (OpenCV). Odpočíta aj pohyb kamery — bez toho sa
+                            <span class="block text-[13px] text-on-surface-variant">
+                                Druhá, nezávislá metóda (OpenCV). Odpočíta aj pohyb kamery, bez toho sa
                                 pri panorámovaní nedá zmerať dĺžka kroku.
                             </span>
                         </span>
                     </label>
 
-                    <button type="submit" id="submit-btn"
-                            class="w-full btn-glow bg-primary hover:opacity-90 text-white font-bold py-3 rounded-2xl transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                    <button type="submit" id="submit-btn" class="btn btn-primary btn-lg w-full"
                             {% if not deps_ok %}disabled{% endif %}>
                         Analyzovať video
                     </button>
-                    <p class="text-xs text-on-surface-variant">
+                    <p class="text-[13px] text-on-surface-variant">
                         Nahrávaj len video, na ktorom si ty alebo osoba, ktorá s analýzou súhlasí (u mladších ako
-                        16 rokov rodič). <a href="/podmienky#videa" class="underline hover:text-on-surface">Podmienky používania</a>.
+                        16 rokov rodič). <a href="/podmienky#videa" class="link">Podmienky používania</a>.
                     </p>
                 </form>
 
                 <!-- priebeh -->
                 <div id="progress-wrap" class="hidden mt-5" aria-live="polite">
-                    <div class="flex justify-between text-xs mb-2">
+                    <div class="flex justify-between gap-3 text-[13px] mb-2">
                         <span id="progress-msg" class="text-on-surface-variant">Nahrávam…</span>
-                        <span id="progress-pct" class="font-bold text-primary">0 %</span>
+                        <span id="progress-pct" class="mono font-semibold text-primary">0 %</span>
                     </div>
-                    <div class="h-2 bg-surface-container rounded-full overflow-hidden" id="progress-track"
+                    <div class="progress" id="progress-track"
                          role="progressbar" aria-labelledby="progress-msg" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                        <div id="progress-bar" class="h-full bg-primary rounded-full transition-all duration-300" style="width:0%"></div>
+                        <div id="progress-bar" style="width:0%"></div>
                     </div>
-                    <p class="text-xs text-on-surface-variant mt-2">
-                        Spomalené video má veľa snímok — analýza môže trvať aj minútu.
+                    <p class="text-[13px] text-on-surface-variant mt-2">
+                        Spomalené video má veľa snímok, analýza môže trvať aj minútu.
                     </p>
                 </div>
 
-                <div id="error-box" class="hidden mt-5 note bad rounded-2xl p-4 text-sm t-bad" role="alert"></div>
+                <div id="error-box" class="hidden mt-5 note bad text-[14px] t-bad" role="alert"></div>
             </section>
 
             <!-- ── Ako natáčať ── -->
-            <section class="card rounded-3xl p-6 card-enter delay-2" aria-labelledby="h-howto">
-                <h2 id="h-howto" class="font-headline font-bold text-lg mb-3 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary" aria-hidden="true">tips_and_updates</span>
-                    Ako natáčať
-                </h2>
-                <ul class="text-sm space-y-2.5 text-on-surface-variant">
-                    <li><strong class="text-on-surface">Spomalene (Slo-mo).</strong> Kontakt so zemou pri šprinte trvá
-                        len okolo 0,11 s. Pri 30 fps sú to 3 snímky a chyba je väčšia než rozdiel medzi dobrým
-                        a zlým krokom. Pri 240 fps je to 26 snímok.</li>
-                    <li><strong class="text-on-surface">Presne z boku,</strong> kamera v úrovni bokov, statív alebo
-                        opretý telefón. Nie spredu a nie šikmo — uhly by boli skreslené.</li>
-                    <li><strong class="text-on-surface">Celé telo v zábere</strong> vrátane chodidiel, aj počas celej
-                        pasáže. Radšej zaber viac priestoru — appka si bežca sama „priblíži“.</li>
-                    <li><strong class="text-on-surface">6–8 krokov</strong> v rovnomernom tempe. Kratší úsek dá
-                        štatisticky slabý priemer.</li>
-                    <li><strong class="text-on-surface">Kontrastné pozadie</strong> a dosť svetla — model kostry
-                        potrebuje jasne vidieť nohy.</li>
+            <section aria-labelledby="h-howto">
+                <div class="rule"><h2 id="h-howto">Ako natáčať</h2></div>
+                <ul class="howto">
+                    <li><strong>Spomalene (slow motion).</strong> Kontakt so zemou pri šprinte trvá okolo 0,11 s.
+                        Pri 30 fps sú to 3 snímky a chyba je väčšia než rozdiel medzi dobrým a zlým krokom.
+                        Pri 240 fps je to 26 snímok.</li>
+                    <li><strong>Presne z boku,</strong> kamera v úrovni bokov, na statíve alebo opretá.
+                        Nie spredu a nie šikmo, uhly by boli skreslené.</li>
+                    <li><strong>Celé telo v zábere</strong> vrátane chodidiel, počas celého úseku.
+                        Radšej zaber viac priestoru, appka si bežca sama priblíži.</li>
+                    <li><strong>6 až 8 krokov</strong> v rovnomernom tempe. Kratší úsek dá štatisticky slabý priemer.</li>
+                    <li><strong>Kontrastné pozadie</strong> a dosť svetla, model kostry potrebuje jasne vidieť nohy.</li>
                 </ul>
+                <p class="text-[13px] text-on-surface-variant mt-3">
+                    Presnosť závisí od snímkovej frekvencie: časy sú presné na ±1 snímok, pri 30 fps je to ±33 ms,
+                    pri 240 fps ±4 ms.
+                </p>
             </section>
 
             <!-- ── História ── -->
-            <section class="card rounded-3xl p-6 card-enter delay-3" aria-labelledby="h-history">
-                <h2 id="h-history" class="font-headline font-bold text-lg mb-3">História meraní</h2>
-                <div id="history-list" class="space-y-2">
+            <section aria-labelledby="h-history">
+                <div class="rule"><h2 id="h-history">História meraní</h2></div>
+                <div id="history-list">
                     {% if history %}
                         {% for h in history %}
                         {% set hlabel = h.label or h.original_name or 'Meranie' %}
-                        <div class="history-item flex items-center justify-between gap-2 p-3 rounded-2xl bg-surface-container hover:bg-surface-container-highest transition-colors"
-                             data-id="{{ h.id }}">
-                            <button type="button" class="history-open min-w-0 flex-1 text-left rounded-lg" data-id="{{ h.id }}">
+                        <div class="history-item" data-id="{{ h.id }}">
+                            <button type="button" class="history-open" data-id="{{ h.id }}">
                                 <span class="sr-only">Zobraziť meranie: </span>
-                                <span class="history-title block text-sm font-semibold truncate">{{ hlabel }}</span>
-                                <span class="block text-xs text-on-surface-variant">
-                                    {{ h.created_at.strftime('%d.%m.%Y %H:%M') }} ·
-                                    {{ h.steps_detected or 0 }} krokov ·
-                                    {{ '%.0f'|format(h.fps or 0) }} fps
-                                    {% if owner_names %} · <span class="text-on-surface">{{ owner_names.get(h.user_id, 'bez účtu') }}</span>{% endif %}
+                                <span class="history-title">{{ hlabel }}</span>
+                                <span class="history-meta">
+                                    {% set n = h.steps_detected or 0 %}
+                                    {{ h.created_at.strftime('%d. %m. %Y %H:%M') }}, {{ n }} {{ 'krok' if n == 1 else ('kroky' if 2 <= n <= 4 else 'krokov') }},
+                                    {{ '%.0f'|format(h.fps or 0) }} fps{% if owner_names %}, <span class="text-on-surface">{{ owner_names.get(h.user_id, 'bez účtu') }}</span>{% endif %}
                                 </span>
                             </button>
-                            <div class="text-right flex-shrink-0">
-                                <p class="font-headline font-bold text-primary">
-                                    {{ '%.0f'|format(h.contact_ms_mean) if h.contact_ms_mean else '—' }}<span class="text-xs font-normal"> ms</span>
+                            <div class="history-side">
+                                <p class="history-value">
+                                    {{ '%.0f'|format(h.contact_ms_mean) if h.contact_ms_mean else '–' }}<span class="text-[12px] font-normal text-on-surface-variant"> ms</span>
                                 </p>
-                                <button type="button" class="delete-btn text-xs text-on-surface-variant underline" data-id="{{ h.id }}"
-                                        aria-label="Zmazať meranie {{ hlabel }}">zmazať</button>
+                                <button type="button" class="delete-btn" data-id="{{ h.id }}"
+                                        aria-label="Zmazať meranie {{ hlabel }}">Zmazať</button>
                             </div>
                         </div>
                         {% endfor %}
                     {% else %}
-                        <p class="text-sm text-on-surface-variant">Zatiaľ žiadne merania.</p>
+                        <p class="text-[14px] text-on-surface-variant">Zatiaľ žiadne merania.</p>
                     {% endif %}
                 </div>
             </section>
         </div>
 
         <!-- ══ PRAVÝ STĹPEC: výsledky ══ -->
-        <div class="lg:col-span-2">
-            <div id="empty-state" class="card rounded-3xl p-10 text-center card-enter delay-2">
-                <span class="material-symbols-outlined text-5xl text-on-surface-variant" aria-hidden="true">timeline</span>
-                <p class="font-headline font-bold text-lg mt-3">Zatiaľ tu nič nie je</p>
-                <p class="text-sm text-on-surface-variant mt-1 max-w-md mx-auto">
-                    Nahraj video vľavo alebo otvor niektoré meranie v histórii.
+        <div class="min-w-0">
+            <div id="empty-state" class="card p-8">
+                <p class="section-title">Zatiaľ žiadna analýza</p>
+                <p class="text-on-surface-variant mt-2 max-w-[56ch]">
+                    Nahraj video vľavo alebo otvor meranie z histórie. Výsledky sa ukážu tu: kontakt so zemou,
+                    hodnotenie techniky, graf krokov a tabuľka s uhlami.
                 </p>
             </div>
 
-            <div id="results" class="hidden space-y-5">
+            <div id="results" class="hidden space-y-10">
 
-                <!-- presnosť -->
-                <div id="accuracy-box" class="rounded-3xl p-5 note"></div>
+                <div class="space-y-3">
+                    <!-- presnosť -->
+                    <div id="accuracy-box" class="note"></div>
 
-                <!-- upozornenia -->
-                <div id="warnings-box" class="hidden note warn rounded-3xl p-5">
-                    <p class="font-bold t-warn text-sm mb-2 flex items-center gap-2">
-                        <span class="material-symbols-outlined text-base" aria-hidden="true">warning</span> Na čo si dať pozor
-                    </p>
-                    <ul id="warnings-list" class="text-sm text-on-surface space-y-1.5 list-disc pl-5"></ul>
+                    <!-- upozornenia -->
+                    <div id="warnings-box" class="hidden note warn">
+                        <p class="font-semibold t-warn mb-1.5">Na čo si dať pozor</p>
+                        <ul id="warnings-list" class="text-[14px] space-y-1 list-disc pl-5"></ul>
+                    </div>
                 </div>
 
                 <!-- hlavné čísla -->
-                <h2 class="sr-only">Hlavné čísla</h2>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="stat-grid"></div>
+                <section aria-labelledby="h-stats">
+                    <h2 id="h-stats" class="sr-only">Hlavné čísla</h2>
+                    <div class="kpi-strip small cols-4" id="stat-grid"></div>
+                </section>
 
                 <!-- hodnotenie techniky -->
-                <section class="card rounded-3xl p-5" aria-labelledby="h-tech">
-                    <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
-                        <div>
-                            <h2 id="h-tech" class="font-headline font-bold text-lg">Hodnotenie techniky</h2>
-                            <p class="text-xs text-on-surface-variant" id="tech-phase"></p>
-                        </div>
-                        <div id="tech-counts" class="flex gap-2 text-xs font-bold"></div>
+                <section aria-labelledby="h-tech">
+                    <div class="rule">
+                        <h2 id="h-tech">Hodnotenie techniky</h2>
+                        <span id="tech-phase"></span>
                     </div>
-                    <p id="tech-overall" class="text-sm mb-4"></p>
+                    <div id="tech-counts" class="flex flex-wrap gap-2 mb-3"></div>
+                    <p id="tech-overall" class="mb-4 max-w-[72ch]"></p>
                     <div id="tech-list" class="grid md:grid-cols-2 gap-3"></div>
-                    <p class="text-xs text-on-surface-variant mt-4">
+                    <p class="text-[13px] text-on-surface-variant mt-4 max-w-[80ch]">
                         Referenčné pásma vychádzajú zo šprintérskej biomechaniky (Mann, Haugen a kol.) a sú
-                        orientačné. Hodnotenie „v norme / sledovať / riešiť“ je porovnanie s týmito pásmami,
+                        orientačné. Hodnotenie v norme, sledovať a riešiť je porovnanie s týmito pásmami,
                         nie diagnóza ani zdravotná rada. Uhly platia len pri zábere presne z boku; časy sú presné
-                        na ±1 snímok — pri 30 fps je to ±33 ms, pri 240 fps ±4 ms.
+                        na ±1 snímok, pri 30 fps je to ±33 ms, pri 240 fps ±4 ms.
                     </p>
                 </section>
 
                 <!-- AI tréner -->
-                <section class="card rounded-3xl p-5" aria-labelledby="h-coach">
-                    <div class="flex flex-wrap items-center justify-between gap-3">
-                        <div class="max-w-xl">
-                            <h2 id="h-coach" class="font-headline font-bold text-lg">AI tréner</h2>
-                            <p class="text-xs text-on-surface-variant" id="coach-note">
-                                Namerané čísla a vyhodnotenie sa odošlú službe Groq (USA), ktorá napíše súvislý komentár
-                                s cvičeniami. Odpoveď je orientačná, nie zdravotná rada.
-                                <a href="/ochrana-udajov#tretie-strany" class="underline hover:text-on-surface">Čo sa odosiela tretím stranám</a>.
-                            </p>
-                        </div>
-                        <button type="button" id="coach-btn" aria-describedby="coach-note"
-                                class="btn-glow bg-primary text-white text-sm font-bold px-4 py-2 rounded-xl disabled:opacity-40"
+                <section aria-labelledby="h-coach">
+                    <div class="rule"><h2 id="h-coach">AI tréner</h2></div>
+                    <div class="flex flex-wrap items-start justify-between gap-4">
+                        <p class="text-[14px] text-on-surface-variant max-w-[60ch]" id="coach-note">
+                            Namerané čísla a vyhodnotenie sa odošlú službe Groq (USA), ktorá napíše súvislý komentár
+                            s cvičeniami. Odpoveď je orientačná, nie zdravotná rada.
+                            <a href="/ochrana-udajov#tretie-strany" class="link">Čo sa odosiela tretím stranám</a>.
+                        </p>
+                        <button type="button" id="coach-btn" aria-describedby="coach-note" class="btn btn-secondary"
                                 {% if not groq_ok %}disabled title="Nastav GROQ_API_KEY v .env"{% endif %}>
-                            Okomentovať techniku
+                            <span class="material-symbols-outlined" aria-hidden="true">smart_toy</span>Okomentovať techniku
                         </button>
                     </div>
                     {% if not groq_ok %}
-                    <p class="text-xs t-warn mt-2">AI tréner potrebuje GROQ_API_KEY v súbore .env — hodnotenie podľa pravidiel vyššie funguje aj bez neho.</p>
+                    <p class="text-[13px] t-warn mt-2">AI tréner potrebuje GROQ_API_KEY v súbore .env. Hodnotenie podľa pravidiel vyššie funguje aj bez neho.</p>
                     {% endif %}
-                    <div id="coach-box" class="hidden mt-4 text-sm leading-relaxed whitespace-pre-line bg-surface-container rounded-2xl p-4" aria-live="polite"></div>
+                    <div id="coach-box" class="hidden mt-4 card p-4 text-[15px] leading-relaxed whitespace-pre-line max-w-[80ch]" aria-live="polite"></div>
                 </section>
 
                 <!-- kľúčové momenty -->
-                <section id="keyframes-box" class="hidden card rounded-3xl p-5" aria-labelledby="h-keyframes">
-                    <h2 id="h-keyframes" class="font-headline font-bold text-lg mb-1">Kľúčové momenty s uhlami</h2>
-                    <p class="text-xs text-on-surface-variant mb-4">
-                        Dopad a odraz vybraných krokov. Oranžový/modrý oblúk = uhol v kolene (180° = vystreté),
-                        žltá čiara = náklon trupu od zvislice, červený údaj = uhol holene stojnej nohy
+                <section id="keyframes-box" class="hidden" aria-labelledby="h-keyframes">
+                    <div class="rule"><h2 id="h-keyframes">Kľúčové momenty s uhlami</h2></div>
+                    <p class="text-[14px] text-on-surface-variant mb-4 max-w-[80ch]">
+                        Dopad a odraz vybraných krokov. Oranžový a modrý oblúk je uhol v kolene (180° = vystreté),
+                        žltá čiara náklon trupu od zvislice, červený údaj uhol holene stojnej nohy
                         (mínus = chodidlo pred kolenom, teda brzdenie). Rovnaké čísla sú pod každým snímkom.
                     </p>
-                    <div id="keyframes-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+                    <div id="keyframes-grid" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-3"></div>
                 </section>
 
                 <!-- video s kostrou -->
-                <section id="overlay-box" class="hidden card rounded-3xl p-5" aria-labelledby="h-overlay">
-                    <h2 id="h-overlay" class="font-headline font-bold text-lg mb-3">Video s kostrou a uhlami</h2>
-                    <video id="overlay-video" controls playsinline class="w-full rounded-2xl bg-black"
+                <section id="overlay-box" class="hidden" aria-labelledby="h-overlay">
+                    <div class="rule"><h2 id="h-overlay">Video s kostrou a uhlami</h2></div>
+                    <video id="overlay-video" controls playsinline class="w-full bg-black"
                            aria-label="Nahrané video s vykreslenou kostrou, uhlami a popiskami dopadov"></video>
-                    <p class="text-xs text-on-surface-variant mt-2">
-                        Červené chodidlo = noha je na zemi, pri každom dopade a odraze bliká popisok. Uhly v kolenách,
+                    <p class="text-[13px] text-on-surface-variant mt-2 max-w-[80ch]">
+                        Červené chodidlo znamená, že noha je na zemi; pri každom dopade a odraze bliká popisok. Uhly v kolenách,
                         náklon trupu a uhol holene sa prekresľujú v každom snímku. Video prehraj spomalene
                         (v prehrávači zníž rýchlosť), aby si videl jednotlivé kroky.
                     </p>
                 </section>
 
                 <!-- graf -->
-                <section class="card rounded-3xl p-5" aria-labelledby="h-chart">
-                    <h2 id="h-chart" class="font-headline font-bold text-lg mb-1">Krok po kroku</h2>
-                    <p class="text-xs text-on-surface-variant mb-4">
-                        Kontakt so zemou (stĺpce) a letová fáza (čiara). Podobná výška stĺpcov znamená rovnomerné kroky.
-                        Rovnaké čísla sú v tabuľke Detail krokov nižšie.
+                <section aria-labelledby="h-chart">
+                    <div class="rule"><h2 id="h-chart">Krok po kroku</h2></div>
+                    <p class="text-[14px] text-on-surface-variant mb-4 max-w-[80ch]">
+                        Kontakt so zemou (stĺpce, ľavá a pravá noha) a letová fáza (čiara). Podobná výška stĺpcov
+                        znamená rovnomerné kroky. Rovnaké čísla sú v tabuľke Detail krokov nižšie.
                     </p>
-                    <div style="height:300px">
+                    <div class="card p-4" style="height:320px">
                         <canvas id="steps-chart" role="img"
                                 aria-label="Graf kontaktu so zemou a letovej fázy po krokoch – rovnaké čísla sú v tabuľke Detail krokov nižšie"></canvas>
                     </div>
                 </section>
 
                 <!-- porovnanie nôh -->
-                <section class="card rounded-3xl p-5" aria-labelledby="h-legs">
-                    <h2 id="h-legs" class="font-headline font-bold text-lg mb-4">Ľavá vs. pravá</h2>
-                    <div id="legs-box" class="space-y-3"></div>
+                <section aria-labelledby="h-legs">
+                    <div class="rule"><h2 id="h-legs">Ľavá a pravá noha</h2></div>
+                    <div id="legs-box" class="space-y-3 max-w-[640px]"></div>
                 </section>
 
                 <!-- tabuľka -->
-                <section class="card rounded-3xl p-5" aria-labelledby="h-table">
-                    <h2 id="h-table" class="font-headline font-bold text-lg mb-1">Detail krokov</h2>
-                    <p class="text-xs text-on-surface-variant mb-4">
+                <section aria-labelledby="h-table">
+                    <div class="rule"><h2 id="h-table">Detail krokov</h2></div>
+                    <p class="text-[14px] text-on-surface-variant mb-4 max-w-[80ch]">
                         Stĺpec <strong class="text-on-surface">Kontakt</strong> je výsledok z polohy kostry,
                         stĺpec <strong class="text-on-surface">Tok</strong> to isté zmerané nezávisle
                         optickým tokom. <strong class="text-on-surface">Dĺžka</strong> kroku je vzdialenosť medzi
                         miestami dopadu dvoch po sebe idúcich krokov (<span class="text-primary" aria-hidden="true">●</span>
                         <span class="sr-only">plný krúžok</span> = zmerané geometricky, <span aria-hidden="true">○</span>
-                        <span class="sr-only">prázdny krúžok</span> = odhad rýchlosť × čas). Uhly sú v rovine obrazu — platia len ak je kamera
-                        presne z boku. 180° pri kolene = úplne vystretá noha; holeň + = koleno pred členkom.
+                        <span class="sr-only">prázdny krúžok</span> = odhad rýchlosť × čas). Uhly sú v rovine obrazu a platia,
+                        len ak je kamera presne z boku. 180° pri kolene je úplne vystretá noha; holeň + znamená koleno pred členkom.
                     </p>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm whitespace-nowrap">
+                    <div class="overflow-x-auto relative">
+                        <table class="w-full text-[14px] whitespace-nowrap">
                             <thead>
-                                <tr class="text-xs uppercase tracking-wider text-on-surface-variant border-b border-white/10">
-                                    <th scope="col" class="text-left py-2 pr-4"><span aria-hidden="true">#</span><span class="sr-only">Poradie</span></th>
-                                    <th scope="col" class="text-left py-2 pr-4">Noha</th>
-                                    <th scope="col" class="text-right py-2 pr-4">Čas (s)</th>
-                                    <th scope="col" class="text-right py-2 pr-4">Kontakt</th>
-                                    <th scope="col" class="text-right py-2 pr-4">Tok</th>
-                                    <th scope="col" class="text-right py-2 pr-4">Let</th>
-                                    <th scope="col" class="text-right py-2 pr-4">Krok</th>
-                                    <th scope="col" class="text-right py-2 pr-4">Dĺžka</th>
-                                    <th scope="col" class="text-right py-2 pr-4">Koleno dopad</th>
-                                    <th scope="col" class="text-right py-2 pr-4">Koleno min.</th>
-                                    <th scope="col" class="text-right py-2 pr-4">Holeň</th>
-                                    <th scope="col" class="text-right py-2 pr-4">Trup</th>
-                                    <th scope="col" class="text-right py-2">Snímok</th>
+                                <tr>
+                                    <th scope="col" class="text-left"><span aria-hidden="true">#</span><span class="sr-only">Poradie</span></th>
+                                    <th scope="col" class="text-left">Noha</th>
+                                    <th scope="col" class="text-right">Čas (s)</th>
+                                    <th scope="col" class="text-right">Kontakt</th>
+                                    <th scope="col" class="text-right">Tok</th>
+                                    <th scope="col" class="text-right">Let</th>
+                                    <th scope="col" class="text-right">Krok</th>
+                                    <th scope="col" class="text-right">Dĺžka</th>
+                                    <th scope="col" class="text-right">Koleno dopad</th>
+                                    <th scope="col" class="text-right">Koleno min.</th>
+                                    <th scope="col" class="text-right">Holeň</th>
+                                    <th scope="col" class="text-right">Trup</th>
+                                    <th scope="col" class="text-right">Snímok</th>
                                 </tr>
                             </thead>
                             <tbody id="steps-table"></tbody>
@@ -407,11 +368,11 @@
     });
     ['dragenter', 'dragover'].forEach(ev => dropzone.addEventListener(ev, e => {
         e.preventDefault();
-        dropzone.classList.add('border-primary/70', 'bg-white/5');
+        dropzone.classList.add('drag');
     }));
     ['dragleave', 'drop'].forEach(ev => dropzone.addEventListener(ev, e => {
         e.preventDefault();
-        dropzone.classList.remove('border-primary/70', 'bg-white/5');
+        dropzone.classList.remove('drag');
     }));
     dropzone.addEventListener('drop', e => {
         if (e.dataTransfer.files.length) {
@@ -424,10 +385,10 @@
     function showFile() {
         const f = input.files[0];
         if (!f) return;
-        dropLabel.textContent = 'Vybrané video: ' + f.name + ' (klikni pre zmenu)';
+        dropLabel.textContent = 'Vybrané video: ' + f.name + ' (kliknutím zmeníš)';
         const mb = (f.size / 1048576).toFixed(1);
         fileMeta.classList.remove('hidden');
-        fileMeta.innerHTML = '<div class="flex justify-between"><span class="text-on-surface-variant">Veľkosť</span><span>' + mb + ' MB</span></div>';
+        fileMeta.innerHTML = metaRow('Veľkosť', mb.replace('.', ',') + ' MB');
         clearPick();
 
         // Zistíme dĺžku a rozlíšenie priamo v prehliadači a vykreslíme prvý snímok
@@ -436,11 +397,8 @@
         v.muted = true;
         v.playsInline = true;
         v.onloadedmetadata = () => {
-            fileMeta.innerHTML +=
-                '<div class="flex justify-between"><span class="text-on-surface-variant">Dĺžka</span><span>' +
-                v.duration.toFixed(1) + ' s</span></div>' +
-                '<div class="flex justify-between"><span class="text-on-surface-variant">Rozlíšenie</span><span>' +
-                v.videoWidth + '×' + v.videoHeight + '</span></div>';
+            fileMeta.innerHTML += metaRow('Dĺžka', v.duration.toFixed(1).replace('.', ',') + ' s') +
+                metaRow('Rozlíšenie', v.videoWidth + ' × ' + v.videoHeight);
             v.currentTime = Math.min(0.1, v.duration / 2);
         };
         v.onseeked = () => {
@@ -456,6 +414,11 @@
         };
         v.onerror = () => { pickWrap.classList.add('hidden'); };
         v.src = URL.createObjectURL(f);
+    }
+
+    function metaRow(label, value) {
+        return '<div class="flex justify-between gap-3"><span class="text-on-surface-variant">' + label +
+               '</span><span class="mono">' + value + '</span></div>';
     }
 
     function clearPick() {
@@ -590,17 +553,17 @@
         const empty = list.querySelector('p');
         if (empty) empty.remove();
         const el = document.createElement('div');
-        el.className = 'history-item flex items-center justify-between gap-2 p-3 rounded-2xl bg-surface-container hover:bg-surface-container-highest transition-colors';
+        el.className = 'history-item';
         el.dataset.id = d.analysis_id;
         const label = document.getElementById('label').value || (input.files[0] ? input.files[0].name : 'Meranie');
-        el.innerHTML = '<button type="button" class="history-open min-w-0 flex-1 text-left rounded-lg" data-id="' + d.analysis_id + '">' +
+        el.innerHTML = '<button type="button" class="history-open" data-id="' + d.analysis_id + '">' +
             '<span class="sr-only">Zobraziť meranie: </span>' +
-            '<span class="history-title block text-sm font-semibold truncate">' + esc(label) + '</span>' +
-            '<span class="block text-xs text-on-surface-variant">práve teraz · ' + d.summary.steps_detected + ' krokov · ' +
+            '<span class="history-title">' + esc(label) + '</span>' +
+            '<span class="history-meta">práve teraz, ' + plural(d.summary.steps_detected, 'krok', 'kroky', 'krokov') + ', ' +
             Math.round(d.video.fps) + ' fps</span></button>' +
-            '<div class="text-right flex-shrink-0"><p class="font-headline font-bold text-primary">' +
-            fmt(d.summary.contact_ms_mean, '') + '<span class="text-xs font-normal"> ms</span></p>' +
-            '<button type="button" class="delete-btn text-xs text-on-surface-variant underline" data-id="' + d.analysis_id + '" aria-label="Zmazať meranie ' + esc(label) + '">zmazať</button></div>';
+            '<div class="history-side"><p class="history-value">' +
+            fmt(d.summary.contact_ms_mean, '') + '<span class="text-[12px] font-normal text-on-surface-variant"> ms</span></p>' +
+            '<button type="button" class="delete-btn" data-id="' + d.analysis_id + '" aria-label="Zmazať meranie ' + esc(label) + '">Zmazať</button></div>';
         list.prepend(el);
         bindHistory(el);
     }
@@ -624,40 +587,48 @@
 
     // ── vykreslenie výsledkov ───────────────────────────────────────
     const fmt = (v, unit, dec) => (v === null || v === undefined)
-        ? '—' : Number(v).toFixed(dec === undefined ? 0 : dec) + (unit || '');
+        ? '–' : Number(v).toFixed(dec === undefined ? 0 : dec).replace('.', ',') + (unit || '');
+    const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    // Texty zo servera (hodnotenie, upozornenia) majú desatinnú bodku – na stránke je všade slovenská čiarka.
+    const sk = s => String(s).replace(/(\d)\.(\d)/g, '$1,$2');
+    const plural = (n, one, few, many) => n + ' ' + (n === 1 ? one : (n >= 2 && n <= 4 ? few : many));
 
+    // Bunka tabule čísel; jednotka (ms, %, m) ide menším písmom vedľa čísla.
     function tile(label, value, sub, accent) {
-        return '<div class="bg-surface-container-high rounded-2xl p-4 hover-lift">' +
-            '<p class="text-xs uppercase tracking-wider text-on-surface-variant mb-1">' + label + '</p>' +
-            '<p class="font-headline font-extrabold text-2xl ' + (accent ? 'text-primary' : 'text-on-surface') + '">' + value + '</p>' +
-            (sub ? '<p class="text-xs text-on-surface-variant mt-0.5">' + sub + '</p>' : '') +
+        const m = String(value).match(/^(.*\d)\s+(\S+)$/);
+        const num = m ? m[1] : value, unit = m ? '<span class="kpi-suffix">' + m[2] + '</span>' : '';
+        return '<div class="kpi' + (accent ? ' accent' : '') + '">' +
+            '<p class="kpi-label">' + label + '</p>' +
+            '<p class="kpi-value">' + num + unit + '</p>' +
+            (sub ? '<p class="kpi-hint">' + sub + '</p>' : '') +
             '</div>';
     }
 
     function flowLine(d) {
         const f = d.optical_flow;
         if (!f || !f.available) {
-            return '<p class="text-xs text-on-surface-variant mt-1">' +
-                   'Kontrola optickým tokom nebola zapnutá — výsledok stojí na jednej metóde.</p>';
+            return '<p class="text-[13px] text-on-surface-variant mt-1">' +
+                   'Kontrola optickým tokom nebola zapnutá, výsledok stojí na jednej metóde.</p>';
         }
         const cam = (d.geometry && d.geometry.camera && d.geometry.camera.note)
             ? ', kamera: ' + d.geometry.camera.note : '';
         if (!f.steps_matched) {
-            return '<p class="text-xs text-on-surface-variant mt-1">' +
+            return '<p class="text-[13px] text-on-surface-variant mt-1">' +
                    'Optický tok neoveril ani jeden krok (málo kontrastný alebo rozmazaný záber)' + cam + '.</p>';
         }
-        return '<p class="text-xs text-on-surface-variant mt-1">Overené optickým tokom: ' +
+        return '<p class="text-[13px] text-on-surface-variant mt-1">Overené optickým tokom: ' +
                f.steps_matched + ' krokov, rozdiel metód ' +
-               (d.summary.flow_agreement_ms !== null ? '± ' + d.summary.flow_agreement_ms + ' ms' : '—') +
-               cam + '</p>';
+               (d.summary.flow_agreement_ms !== null ? '± ' + sk(d.summary.flow_agreement_ms) + ' ms' : '–') +
+               cam + '.</p>';
     }
 
+    // Stav pravidla: farebný okraj karty + štítok s textom (nie iba farba).
     const STATUS = {
-        problem: { cls: 'note bad',  dot: 'dot-bad',  txt: 't-bad',  name: 'riešiť' },
-        pozor:   { cls: 'note warn', dot: 'dot-warn', txt: 't-warn', name: 'sledovať' },
-        ok:      { cls: 'note ok',   dot: 'dot-ok',   txt: 't-ok',   name: 'v norme' },
-        info:    { cls: 'note info', dot: 'dot-info', txt: 'text-on-surface-variant', name: 'info' },
+        problem: { cls: 'bad',  chip: 'bad',  txt: 't-bad',  name: 'riešiť' },
+        pozor:   { cls: 'warn', chip: 'warn', txt: 't-warn', name: 'sledovať' },
+        ok:      { cls: 'ok',   chip: 'ok',   txt: 't-ok',   name: 'v norme' },
+        info:    { cls: '',     chip: '',     txt: 'text-on-surface-variant', name: 'info' },
     };
 
     function renderTechnique(t) {
@@ -671,23 +642,23 @@
             phase.textContent = ''; counts.innerHTML = '';
             return;
         }
-        phase.textContent = 'Fáza: ' + t.phase_text + (t.low_fps ? ' · časové údaje sú pri < 100 fps orientačné' : '');
-        overall.textContent = t.overall;
+        phase.textContent = 'Fáza: ' + t.phase_text + (t.low_fps ? ', časové údaje sú pri menej ako 100 fps orientačné' : '');
+        overall.textContent = sk(t.overall);
         const c = t.counts || {};
         counts.innerHTML =
-            '<span class="px-2 py-1 rounded-lg note bad t-bad">' + (c.problem || 0) + ' riešiť</span>' +
-            '<span class="px-2 py-1 rounded-lg note warn t-warn">' + (c.pozor || 0) + ' sledovať</span>' +
-            '<span class="px-2 py-1 rounded-lg note ok t-ok">' + (c.ok || 0) + ' v norme</span>';
+            '<span class="chip bad"><span class="dot" aria-hidden="true"></span>' + (c.problem || 0) + ' riešiť</span>' +
+            '<span class="chip warn"><span class="dot" aria-hidden="true"></span>' + (c.pozor || 0) + ' sledovať</span>' +
+            '<span class="chip ok"><span class="dot" aria-hidden="true"></span>' + (c.ok || 0) + ' v norme</span>';
         list.innerHTML = t.findings.map(f => {
             const s = STATUS[f.status] || STATUS.info;
-            return '<div class="rounded-2xl p-4 ' + s.cls + '">' +
-                '<div class="flex items-center justify-between gap-2 mb-1">' +
-                '<p class="font-semibold text-sm flex items-center gap-2"><span class="inline-block w-2 h-2 rounded-full ' + s.dot + '" aria-hidden="true"></span>' +
-                '<span class="sr-only">' + s.name + ': </span>' + esc(f.label) + '</p>' +
-                '<p class="font-headline font-bold ' + s.txt + '">' + esc(f.value_text) + '</p></div>' +
-                '<p class="text-xs text-on-surface-variant mb-1.5">Referencia: ' + esc(f.reference) + '</p>' +
-                '<p class="text-sm">' + esc(f.text) + '</p>' +
-                (f.tip && f.status !== 'ok' ? '<p class="text-xs text-on-surface-variant mt-2"><span class="text-primary font-bold">Tip:</span> ' + esc(f.tip) + '</p>' : '') +
+            return '<div class="finding ' + s.cls + '">' +
+                '<div class="flex items-start justify-between gap-3">' +
+                '<p class="font-semibold">' + esc(f.label) + '</p>' +
+                '<span class="chip ' + s.chip + ' flex-shrink-0">' + s.name + '</span></div>' +
+                '<p class="finding-value ' + s.txt + ' mt-1">' + sk(esc(f.value_text)) + '</p>' +
+                '<p class="text-[13px] text-on-surface-variant mt-1">Referencia: ' + sk(esc(f.reference)) + '</p>' +
+                '<p class="text-[14.5px] mt-2">' + sk(esc(f.text)) + '</p>' +
+                (f.tip && f.status !== 'ok' ? '<p class="text-[13.5px] text-on-surface-variant mt-2"><span class="font-semibold text-on-surface">Tip:</span> ' + sk(esc(f.tip)) + '</p>' : '') +
                 '</div>';
         }).join('');
     }
@@ -705,10 +676,10 @@
             if (a.trunk_lean_deg !== null && a.trunk_lean_deg !== undefined) bits.push('trup ' + a.trunk_lean_deg + '°');
             if (k.event === 'touchdown' && a.shank_deg !== null && a.shank_deg !== undefined) bits.push('holeň ' + a.shank_deg + '°');
             if (k.event === 'toeoff' && a.thigh_deg !== null && a.thigh_deg !== undefined) bits.push('stehno ' + a.thigh_deg + '°');
-            return '<a href="' + k.url + '" target="_blank" rel="noopener" class="block rounded-2xl overflow-hidden bg-surface-container hover-lift">' +
-                '<img src="' + k.url + '" alt="Snímok s kostrou a uhlami: ' + esc(k.label) + '" class="w-full block" loading="lazy">' +
-                '<div class="p-3"><p class="text-sm font-semibold">' + esc(k.label) + '<span class="sr-only"> (otvorí sa v novom okne)</span></p>' +
-                '<p class="text-xs text-on-surface-variant">' + k.time_s.toFixed(3) + ' s · ' + bits.join(' · ') + '</p></div></a>';
+            return '<a href="' + k.url + '" target="_blank" rel="noopener" class="keyframe">' +
+                '<img src="' + k.url + '" alt="Snímok s kostrou a uhlami: ' + esc(k.label) + '" loading="lazy">' +
+                '<div class="p-3"><p class="text-[14px] font-semibold">' + esc(k.label) + '<span class="sr-only"> (otvorí sa v novom okne)</span></p>' +
+                '<p class="mono text-[13px] text-on-surface-variant">' + [k.time_s.toFixed(3).replace('.', ',') + ' s'].concat(bits).join(', ') + '</p></div></a>';
         }).join('');
     }
 
@@ -723,39 +694,35 @@
         // presnosť
         const good = v.fps >= 100;
         const box = document.getElementById('accuracy-box');
-        box.className = 'rounded-3xl p-5 note ' + (good ? 'ok' : 'warn');
+        box.className = 'note ' + (good ? 'ok' : 'warn');
         box.innerHTML =
-            '<div class="flex items-start gap-3">' +
-            '<span class="material-symbols-outlined ' + (good ? 't-ok' : 't-warn') + '" aria-hidden="true">' +
-            (good ? 'verified' : 'error') + '</span><div>' +
-            '<p class="font-bold text-sm ' + (good ? 't-ok' : 't-warn') + '">' +
-            'Presnosť merania: ' + a.quality + ' — ± ' + a.uncertainty_ms + ' ms</p>' +
-            '<p class="text-sm mt-1 text-on-surface">' + a.note + '</p>' +
-            '<p class="text-xs text-on-surface-variant mt-2">Video: ' + v.fps + ' fps · ' +
-            v.duration_s + ' s · ' + v.width + '×' + v.height + ' · kostra rozpoznaná na ' +
+            '<p class="font-semibold ' + (good ? 't-ok' : 't-warn') + '">' +
+            'Presnosť merania: ' + a.quality + ', ± ' + sk(a.uncertainty_ms) + ' ms</p>' +
+            '<p class="text-[14.5px] mt-1">' + sk(a.note) + '</p>' +
+            '<p class="text-[13px] text-on-surface-variant mt-2">Video ' + v.fps + ' fps, ' +
+            String(v.duration_s).replace('.', ',') + ' s, ' + v.width + ' × ' + v.height + ', kostra rozpoznaná na ' +
             Math.round(v.detected_ratio * 100) + ' % snímok' +
-            (v.crop_ratio ? ' · bežec priblížený na ' + Math.round(v.crop_ratio * 100) + ' % snímok' : '') +
-            '</p>' + flowLine(d) +
-            '</div></div>';
+            (v.crop_ratio ? ', bežec priblížený na ' + Math.round(v.crop_ratio * 100) + ' % snímok' : '') +
+            '.</p>' + flowLine(d);
 
         // upozornenia
         const wBox = document.getElementById('warnings-box');
         const wList = document.getElementById('warnings-list');
         if (d.warnings && d.warnings.length) {
             wBox.classList.remove('hidden');
-            wList.innerHTML = d.warnings.map(w => '<li>' + esc(w) + '</li>').join('');
+            wList.innerHTML = d.warnings.map(w => '<li>' + sk(esc(w)) + '</li>').join('');
         } else { wBox.classList.add('hidden'); }
 
         // dlaždice
         const stepSub = s.step_length_method
             ? (s.step_length_method === 'geometria'
                 ? 'z miest dopadu, ' + (s.step_length_steps_measured || 0) + ' krokov' +
-                  (s.step_length_height_ratio ? ' · ' + s.step_length_height_ratio + '× výška' : '')
+                  (s.step_length_height_ratio ? ', ' + String(s.step_length_height_ratio).replace('.', ',') + ' × výška' : '')
                 : 'odhad rýchlosť × čas')
             : 'zadaj výšku';
         const speedSub = s.speed_ms !== null
             ? fmt(s.speed_kmh, ' km/h', 1) + (s.speed_agreement_pct !== null && s.speed_agreement_pct !== undefined
-                ? ' · zhoda metód ' + s.speed_agreement_pct + ' %' : '')
+                ? ', zhoda metód ' + s.speed_agreement_pct + ' %' : '')
             : 'zadaj výšku';
         document.getElementById('stat-grid').innerHTML = [
             tile('Kontakt so zemou', fmt(s.contact_ms_mean, ' ms'),
@@ -763,12 +730,12 @@
             tile('Letová fáza', fmt(s.flight_ms_mean, ' ms'), 'čas vo vzduchu'),
             tile('Kadencia', fmt(s.cadence_spm, ''), 'krokov za minútu'),
             tile('Duty factor', fmt(s.duty_factor_pct, ' %'), 'podiel opory v cykle'),
-            tile('Rýchlosť', s.speed_ms !== null ? fmt(s.speed_ms, ' m/s', 2) : '—', speedSub),
-            tile('Dĺžka kroku', s.step_length_m !== null ? fmt(s.step_length_m, ' m', 2) : '—', stepSub),
-            tile('Dĺžka dvojkroku', s.stride_length_m !== null ? fmt(s.stride_length_m, ' m', 2) : '—', 'stride length'),
-            tile('Asymetria Ľ/P', s.asymmetry_pct !== null ? fmt(s.asymmetry_pct, ' %', 1) : '—',
-                 (s.asymmetry_pct !== null && s.asymmetry_pct > 5) ? 'nad 5 % — pozri detail' : 'do 5 % (bežné)'),
-            tile('Vertikálna oscilácia', s.vertical_oscillation_cm !== null ? fmt(s.vertical_oscillation_cm, ' cm', 1) : '—', 'zdvih panvy'),
+            tile('Rýchlosť', s.speed_ms !== null ? fmt(s.speed_ms, ' m/s', 2) : '–', speedSub),
+            tile('Dĺžka kroku', s.step_length_m !== null ? fmt(s.step_length_m, ' m', 2) : '–', stepSub),
+            tile('Dĺžka dvojkroku', s.stride_length_m !== null ? fmt(s.stride_length_m, ' m', 2) : '–', 'dva kroky za sebou'),
+            tile('Asymetria Ľ/P', s.asymmetry_pct !== null ? fmt(s.asymmetry_pct, ' %', 1) : '–',
+                 (s.asymmetry_pct !== null && s.asymmetry_pct > 5) ? 'nad 5 %, pozri detail' : 'do 5 % (bežné)'),
+            tile('Vertikálna oscilácia', s.vertical_oscillation_cm !== null ? fmt(s.vertical_oscillation_cm, ' cm', 1) : '–', 'zdvih panvy'),
             tile('Nájdených krokov', fmt(s.steps_detected, ''), 'v zábere'),
             s.flow_agreement_ms !== null && s.flow_agreement_ms !== undefined
                 ? tile('Zhoda metód', '± ' + fmt(s.flow_agreement_ms, ' ms', 0),
@@ -791,15 +758,15 @@
         // porovnanie nôh
         const L = s.contact_left_ms, R = s.contact_right_ms;
         const maxv = Math.max(L || 0, R || 0) || 1;
-        document.getElementById('legs-box').innerHTML = [['Ľavá', L, '#879c26'], ['Pravá', R, '#3987e5']]
+        document.getElementById('legs-box').innerHTML = [['Ľavá', L, 'var(--series-3)'], ['Pravá', R, 'var(--series-2)']]
             .map(([name, val, col]) =>
-                '<div><div class="flex justify-between text-sm mb-1"><span class="font-semibold">' + name + '</span>' +
-                '<span class="font-headline font-bold">' + fmt(val, ' ms', 1) + '</span></div>' +
-                '<div class="h-3 bg-surface-container rounded-full overflow-hidden" aria-hidden="true">' +
-                '<div class="h-full rounded-full" style="width:' + ((val || 0) / maxv * 100) + '%;background:' + col + '"></div>' +
+                '<div><div class="flex justify-between text-[14.5px] mb-1"><span class="font-semibold">' + name + '</span>' +
+                '<span class="mono font-semibold">' + fmt(val, ' ms', 1) + '</span></div>' +
+                '<div class="leg-bar" aria-hidden="true">' +
+                '<div style="width:' + ((val || 0) / maxv * 100) + '%;background:' + col + '"></div>' +
                 '</div></div>').join('') +
             (s.asymmetry_pct !== null
-                ? '<p class="text-xs text-on-surface-variant pt-1">Rozdiel ' + fmt(s.asymmetry_pct, ' %', 1) +
+                ? '<p class="text-[13px] text-on-surface-variant pt-1">Rozdiel ' + fmt(s.asymmetry_pct, ' %', 1) +
                   '. Pri šprinte býva pár percent bežných; trvalý rozdiel nad 5 % stojí za pozornosť ' +
                   '(sila, pohyblivosť, staršie zranenie).</p>'
                 : '');
@@ -811,21 +778,19 @@
                 (st.step_length_method === 'geometria'
                     ? ' <span class="text-primary" aria-hidden="true">●</span><span class="sr-only"> zmerané geometricky</span>'
                     : ' <span aria-hidden="true">○</span><span class="sr-only"> odhad</span>');
-            return '<tr class="border-b border-white/5">' +
-                '<td class="py-2 pr-4 text-on-surface-variant">' + st.index + '</td>' +
-                '<td class="py-2 pr-4"><span class="px-2 py-0.5 rounded-lg text-xs font-bold" style="background:' +
-                    (st.side_code === 'L' ? 'rgba(46,125,79,0.14);color:#236b41' : 'rgba(31,111,139,0.14);color:#185a71') +
-                    '">' + st.side + '</span></td>' +
-                '<td class="py-2 pr-4 text-right text-on-surface-variant">' + st.touchdown_s.toFixed(3) + '</td>' +
-                '<td class="py-2 pr-4 text-right font-bold">' + fmt(st.contact_ms, ' ms', 1) + '</td>' +
-                '<td class="py-2 pr-4 text-right text-on-surface-variant">' + fmt(st.flow_contact_ms, ' ms', 0) + '</td>' +
-                '<td class="py-2 pr-4 text-right">' + fmt(st.flight_ms, ' ms', 1) + '</td>' +
-                '<td class="py-2 pr-4 text-right">' + fmt(st.step_time_ms, ' ms', 1) + '</td>' +
-                '<td class="py-2 pr-4 text-right" title="' + esc(st.step_length_note || st.step_length_method || '') + '">' + fmt(st.step_length_m, ' m', 2) + lenMark + '</td>' +
-                '<td class="py-2 pr-4 text-right">' + fmt(td.knee_deg, '°', 0) + '</td>' +
-                '<td class="py-2 pr-4 text-right">' + fmt(st.knee_min_stance_deg, '°', 0) + '</td>' +
-                '<td class="py-2 pr-4 text-right">' + (td.shank_deg === null || td.shank_deg === undefined ? '—' : (td.shank_deg > 0 ? '+' : '') + td.shank_deg.toFixed(0) + '°') + '</td>' +
-                '<td class="py-2 pr-4 text-right">' + fmt(td.trunk_lean_deg, '°', 0) + '</td>' +
+            return '<tr class="mono">' +
+                '<td class="py-2 text-on-surface-variant">' + st.index + '</td>' +
+                '<td class="py-2"><span class="chip ' + (st.side_code === 'L' ? 'side-l' : 'side-r') + '">' + st.side + '</span></td>' +
+                '<td class="py-2 text-right text-on-surface-variant">' + fmt(st.touchdown_s, '', 3) + '</td>' +
+                '<td class="py-2 text-right font-semibold">' + fmt(st.contact_ms, ' ms', 1) + '</td>' +
+                '<td class="py-2 text-right text-on-surface-variant">' + fmt(st.flow_contact_ms, ' ms', 0) + '</td>' +
+                '<td class="py-2 text-right">' + fmt(st.flight_ms, ' ms', 1) + '</td>' +
+                '<td class="py-2 text-right">' + fmt(st.step_time_ms, ' ms', 1) + '</td>' +
+                '<td class="py-2 text-right" title="' + esc(st.step_length_note || st.step_length_method || '') + '">' + fmt(st.step_length_m, ' m', 2) + lenMark + '</td>' +
+                '<td class="py-2 text-right">' + fmt(td.knee_deg, '°', 0) + '</td>' +
+                '<td class="py-2 text-right">' + fmt(st.knee_min_stance_deg, '°', 0) + '</td>' +
+                '<td class="py-2 text-right">' + (td.shank_deg === null || td.shank_deg === undefined ? '–' : (td.shank_deg > 0 ? '+' : '') + td.shank_deg.toFixed(0) + '°') + '</td>' +
+                '<td class="py-2 text-right">' + fmt(td.trunk_lean_deg, '°', 0) + '</td>' +
                 '<td class="py-2 text-right text-on-surface-variant">' + st.frames_in_contact + '</td>' +
                 '</tr>';
         }).join('');
@@ -833,11 +798,16 @@
         results.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
+    // Graf sa pri prepnutí témy nakreslí znova – farby sérií sú z CSS premenných aktuálnej témy.
+    let lastSteps = null;
+    document.addEventListener('atletcoach:tema', () => { if (lastSteps) drawChart(lastSteps); });
+
     function drawChart(steps) {
         const ctx = document.getElementById('steps-chart');
         if (chart) chart.destroy();
-        // Farby osí a mriežky: #655f53 má na bielej 6,3:1 (pôvodné #8b8b84 len 3,4:1).
-        const axis = '#655f53', grid = 'rgba(21,20,15,0.08)';
+        lastSteps = steps;
+        // Ľavá noha = séria 3, pravá = séria 2 (rovnako ako štítky v tabuľke), letová fáza = séria 1.
+        const colL = css('--series-3'), colR = css('--series-2'), colFlight = css('--series-1');
         chart = new Chart(ctx, {
             data: {
                 labels: steps.map(s => s.index + '. ' + s.side.charAt(0)),
@@ -846,16 +816,16 @@
                         type: 'bar',
                         label: 'Kontakt so zemou (ms)',
                         data: steps.map(s => s.contact_ms),
-                        backgroundColor: steps.map(s => s.side_code === 'L' ? '#879c26' : '#3987e5'),
-                        borderRadius: 6,
+                        backgroundColor: steps.map(s => s.side_code === 'L' ? colL : colR),
+                        borderRadius: 0,
                         order: 2,
                     },
                     {
                         type: 'line',
                         label: 'Letová fáza (ms)',
                         data: steps.map(s => s.flight_ms),
-                        borderColor: '#d55181',
-                        backgroundColor: '#d55181',
+                        borderColor: colFlight,
+                        backgroundColor: colFlight,
                         borderWidth: 2,
                         tension: 0.3,
                         pointRadius: 3,
@@ -866,9 +836,10 @@
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
+                locale: 'sk-SK',   // desatinná čiarka na osiach a v bublinách
                 interaction: { mode: 'index', intersect: false },
                 plugins: {
-                    legend: { labels: { color: axis, boxWidth: 12, font: { size: 11 } } },
+                    legend: { labels: { boxWidth: 12, font: { size: 12 } } },
                     tooltip: {
                         callbacks: {
                             afterBody: items => {
@@ -892,12 +863,11 @@
                     },
                 },
                 scales: {
-                    x: { ticks: { color: axis, font: { size: 10 } }, grid: { display: false } },
+                    x: { ticks: { font: { size: 11 } }, grid: { display: false } },
                     y: {
                         beginAtZero: true,
-                        ticks: { color: axis, font: { size: 10 } },
-                        grid: { color: grid },
-                        title: { display: true, text: 'milisekundy', color: axis, font: { size: 10 } },
+                        ticks: { font: { size: 11 } },
+                        title: { display: true, text: 'milisekundy', font: { size: 11 } },
                     },
                 },
             },

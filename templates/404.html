@@ -1,17 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Stránka sa nenašla · AtletCoach{% endblock %}
+{% from "_ui.html" import page_head %}
+{% block title %}Stránka sa nenašla – AtletCoach{% endblock %}
 
 {% block content %}
-<main class="mt-16 pb-12">
-    <p class="eyebrow mb-2">Chyba 404</p>
-    <h1 class="page-title">Táto stránka neexistuje</h1>
-    <p class="text-on-surface-variant mt-4 max-w-[52ch]">
-        Adresa je nesprávna, alebo bola stránka presunutá. Skús to z úvodnej stránky.
-    </p>
-    <div class="mt-8 flex flex-wrap gap-2.5">
-        <a href="{{ url_for('index') }}" class="btn btn-primary">Domov</a>
-        <a href="{{ url_for('stopky.page') }}"
-           class="btn btn-secondary">Stopky</a>
+<main class="pb-4 max-w-[68ch]">
+    {{ page_head('Táto stránka neexistuje', 'Adresa ' ~ request.path|truncate(60) ~ ' v AtletCoach nie je. Mohol sa v nej stať preklep, alebo je odkaz starý.') }}
+    <div class="flex flex-wrap gap-2.5">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">Ísť na úvodnú stránku</a>
+        <a href="{{ url_for('stopky.page') }}" class="btn btn-secondary">Otvoriť stopky</a>
     </div>
 </main>
 {% endblock %}

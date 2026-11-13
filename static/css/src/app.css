@@ -1,0 +1,27 @@
+/* ==========================================================================
+   AtletCoach – dizajnový systém „Modrá dráha“ (zdroj)
+   Zostavenie: npm run css  →  static/css/app.css  (Tailwind CLI, minifikované)
+   Pravidlá a dôvody: DESIGN.md
+
+   Poradie importov je dôležité:
+     1. tailwindcss/base     – reset prehliadača (preflight)
+     2. tokens.css           – farby, písmo, základné elementy
+     3. tailwindcss/components
+     4. komponenty appky     – rám, tlačidlá, tabuľky, stránky
+     5. tailwindcss/utilities – utility v šablónach vždy vyhrajú nad komponentmi
+   ========================================================================== */
+
+@import "tailwindcss/base";
+@import "./tokens.css";
+
+@import "tailwindcss/components";
+@import "./shell.css";
+@import "./components.css";
+@import "./uvod.css";
+@import "./analyza.css";
+@import "./trening.css";
+@import "./ludia.css";
+@import "./ostatne.css";
+
+@import "tailwindcss/utilities";
+@import "./motion.css";

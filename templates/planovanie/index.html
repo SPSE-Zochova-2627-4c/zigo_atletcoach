@@ -1,83 +1,76 @@
 {% extends "base.html" %}
-{% block title %}Plán tréningov · AtletCoach{% endblock %}
-{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='css/planovanie.css') }}">{% endblock %}
+{% from "_ui.html" import page_head %}
+{% block title %}Plán tréningov – AtletCoach{% endblock %}
 
 {% block content %}
-<main class="mt-10 pb-12">
+<main class="pb-4">
 
-    <!-- ── Hlavička ── -->
-    <div class="flex items-end justify-between flex-wrap gap-5 mb-9">
-        <div>
-            <p class="eyebrow mb-2">
-                Kalendár{% if athlete and aid %} · {{ athlete.display_name }}{% elif not is_planner %} · môj plán{% endif %}
-            </p>
-            <h1 class="page-title">Plán tréningov</h1>
-        </div>
-        <div class="flex flex-wrap items-end gap-2.5">
-            {% if choices %}
-            <form method="get" class="flex items-end gap-2">
-                <input type="hidden" name="y" value="{{ year }}">
-                <input type="hidden" name="m" value="{{ month }}">
-                <div>
-                    <label for="athlete_id">Zverenec</label>
-                    <select id="athlete_id" name="athlete_id" class="min-w-[200px]">
-                        {% for u in choices %}
-                        <option value="{{ u.id }}" {% if athlete and u.id == athlete.id %}selected{% endif %}>{{ u.display_name }}{% if u.full_name %} · {{ u.username }}{% endif %}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <button type="submit" class="btn btn-secondary">Zobraziť</button>
-            </form>
-            {% endif %}
-            <a href="{{ url_for('planovanie.overview') }}"
-               class="btn btn-secondary">
-                Prehľad splnenia
-            </a>
-            {% if is_planner %}
-            <a href="{{ url_for('planovanie.week_form') }}"
-               class="btn btn-primary">
-                Týždenný plán z textu
-            </a>
-            {% endif %}
-        </div>
-    </div>
+    {% if athlete and aid %}
+        {% set sub = athlete.display_name ~ '. Klikni na deň a naplánuj tréning.' %}
+    {% elif athlete and is_planner %}
+        {% set sub = 'Tvoj kalendár. Klikni na deň a naplánuj tréning.' %}
+    {% else %}
+        {% set sub = 'Tvoj plán od trénera. Klikni na deň a zapíš, ako tréning dopadol.' %}
+    {% endif %}
+    {% call page_head('Plán tréningov', sub) %}
+        {% if choices %}
+        <form method="get" class="flex items-end gap-2">
+            <input type="hidden" name="y" value="{{ year }}">
+            <input type="hidden" name="m" value="{{ month }}">
+            <div>
+                <label for="athlete_id" class="sr-only">Zverenec</label>
+                <select id="athlete_id" name="athlete_id" class="min-w-[210px]">
+                    {% for u in choices %}
+                    <option value="{{ u.id }}" {% if athlete and u.id == athlete.id %}selected{% endif %}>{{ u.display_name }}{% if u.full_name %} ({{ u.username }}){% endif %}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-secondary">Zobraziť</button>
+        </form>
+        {% endif %}
+        <a href="{{ url_for('planovanie.overview') }}" class="btn btn-secondary">Prehľad splnenia</a>
+        {% if is_planner %}
+        <a href="{{ url_for('planovanie.week_form') }}" class="btn btn-primary">
+            <span class="material-symbols-outlined" aria-hidden="true">edit</span>Napísať plán na týždeň
+        </a>
+        {% endif %}
+    {% endcall %}
 
     {% if athlete is none %}
-    <!-- Tréner bez zverencov -->
-    <p class="font-headline font-bold text-2xl text-on-surface mb-2">Zatiaľ nemáš komu plánovať</p>
-    <p class="text-on-surface-variant max-w-[52ch] mb-6">
-        Pridaj zverenca v sekcii Zverenci a počkaj, kým vzťah potvrdí. Potom sa tu objaví jeho kalendár,
-        do ktorého mu naplánuješ tréningy.
-    </p>
-    <a href="{{ url_for('trener.athletes') }}" class="inline-block btn btn-primary">Zverenci</a>
+    <div class="card p-6 max-w-[64ch]">
+        <p class="section-title">Zatiaľ nemáš komu plánovať</p>
+        <p class="text-on-surface-variant mt-2">
+            Pridaj zverenca v sekcii Zverenci a počkaj, kým vzťah potvrdí. Potom sa tu objaví jeho kalendár,
+            do ktorého mu naplánuješ tréningy.
+        </p>
+        <a href="{{ url_for('trener.athletes') }}" class="btn btn-primary mt-5">Pridať zverenca</a>
+    </div>
     {% else %}
 
-    <!-- ── Mesiac ── -->
-    <div class="flex items-center justify-between gap-4 mb-4">
-        <a href="{{ url_for('planovanie.index', y=prev_y, m=prev_m, athlete_id=aid) }}"
-           class="border border-white/15 hover:border-white/35 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors"
+    {# ── Mesiac: šípky + názov ── #}
+    <div class="flex items-center justify-between gap-3 mb-3">
+        <a href="{{ url_for('planovanie.index', y=prev_y, m=prev_m, athlete_id=aid) }}" class="btn btn-secondary btn-sm"
            aria-label="Predchádzajúci mesiac: {{ MONTHS_SK[prev_m - 1] }} {{ prev_y }}">
-            <span aria-hidden="true">←</span> {{ MONTHS_SK[prev_m - 1] }}
+            <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span><span class="hidden sm:inline">{{ MONTHS_SK[prev_m - 1] }}</span>
         </a>
         <div class="text-center">
-            <h2 class="font-headline font-extrabold uppercase text-[22px] leading-none text-on-surface">{{ month_name }} {{ year }}</h2>
+            <h2 class="section-title text-[24px]">{{ month_name }} {{ year }}</h2>
             {% if not (year == today.year and month == today.month) %}
-            <a href="{{ url_for('planovanie.index', athlete_id=aid) }}" class="eyebrow hover:text-on-surface transition-colors">Dnes<span class="sr-only"> – späť na aktuálny mesiac</span> <span aria-hidden="true">→</span></a>
+            <a href="{{ url_for('planovanie.index', athlete_id=aid) }}" class="link text-[13.5px]">Späť na dnešok</a>
             {% else %}
-            <p class="eyebrow">Dnes {{ today|plan_date }}</p>
+            <p class="text-[13.5px] text-on-surface-variant">Dnes je {{ today|plan_date }}</p>
             {% endif %}
         </div>
-        <a href="{{ url_for('planovanie.index', y=next_y, m=next_m, athlete_id=aid) }}"
-           class="border border-white/15 hover:border-white/35 px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-on-surface transition-colors"
+        <a href="{{ url_for('planovanie.index', y=next_y, m=next_m, athlete_id=aid) }}" class="btn btn-secondary btn-sm"
            aria-label="Nasledujúci mesiac: {{ MONTHS_SK[next_m - 1] }} {{ next_y }}">
-            {{ MONTHS_SK[next_m - 1] }} <span aria-hidden="true">→</span>
+            <span class="hidden sm:inline">{{ MONTHS_SK[next_m - 1] }}</span><span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
         </a>
     </div>
 
-    <!-- ── Mriežka Po–Ne ── -->
-    <div class="grid grid-cols-7 gap-3">
+    {# ── Mriežka Po–Ne: jeden papier, dni oddelené čiarou. Na mobile zoznam dní s tréningom. ── #}
+    <div class="cal">
         {% for d in WEEKDAYS_SHORT_SK %}
-        <div class="bg-surface-container-low px-2 py-2 eyebrow"><span aria-hidden="true">{{ d }}</span><span class="sr-only">{{ WEEKDAYS_SK[loop.index0] }}</span></div>
+        <div class="cal-head" aria-hidden="true">{{ d }}</div>
         {% endfor %}
 
         {% for week in weeks %}{% for d in week %}
@@ -86,21 +79,27 @@
             {% else %}
             {% set entry = days.get(d) %}
             <a href="{{ url_for('planovanie.day', iso=d.isoformat(), athlete_id=aid) }}"
-               class="cal-cell {% if d == today %}cal-cell--today{% endif %}"
-               title="{{ WEEKDAYS_SK[d.weekday()] }} {{ d|plan_date }}">
-                <span class="cal-num mono">{{ d.day }}<span class="sr-only">. – {{ WEEKDAYS_SK[d.weekday()] }}</span></span>
+               class="cal-cell{% if d == today %} cal-cell--today{% endif %}{% if entry %} cal-cell--has{% else %} cal-cell--empty{% endif %}"
+               {% if d == today %}aria-current="date"{% endif %}>
+                <span class="cal-num">
+                    <span class="cal-wd">{{ WEEKDAYS_SK[d.weekday()] }}</span>
+                    <span>{{ d.day }}.</span><span class="sr-only"> {{ month_name|lower }}, {{ WEEKDAYS_SK[d.weekday()]|lower }}</span>
+                    {% if d == today %}<span class="cal-today">dnes</span>{% endif %}
+                </span>
                 {% if entry %}
                     {% for p in entry.plans %}
-                    {% if p.completed %}
-                    <span class="plan-chip plan-chip--done" title="Splnené: {{ p.title }}"><span aria-hidden="true">✓</span><span class="sr-only">splnené:</span> {{ p.title }}</span>
-                    {% elif d < today %}
-                    <span class="plan-chip plan-chip--missed" title="Nesplnené po termíne: {{ p.title }}"><span aria-hidden="true">!</span><span class="sr-only">nesplnené po termíne:</span> {{ p.title }}</span>
-                    {% else %}
-                    <span class="plan-chip" title="Naplánované: {{ p.title }}"><span class="sr-only">naplánované:</span> {{ p.title }}</span>
-                    {% endif %}
+                    {% if p.completed %}{% set st, st_label = 'done', 'splnené' %}
+                    {% elif d < today %}{% set st, st_label = 'missed', 'nesplnené po termíne' %}
+                    {% else %}{% set st, st_label = 'planned', 'naplánované' %}{% endif %}
+                    <span class="cal-plan cal-plan--{{ st }}" title="{{ st_label|capitalize }}: {{ p.title }}">
+                        <span class="plan-mark plan-mark--{{ st }}" aria-hidden="true"></span>
+                        <span class="sr-only">{{ st_label }}:</span>
+                        {% if p.time_text %}<span class="h">{{ p.time_text }}</span>{% endif %}
+                        <span class="t">{{ p.title }}</span>
+                    </span>
                     {% endfor %}
                     {% for log in entry.logs %}
-                    <span class="plan-log" title="Zápis v denníku: {{ log.training_type }}"><span aria-hidden="true">·</span><span class="sr-only">zápis v denníku:</span> {{ log.training_type }}{% if log.distance_km %} {{ log.distance_km }} km{% endif %}</span>
+                    <span class="cal-log" title="Zápis v denníku: {{ log.training_type }}"><span class="sr-only">zápis v denníku:</span>{{ log.training_type }}{% if log.distance_km %}, {{ log.distance_km }} km{% endif %}</span>
                     {% endfor %}
                 {% endif %}
             </a>
@@ -108,42 +107,43 @@
         {% endfor %}{% endfor %}
     </div>
 
-    <!-- ── Legenda ── -->
+    {# ── Legenda: tvar + farba, nie len farba ── #}
     <div class="plan-legend mt-4" aria-label="Legenda kalendára">
-        <span class="flex items-center gap-2"><span class="plan-chip">tréning</span><span class="eyebrow">naplánované</span></span>
-        <span class="flex items-center gap-2"><span class="plan-chip plan-chip--done"><span aria-hidden="true">✓</span> tréning</span><span class="eyebrow">splnené</span></span>
-        <span class="flex items-center gap-2"><span class="plan-chip plan-chip--missed"><span aria-hidden="true">!</span> tréning</span><span class="eyebrow">nesplnené po termíne</span></span>
-        <span class="flex items-center gap-2"><span class="plan-log"><span aria-hidden="true">·</span> 3x300m</span><span class="eyebrow">zápis v denníku</span></span>
+        <span><span class="plan-mark plan-mark--planned" aria-hidden="true"></span>naplánované</span>
+        <span><span class="plan-mark plan-mark--done" aria-hidden="true"></span>splnené</span>
+        <span><span class="plan-mark plan-mark--missed" aria-hidden="true"></span>nesplnené po termíne</span>
+        <span><span class="cal-log">3x300 m</span>zápis v denníku</span>
     </div>
 
-    <!-- ── Čísla za mesiac ── -->
-    <section class="mt-11">
-        <div class="rule"><p class="eyebrow">{{ month_name }} {{ year }} v číslach</p></div>
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div class="card px-5 py-5">
-                <p class="eyebrow mb-3">Naplánované</p>
-                <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">{{ stats.planned }}</p>
+    {# ── Čísla za mesiac ── #}
+    <section class="mt-12" aria-labelledby="h-mesiac">
+        <div class="rule"><h2 id="h-mesiac">{{ month_name }} {{ year }} v číslach</h2></div>
+        {% set pct = (100 * stats.done / stats.planned)|round|int if stats.planned else none %}
+        <div class="kpi-strip kpi-strip--tight">
+            <div class="kpi">
+                <p class="kpi-label">Naplánované</p>
+                <p class="kpi-value">{{ stats.planned }}</p>
+                <p class="kpi-hint">tréningov v mesiaci</p>
             </div>
-            <div class="card px-5 py-5">
-                <p class="eyebrow mb-3">Splnené</p>
-                <p class="font-headline font-extrabold text-[34px] leading-none" style="color:var(--volt)">{{ stats.done }}</p>
-                {% if stats.planned %}
-                <p class="mono text-[11px] text-on-surface-variant mt-2">{{ (100 * stats.done / stats.planned)|round|int }} % z plánu</p>
-                {% endif %}
+            <div class="kpi {{ 'good' if stats.done }}">
+                <p class="kpi-label">Splnené</p>
+                <p class="kpi-value">{{ stats.done }}</p>
+                <p class="kpi-hint">{% if pct is not none %}{{ pct }} % z plánu{% else %}zatiaľ nič{% endif %}</p>
             </div>
-            <div class="card px-5 py-5">
-                <p class="eyebrow mb-3">Nesplnené po termíne</p>
-                <p class="font-headline font-extrabold text-[34px] leading-none {% if stats.missed == 0 %}text-on-surface{% endif %}"
-                   {% if stats.missed %}style="color:var(--danger)"{% endif %}>{{ stats.missed }}</p>
+            <div class="kpi {{ 'bad' if stats.missed }}">
+                <p class="kpi-label">Nesplnené po termíne</p>
+                <p class="kpi-value">{{ stats.missed }}</p>
+                <p class="kpi-hint">{{ 'treba dobehnúť alebo zrušiť' if stats.missed else 'nič nezostalo' }}</p>
             </div>
-            <div class="card px-5 py-5">
-                <p class="eyebrow mb-3">Zápisy v denníku</p>
-                <p class="font-headline font-extrabold text-[34px] leading-none text-on-surface">{{ stats.logs }}</p>
+            <div class="kpi">
+                <p class="kpi-label">Zápisy v denníku</p>
+                <p class="kpi-value">{{ stats.logs }}</p>
+                <p class="kpi-hint">reálne odbehnuté</p>
             </div>
         </div>
-        <p class="text-[13px] text-on-surface-variant mt-4 max-w-[64ch]">
+        <p class="text-[14px] text-on-surface-variant mt-4 max-w-[68ch]">
             {% if is_planner %}
-            Klikni na deň a naplánuj tréning, alebo vlož celý týždeň naraz z textu trénera. Zverenec si pri
+            Klikni na deň a naplánuj tréning, alebo vlož celý týždeň naraz z textu. Zverenec si pri
             tréningu zapíše kilá k sériám alebo časy úsekov a po odbehnutí ho označí ako splnený.
             {% else %}
             Klikni na deň, kde máš naplánovaný tréning: ku sériám si zapíš kilá, k úsekom časy (z nich sú

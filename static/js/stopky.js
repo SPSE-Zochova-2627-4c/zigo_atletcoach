@@ -909,7 +909,7 @@
         }
 
         // Popis pri hornom konci; ak by vyšiel z obrazu, ide na druhú stranu.
-        ctx.font = "500 10px 'IBM Plex Mono', monospace";
+        ctx.font = "500 10px 'Archivo', system-ui, sans-serif";
         if ('letterSpacing' in ctx) ctx.letterSpacing = '0.14em';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = color;

@@ -17,14 +17,14 @@ Prístup: zverenec vidí a plní len svoje plány; tréner plánuje len svojim
 import json
 import uuid
 from collections import OrderedDict
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from functools import wraps
 
 from flask import (Blueprint, render_template, request, redirect, url_for,
                    flash, g, abort, jsonify)
 
 import plan_text
-from models import db, PlannedTraining, TrainingLog, PlanItem
+from models import utcnow, db, PlannedTraining, TrainingLog, PlanItem
 from auth import (login_required, roles_required, athlete_ids_visible_to,
                   visible_athletes, require_visible_athlete)
 
@@ -441,7 +441,7 @@ def complete(plan_id):
         db.session.flush()
 
     plan.completed = True
-    plan.completed_at = datetime.utcnow()
+    plan.completed_at = utcnow()
     plan.athlete_note = note
     plan.training_log_id = log.id
     db.session.commit()

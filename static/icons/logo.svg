@@ -1,5 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" aria-hidden="true" focusable="false">
-  <rect width="64" height="64" rx="14" fill="#111114"/>
-  <path fill="#ffffff" d="M27.4 13h9.2L50.5 49h-8.8l-3-8.2H25.3l-3 8.2H13.5zm4.6 9.2-5.1 13.9h10.2z"/>
-  <circle cx="52" cy="52" r="4.5" fill="#0057e6"/>
+  <!-- AtletCoach: ovál 400 m z vtáčej perspektívy – dve čiary dráhy a cieľová čiara na domácej rovinke -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1336D6"/><stop offset=".55" stop-color="#1F4BFF"/><stop offset="1" stop-color="#00C2FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="12" fill="url(#g)"/>
+  <rect x="9" y="17" width="46" height="30" rx="15" fill="none" stroke="#fff" stroke-width="3.5"/>
+  <rect x="16.5" y="24.5" width="31" height="15" rx="7.5" fill="none" stroke="#fff" stroke-width="3.5"/>
+  <path d="M40 39.5v7.5" stroke="#fff" stroke-width="3.5"/>
 </svg>
